@@ -243,13 +243,7 @@
             <div class="position-display" id="positionDisplay">Grid: 0,0</div>
         </div>
         
-        <div class="button-row">
-            <button id="backBtn" class="tertiary-btn">Back</button>
-            <button id="doneBtn" class="primary-btn">Done</button>
-        </div>
-        
         <div class="form-row">
-            <label for="itemName">Item Name:</label>
             <input type="text" id="itemName" placeholder="Enter the name of the item" maxlength="30">
         </div>
         
@@ -264,9 +258,11 @@
         </div>
         
         <div class="button-row">
-            <button id="submitBtn" class="primary-btn">Submit for Review</button>
-            <button id="shareBtn" class="secondary-btn">Share</button>
-            <button id="exportBtn" class="tertiary-btn">Export Data</button>
+            <button id="exportBtn" class="primary-btn">Export Drawing Data</button>
+            <div style="display: flex; gap: 10px;">
+                <button id="submitBtn" class="tertiary-btn" disabled title="Feature coming soon">Submit for Review</button>
+                <button id="shareBtn" class="tertiary-btn" disabled title="Feature coming soon">Share</button>
+            </div>
         </div>
         
         <div class="share-code" id="shareCode">
@@ -286,11 +282,10 @@
         </div>
     </div>
     
-    <!-- Export Modal -->
     <div class="overlay" id="exportOverlay">
         <div class="modal">
             <div class="modal-title">Export Drawing Data</div>
-            <p>Copy this data to add your drawing to the game:</p>
+            <p>Your drawing has been exported as a JSON file. You can also copy the data below:</p>
             <textarea id="exportData" readonly></textarea>
             <div class="modal-buttons">
                 <button class="tertiary-btn" id="copyExportBtn">Copy to Clipboard</button>
@@ -301,8 +296,11 @@
     
     <script>
         // Constants
-        const GRID_SIZE = 15; // 15x15 grid (16x16 points)
+        const GRID_SIZE = 16; // 16x16 grid (17x17 points)
         const DOT_RADIUS = 5;
+        // Define the drawing bounds - prevent drawing on the edges
+        const MIN_DRAW_GRID = 1;  // Minimum grid coordinate for drawing
+        const MAX_DRAW_GRID = 15; // Maximum grid coordinate for drawing
         
         // Global variable to track recording state
         var isCurrentlyRecording = false;
@@ -314,8 +312,6 @@
         const editBtn = document.getElementById('editBtn');
         const recordBtn = document.getElementById('recordBtn');
         const previewBtn = document.getElementById('previewBtn');
-        const backBtn = document.getElementById('backBtn');
-        const doneBtn = document.getElementById('doneBtn');
         const itemNameInput = document.getElementById('itemName');
         const categorySelect = document.getElementById('category');
         const submitBtn = document.getElementById('submitBtn');
@@ -376,7 +372,7 @@
         function drawGrid() {
             gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
             
-            // Draw grid lines
+            // Draw grid lines - all with the same style
             gridCtx.strokeStyle = '#ddd';
             gridCtx.lineWidth = 1;
             
@@ -398,13 +394,19 @@
                 gridCtx.stroke();
             }
             
-            // Draw grid points
-            gridCtx.fillStyle = '#eee';
+            // Draw grid points (skip edge points)
             for (let x = 0; x <= GRID_SIZE; x++) {
                 for (let y = 0; y <= GRID_SIZE; y++) {
+                    // Skip drawing points on the edges
+                    if (x === 0 || x === GRID_SIZE || y === 0 || y === GRID_SIZE) {
+                        continue; // Skip to next iteration
+                    }
+                    
                     const pointX = x * state.gridPointSize;
                     const pointY = y * state.gridPointSize;
                     
+                    // Style all points the same
+                    gridCtx.fillStyle = '#bbb';
                     gridCtx.beginPath();
                     gridCtx.arc(pointX, pointY, 3, 0, Math.PI * 2);
                     gridCtx.fill();
@@ -413,7 +415,18 @@
             
             // Highlight hovered grid point
             if (state.hoveredGridPoint) {
-                gridCtx.fillStyle = '#aaa';
+                // Check if we're on an edge - still maintain functionality restriction
+                const isOnEdge = state.hoveredGridPoint.x < MIN_DRAW_GRID || 
+                                state.hoveredGridPoint.x > MAX_DRAW_GRID || 
+                                state.hoveredGridPoint.y < MIN_DRAW_GRID || 
+                                state.hoveredGridPoint.y > MAX_DRAW_GRID;
+                
+                if (isOnEdge) {
+                    gridCtx.fillStyle = '#f88'; // Red tint for edge (not allowed)
+                } else {
+                    gridCtx.fillStyle = '#aaa'; // Normal highlight
+                }
+                
                 gridCtx.beginPath();
                 gridCtx.arc(
                     state.hoveredGridPoint.x * state.gridPointSize,
@@ -743,8 +756,14 @@
             // Update position display
             positionDisplay.textContent = `Grid: ${gridPoint.x},${gridPoint.y}`;
             
-            // Change cursor based on mode
-            if (state.mode === 'edit') {
+            // Check if we're on the edge of the grid
+            const isOnEdge = gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID || 
+                             gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID;
+            
+            // Change cursor based on mode and position
+            if (isOnEdge && (state.mode === 'sketch' || state.mode === 'record')) {
+                gridCanvas.style.cursor = 'not-allowed'; // Show not-allowed cursor on edges
+            } else if (state.mode === 'edit') {
                 const dotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
                 if (dotIndex !== -1) {
                     gridCanvas.style.cursor = 'not-allowed'; // Delete cursor
@@ -768,6 +787,37 @@
             
             const gridX = state.hoveredGridPoint.x;
             const gridY = state.hoveredGridPoint.y;
+            
+            // Prevent drawing on the edges
+            if (gridX < MIN_DRAW_GRID || gridX > MAX_DRAW_GRID || 
+                gridY < MIN_DRAW_GRID || gridY > MAX_DRAW_GRID) {
+                // Show visual feedback that edges are off-limits
+                const flashDuration = 300; // milliseconds
+                
+                // Create a temporary flash element
+                const flash = document.createElement('div');
+                flash.style.position = 'absolute';
+                flash.style.top = '50%';
+                flash.style.left = '50%';
+                flash.style.transform = 'translate(-50%, -50%)';
+                flash.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+                flash.style.padding = '10px 20px';
+                flash.style.borderRadius = '5px';
+                flash.style.color = 'white';
+                flash.style.fontWeight = 'bold';
+                flash.style.zIndex = '10';
+                flash.textContent = 'Cannot draw on edges';
+                
+                // Add it to the grid container
+                gridCanvas.parentElement.appendChild(flash);
+                
+                // Remove after duration
+                setTimeout(() => {
+                    gridCanvas.parentElement.removeChild(flash);
+                }, flashDuration);
+                
+                return;
+            }
             
             // Get reference to the correct data and selection based on mode
             let dotsArray, linesArray, selectedDotRef;
@@ -879,11 +929,14 @@
         
         // Start recording
         function startRecording() {
-            // No need to check for dots anymore since they're separate
+            // Update state
             state.recording.isRecording = true;
+            isCurrentlyRecording = true;
+            
+            // Update UI
             recordingIndicator.style.display = 'block';
             recordBtn.textContent = 'Stop';
-            recordBtn.classList.remove('primary-btn');
+            recordBtn.classList.remove('tertiary-btn', 'primary-btn');
             recordBtn.classList.add('secondary-btn');
             
             console.log('Recording started');
@@ -891,7 +944,11 @@
         
         // Stop recording
         function stopRecording() {
+            // Update state
             state.recording.isRecording = false;
+            isCurrentlyRecording = false;
+            
+            // Update UI
             recordingIndicator.style.display = 'none';
             recordBtn.textContent = 'Record';
             recordBtn.classList.remove('secondary-btn');
@@ -935,25 +992,7 @@
             const scaleY = previewCanvas.height / gridCanvas.height;
             const scale = Math.min(scaleX, scaleY);
             
-            // Draw grid
-            previewCtx.strokeStyle = '#eee';
-            previewCtx.lineWidth = 1;
-            
-            for (let i = 0; i <= GRID_SIZE; i++) {
-                const x = i * state.gridPointSize * scale;
-                previewCtx.beginPath();
-                previewCtx.moveTo(x, 0);
-                previewCtx.lineTo(x, previewCanvas.height);
-                previewCtx.stroke();
-                
-                const y = i * state.gridPointSize * scale;
-                previewCtx.beginPath();
-                previewCtx.moveTo(0, y);
-                previewCtx.lineTo(previewCanvas.width, y);
-                previewCtx.stroke();
-            }
-            
-            // Collect only dots used in the recording sequence
+            // Collect all dots used in the recording sequence
             const usedDotIndices = new Set();
             state.recording.sequence.forEach(line => {
                 usedDotIndices.add(line.from);
@@ -961,90 +1000,151 @@
             });
             
             // Animation variables
-            let step = 0;
-            let drawnLines = [];
+            let currentLineIndex = 0;
+            let completedLines = [];
+            let animationProgress = 0;
+            let animationId = null;
             state.recording.isPlaying = true;
             
-            function drawNextLine() {
-                if (step < state.recording.sequence.length && state.recording.isPlaying) {
-                    // Add the current line to our drawn lines
-                    drawnLines.push(state.recording.sequence[step]);
+            // Function to draw everything in its current state
+            function drawPreviewFrame() {
+                // Clear canvas
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                
+                // Draw grid
+                previewCtx.strokeStyle = '#eee';
+                previewCtx.lineWidth = 1;
+                
+                for (let i = 0; i <= GRID_SIZE; i++) {
+                    const x = i * state.gridPointSize * scale;
+                    previewCtx.beginPath();
+                    previewCtx.moveTo(x, 0);
+                    previewCtx.lineTo(x, previewCanvas.height);
+                    previewCtx.stroke();
                     
-                    // Clear canvas and redraw grid
-                    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-                    
-                    // Draw grid
-                    previewCtx.strokeStyle = '#eee';
-                    previewCtx.lineWidth = 1;
-                    
-                    for (let i = 0; i <= GRID_SIZE; i++) {
-                        const x = i * state.gridPointSize * scale;
+                    const y = i * state.gridPointSize * scale;
+                    previewCtx.beginPath();
+                    previewCtx.moveTo(0, y);
+                    previewCtx.lineTo(previewCanvas.width, y);
+                    previewCtx.stroke();
+                }
+                
+                // Draw ALL dots from the beginning
+                previewCtx.fillStyle = '#333';
+                usedDotIndices.forEach(dotIndex => {
+                    if (state.recording.dots[dotIndex]) { // Safety check
+                        const dot = state.recording.dots[dotIndex];
                         previewCtx.beginPath();
-                        previewCtx.moveTo(x, 0);
-                        previewCtx.lineTo(x, previewCanvas.height);
-                        previewCtx.stroke();
+                        previewCtx.arc(dot.x * scale, dot.y * scale, DOT_RADIUS, 0, Math.PI * 2);
+                        previewCtx.fill();
                         
-                        const y = i * state.gridPointSize * scale;
-                        previewCtx.beginPath();
-                        previewCtx.moveTo(0, y);
-                        previewCtx.lineTo(previewCanvas.width, y);
-                        previewCtx.stroke();
+                        // Draw index number
+                        previewCtx.fillStyle = '#fff';
+                        previewCtx.textAlign = 'center';
+                        previewCtx.textBaseline = 'middle';
+                        previewCtx.font = '8px Arial';
+                        previewCtx.fillText(dotIndex.toString(), dot.x * scale, dot.y * scale);
+                        previewCtx.fillStyle = '#333';
                     }
+                });
+                
+                // Draw completed lines
+                previewCtx.strokeStyle = '#4CAF50'; // Green for recording lines
+                previewCtx.lineWidth = 4; // Double thickness
+                
+                for (let i = 0; i < completedLines.length; i++) {
+                    const lineIndex = completedLines[i];
+                    const line = state.recording.sequence[lineIndex];
+                    const from = state.recording.dots[line.from];
+                    const to = state.recording.dots[line.to];
                     
-                    // Calculate which dots should be visible based on drawn lines
-                    const visibleDots = new Set();
-                    drawnLines.forEach(line => {
-                        visibleDots.add(line.from);
-                        visibleDots.add(line.to);
-                    });
+                    previewCtx.beginPath();
+                    previewCtx.moveTo(from.x * scale, from.y * scale);
+                    previewCtx.lineTo(to.x * scale, to.y * scale);
+                    previewCtx.stroke();
+                }
+                
+                // Draw animated line (if we're still animating)
+                if (currentLineIndex < state.recording.sequence.length) {
+                    const line = state.recording.sequence[currentLineIndex];
+                    const from = state.recording.dots[line.from];
+                    const to = state.recording.dots[line.to];
                     
-                    // Draw all lines drawn so far
-                    previewCtx.strokeStyle = '#4CAF50'; // Green for recording lines
-                    previewCtx.lineWidth = 4; // Double thickness
+                    // Calculate endpoints of the animated line segment
+                    const startX = from.x * scale;
+                    const startY = from.y * scale;
+                    const endX = to.x * scale;
+                    const endY = to.y * scale;
                     
-                    for (let i = 0; i < drawnLines.length; i++) {
-                        const line = drawnLines[i];
-                        const from = state.recording.dots[line.from];
-                        const to = state.recording.dots[line.to];
-                        
-                        previewCtx.beginPath();
-                        previewCtx.moveTo(from.x * scale, from.y * scale);
-                        previewCtx.lineTo(to.x * scale, to.y * scale);
-                        previewCtx.stroke();
-                    }
+                    // Calculate current end point based on progress
+                    const currentEndX = startX + (endX - startX) * animationProgress;
+                    const currentEndY = startY + (endY - startY) * animationProgress;
                     
-                    // Draw only dots that are connected by lines that have been drawn so far
-                    previewCtx.fillStyle = '#333';
-                    visibleDots.forEach(dotIndex => {
-                        if (state.recording.dots[dotIndex]) { // Safety check
-                            const dot = state.recording.dots[dotIndex];
-                            previewCtx.beginPath();
-                            previewCtx.arc(dot.x * scale, dot.y * scale, DOT_RADIUS, 0, Math.PI * 2);
-                            previewCtx.fill();
-                            
-                            // Draw index number for debugging
-                            previewCtx.fillStyle = '#fff';
-                            previewCtx.textAlign = 'center';
-                            previewCtx.textBaseline = 'middle';
-                            previewCtx.font = '8px Arial';
-                            previewCtx.fillText(dotIndex.toString(), dot.x * scale, dot.y * scale);
-                            previewCtx.fillStyle = '#333';
-                        }
-                    });
-                    
-                    step++;
-                    setTimeout(drawNextLine, 500); // 0.5 second per line
+                    // Draw the partially completed line
+                    previewCtx.strokeStyle = '#4CAF50';
+                    previewCtx.lineWidth = 4;
+                    previewCtx.beginPath();
+                    previewCtx.moveTo(startX, startY);
+                    previewCtx.lineTo(currentEndX, currentEndY);
+                    previewCtx.stroke();
                 }
             }
             
-            // Start animation
-            drawNextLine();
+            // Function to animate the current line
+            function animateLine() {
+                if (!state.recording.isPlaying || currentLineIndex >= state.recording.sequence.length) {
+                    cancelAnimationFrame(animationId);
+                    return;
+                }
+                
+                // Increment progress
+                animationProgress += 0.05; // Adjust for speed
+                
+                // If line is complete
+                if (animationProgress >= 1) {
+                    // Add to completed lines
+                    completedLines.push(currentLineIndex);
+                    
+                    // Move to next line
+                    currentLineIndex++;
+                    animationProgress = 0;
+                    
+                    // Draw the current state
+                    drawPreviewFrame();
+                    
+                    // Pause briefly between lines
+                    setTimeout(() => {
+                        if (state.recording.isPlaying) {
+                            animationId = requestAnimationFrame(animateLine);
+                        }
+                    }, 200);
+                    return;
+                }
+                
+                // Draw the current frame
+                drawPreviewFrame();
+                
+                // Continue animation
+                animationId = requestAnimationFrame(animateLine);
+            }
+            
+            // Start by drawing the initial frame with all dots
+            drawPreviewFrame();
+            
+            // Start the animation
+            animationId = requestAnimationFrame(animateLine);
         }
         
         // Stop preview
         function stopPreview() {
             state.recording.isPlaying = false;
             previewOverlay.style.display = 'none';
+            
+            // Cancel any ongoing animations
+            if (window.animationId) {
+                cancelAnimationFrame(window.animationId);
+            }
+            
             setMode('record');
         }
         
@@ -1144,7 +1244,29 @@
             if (!validateRecording()) return;
             
             const exportData = getExportData();
-            exportData.value = JSON.stringify(exportData, null, 2);
+            
+            // Format the data as a JSON string with proper indentation
+            const jsonString = JSON.stringify(exportData, null, 2);
+            
+            // Create a download link for the text file
+            const blob = new Blob([jsonString], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create filename based on the item name
+            const filename = (exportData.name.toLowerCase().replace(/\s+/g, '_') || 'drawing') + '.json';
+            
+            // Set up download link
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = filename;
+            
+            // Add to DOM, click, then remove
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            // Also show in the export overlay
+            document.getElementById('exportData').value = jsonString;
             exportOverlay.style.display = 'flex';
         }
         
@@ -1205,17 +1327,17 @@
             setMode('edit');
         });
         
+        // FIXED RECORD BUTTON - This is where the fix is applied
         recordBtn.addEventListener('click', () => {
             if (state.recording.isRecording) {
-                // Stop the current recording
+                // Stop recording but don't automatically restart
                 stopRecording();
-                
-                // Clear the recording sequence to start fresh
-                state.recording.sequence = [];
-                
-                // Start a new recording
-                startRecording();
             } else {
+                // Clear ALL previous recording data when starting a new recording
+                state.recording.dots = [];     // Clear all dots
+                state.recording.lines = [];    // Clear all lines
+                state.recording.sequence = []; // Clear sequence
+                state.recording.selectedDot = null; // Reset selection
                 startRecording();
             }
             setMode('record');
@@ -1224,45 +1346,6 @@
         previewBtn.addEventListener('click', () => {
             previewAnimation();
         });
-        
-        backBtn.addEventListener('click', () => {
-            if (confirm('This will clear your current drawing. Are you sure?')) {
-                // Stop recording if active
-                if (state.recording.isRecording) {
-                    // Update state
-                    state.recording.isRecording = false;
-                    
-                    // Update UI
-                    recordingIndicator.style.display = 'none';
-                    recordBtn.textContent = 'Record';
-                    recordBtn.classList.remove('secondary-btn');
-                    recordBtn.classList.add('primary-btn');
-                }
-                
-                clearDrawing();
-            }
-        });
-        
-        // Update the Done button to properly handle recording
-        doneBtn.onclick = function() {
-            if (isCurrentlyRecording) {
-                // Update global state
-                isCurrentlyRecording = false;
-                state.recording.isRecording = false;
-                
-                // Update UI
-                recordingIndicator.style.display = 'none';
-                document.getElementById('recordBtn').textContent = 'Record';
-                document.getElementById('recordBtn').className = 'primary-btn';
-                
-                alert('Recording completed!');
-                console.log('Recording stopped (done button). Sequence:', state.recording.sequence);
-            } else {
-                alert('Your drawing is ready to be submitted or shared.');
-            }
-            
-            redrawCanvas();
-        };
         
         submitBtn.addEventListener('click', submitDrawing);
         shareBtn.addEventListener('click', shareDrawing);
