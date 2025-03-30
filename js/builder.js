@@ -177,8 +177,9 @@ function setupEventListeners() {
 function handleTouchStart(e) {
     e.preventDefault();
 
-    // Process based on mode
-    if (state.mode === 'sketch' || state.mode === 'record') {
+    // Process based on mode and recording state
+    if ((state.mode === 'sketch') ||
+        (state.mode === 'record' && isCurrentlyRecording)) {
         const touch = e.touches[0];
         const rect = gridCanvas.getBoundingClientRect();
         const touchX = touch.clientX - rect.left;
@@ -241,6 +242,7 @@ function handleTouchStart(e) {
 
         redrawCanvas();
     }
+    // If in record mode but not recording, don't react to touches
 }
 
 function handleTouchMove(e) {
@@ -946,9 +948,10 @@ function setMode(mode) {
 
     state.mode = mode;
 
-    // Reset all buttons to inactive state except record button
+    // Reset all buttons to inactive state
     sketchBtn.className = 'tertiary-btn';
     editBtn.className = 'tertiary-btn';
+    recordBtn.className = 'tertiary-btn';
     previewBtn.className = 'tertiary-btn';
 
     // Set appropriate button to active state based on mode
@@ -968,10 +971,16 @@ function setMode(mode) {
             break;
 
         case 'record':
-            // Don't modify the record button - it's handled separately
-            setPointBtn.style.display = 'block';
-            setPointBtn.textContent = 'Set Point';
-            cancelPointBtn.textContent = 'Cancel Point';
+            recordBtn.className = 'primary-btn';
+
+            // If we're not currently recording, hide the Set Point button
+            if (!isCurrentlyRecording) {
+                setPointBtn.style.display = 'none';
+            } else {
+                setPointBtn.style.display = 'block';
+                setPointBtn.textContent = 'Set Point';
+                cancelPointBtn.textContent = 'Cancel Point';
+            }
             break;
 
         case 'preview':
@@ -998,9 +1007,12 @@ function startRecording() {
 
     // Update UI
     recordingIndicator.style.display = 'block';
-    recordBtn.textContent = 'Stop-11:48';
+    recordBtn.textContent = 'Stop-11:59';
     recordBtn.classList.remove('tertiary-btn', 'primary-btn');
     recordBtn.classList.add('secondary-btn');
+
+    // Show Set Point button during active recording
+    setPointBtn.style.display = 'block';
 
     console.log('Recording started');
 }
@@ -1015,12 +1027,13 @@ function stopRecording() {
     recordingIndicator.style.display = 'none';
     recordBtn.textContent = 'Record';
     recordBtn.classList.remove('secondary-btn');
-    recordBtn.classList.add('primary-btn');
+    recordBtn.classList.add('tertiary-btn');
+
+    // Keep in record mode but with record button inactive
+    // (user must explicitly switch to Sketch to edit)
+    setPointBtn.style.display = 'none'; // Hide Set Point button while not recording
 
     console.log('Recording stopped. Sequence:', state.recording.sequence);
-
-    // Switch back to sketch mode
-    setMode('sketch');
 }
 
 // Preview animation - shows how drawing will look in the game
