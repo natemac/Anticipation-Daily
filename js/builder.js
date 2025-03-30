@@ -387,8 +387,9 @@ function handleSetPoint() {
         }
     }
 
-    // Reset temp point
+    // Reset temp point - we'll create a new one on next touch/move
     state.touch.tempPoint = null;
+    state.touch.previewLine = null;
 
     // Reset the touch indicator style to the pending point
     const pendingDot = dotsArray[state.touch.pendingPoint];
@@ -444,6 +445,7 @@ function updateTouchIndicator(x, y) {
     state.hoveredGridPoint = gridPoint;
 }
 
+// Update preview line
 function updatePreviewLine() {
     if (!state.touch.pendingPoint || !state.touch.tempPoint) return;
 
@@ -451,6 +453,7 @@ function updatePreviewLine() {
 
     if (state.touch.pendingPoint >= dotsArray.length) return;
 
+    // Always create a preview line regardless of existing lines
     state.touch.previewLine = {
         from: state.touch.pendingPoint,
         to: state.touch.tempPoint
@@ -571,14 +574,15 @@ function redrawCanvas() {
         drawRecording();
     }
 
-    // Draw preview line if it exists
-    if (state.touch.previewLine) {
+    // Draw preview line if it exists (this should show for all connections)
+    if (state.touch.pendingPoint !== null && state.touch.tempPoint !== null) {
         const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
 
-        if (state.touch.previewLine.from < dotsArray.length) {
-            const fromDot = dotsArray[state.touch.previewLine.from];
+        if (state.touch.pendingPoint < dotsArray.length) {
+            const fromDot = dotsArray[state.touch.pendingPoint];
             const toDot = state.touch.tempPoint;
 
+            // Always draw the preview line when we have a pendingPoint and tempPoint
             gridCtx.strokeStyle = 'rgba(0, 0, 255, 0.7)';
             gridCtx.lineWidth = 2;
             gridCtx.setLineDash([5, 5]);
