@@ -176,69 +176,78 @@ function setupEventListeners() {
 // Touch Event Handlers
 function handleTouchStart(e) {
     e.preventDefault();
-
+    
     // Only process in sketch or record mode
     if (state.mode !== 'sketch' && state.mode !== 'record') return;
-
+    
     const touch = e.touches[0];
     const rect = gridCanvas.getBoundingClientRect();
     const touchX = touch.clientX - rect.left;
     const touchY = touch.clientY - rect.top;
-
-    state.touch.lastTouchX = touchX;
-    state.touch.lastTouchY = touchY;
-
-    // Show the touch indicator
-    updateTouchIndicator(touchX, touchY);
+    
+    // Find the nearest grid point
+    const gridPoint = findNearestGridPoint(touchX, touchY);
+    
+    // Store the snapped grid position (not the exact touch position)
+    state.touch.lastTouchX = gridPoint.canvasX;
+    state.touch.lastTouchY = gridPoint.canvasY;
+    
+    // Show the touch indicator at the snapped grid position
+    updateTouchIndicator(gridPoint.canvasX, gridPoint.canvasY);
 }
 
 function handleTouchMove(e) {
     e.preventDefault();
-
+    
     // Only process in sketch or record mode
     if (state.mode !== 'sketch' && state.mode !== 'record') return;
-
+    
     if (e.touches.length > 0) {
         const touch = e.touches[0];
         const rect = gridCanvas.getBoundingClientRect();
         const touchX = touch.clientX - rect.left;
         const touchY = touch.clientY - rect.top;
-
-        state.touch.lastTouchX = touchX;
-        state.touch.lastTouchY = touchY;
-
-        // Update the touch indicator
-        updateTouchIndicator(touchX, touchY);
-
-        // If we have a pending point, show preview line
+        
+        // Find the nearest grid point
+        const gridPoint = findNearestGridPoint(touchX, touchY);
+        
+        // Store the snapped grid position (not the exact touch position)
+        state.touch.lastTouchX = gridPoint.canvasX;
+        state.touch.lastTouchY = gridPoint.canvasY;
+        
+        // Update the touch indicator at the snapped grid position
+        updateTouchIndicator(gridPoint.canvasX, gridPoint.canvasY);
+        
+        // If we have a pending point, show preview line (but not for the first connection)
         if (state.touch.pendingPoint !== null) {
-            const gridPoint = findNearestGridPoint(touchX, touchY);
-
             // Skip if we're on grid edges
             if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
                 gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
                 return;
             }
-
+            
             state.touch.tempPoint = {
                 gridX: gridPoint.x,
                 gridY: gridPoint.y,
                 x: gridPoint.canvasX,
                 y: gridPoint.canvasY
             };
-
-            // Update the preview line
-            updatePreviewLine();
+            
+            // Only update the preview line if we already have at least one line
+            const linesArray = (state.mode === 'sketch') ? state.sketch.lines : state.recording.lines;
+            if (linesArray.length > 0) {
+                updatePreviewLine();
+            }
         }
     }
 }
 
 function handleTouchEnd(e) {
     e.preventDefault();
-
+    
     // Only process in sketch or record mode
     if (state.mode !== 'sketch' && state.mode !== 'record') return;
-
+    
     // Keep the touch indicator visible at the last position
     // User will confirm with Set Point button
 }
@@ -247,58 +256,67 @@ function handleTouchEnd(e) {
 function handleMouseDown(e) {
     // Only process in sketch or record mode
     if (state.mode !== 'sketch' && state.mode !== 'record') return;
-
+    
     const rect = gridCanvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-
-    state.touch.lastTouchX = mouseX;
-    state.touch.lastTouchY = mouseY;
-
-    // Show the touch indicator
-    updateTouchIndicator(mouseX, mouseY);
+    
+    // Find the nearest grid point
+    const gridPoint = findNearestGridPoint(mouseX, mouseY);
+    
+    // Store the snapped grid position (not the exact mouse position)
+    state.touch.lastTouchX = gridPoint.canvasX;
+    state.touch.lastTouchY = gridPoint.canvasY;
+    
+    // Show the touch indicator at the snapped grid position
+    updateTouchIndicator(gridPoint.canvasX, gridPoint.canvasY);
 }
 
 function handleMouseMove(e) {
     // Only process in sketch or record mode
     if (state.mode !== 'sketch' && state.mode !== 'record') return;
-
+    
     const rect = gridCanvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-
-    state.touch.lastTouchX = mouseX;
-    state.touch.lastTouchY = mouseY;
-
-    // Update the touch indicator
-    updateTouchIndicator(mouseX, mouseY);
-
-    // If we have a pending point, show preview line
+    
+    // Find the nearest grid point
+    const gridPoint = findNearestGridPoint(mouseX, mouseY);
+    
+    // Store the snapped grid position (not the exact mouse position)
+    state.touch.lastTouchX = gridPoint.canvasX;
+    state.touch.lastTouchY = gridPoint.canvasY;
+    
+    // Update the touch indicator at the snapped grid position
+    updateTouchIndicator(gridPoint.canvasX, gridPoint.canvasY);
+    
+    // If we have a pending point, show preview line (but not for the first connection)
     if (state.touch.pendingPoint !== null) {
-        const gridPoint = findNearestGridPoint(mouseX, mouseY);
-
         // Skip if we're on grid edges
         if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
             gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
             return;
         }
-
+        
         state.touch.tempPoint = {
             gridX: gridPoint.x,
             gridY: gridPoint.y,
             x: gridPoint.canvasX,
             y: gridPoint.canvasY
         };
-
-        // Update the preview line
-        updatePreviewLine();
+        
+        // Only update the preview line if we already have at least one line
+        const linesArray = (state.mode === 'sketch') ? state.sketch.lines : state.recording.lines;
+        if (linesArray.length > 0) {
+            updatePreviewLine();
+        }
     }
 }
 
 function handleMouseUp(e) {
     // Only process in sketch or record mode
     if (state.mode !== 'sketch' && state.mode !== 'record') return;
-
+    
     // Keep the touch indicator visible
     // User will confirm with Set Point button
 }
@@ -307,30 +325,30 @@ function handleMouseUp(e) {
 function handleSetPoint() {
     // Only process in sketch or record mode
     if (state.mode !== 'sketch' && state.mode !== 'record') return;
-
+    
     const lastX = state.touch.lastTouchX;
     const lastY = state.touch.lastTouchY;
-
+    
     if (lastX === 0 && lastY === 0) return; // No touch registered
-
+    
     const gridPoint = findNearestGridPoint(lastX, lastY);
-
+    
     // Prevent placing points on the edges
     if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
         gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
         showEdgeWarning();
         return;
     }
-
+    
     // Get the data arrays based on current mode
     const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
-
+    
     // If we have a pending point, create a line
     if (state.touch.pendingPoint !== null) {
         // Check if there's already a dot at this location
         const existingDotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
         let newDotIndex;
-
+        
         if (existingDotIndex !== -1) {
             // Use existing dot
             newDotIndex = existingDotIndex;
@@ -342,22 +360,22 @@ function handleSetPoint() {
                 x: gridPoint.canvasX,
                 y: gridPoint.canvasY
             };
-
+            
             dotsArray.push(newDot);
             newDotIndex = dotsArray.length - 1;
         }
-
+        
         // Add line between pending point and new point
         if (state.touch.pendingPoint !== newDotIndex) { // Prevent self-connections
             addLine(state.touch.pendingPoint, newDotIndex);
-
+            
             // Make the new dot the pending point for continued line drawing
             state.touch.pendingPoint = newDotIndex;
         }
     } else {
         // No pending point, just create or select a dot
         const existingDotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
-
+        
         if (existingDotIndex !== -1) {
             // Use existing dot as the pending point
             state.touch.pendingPoint = existingDotIndex;
@@ -369,19 +387,19 @@ function handleSetPoint() {
                 x: gridPoint.canvasX,
                 y: gridPoint.canvasY
             };
-
+            
             dotsArray.push(newDot);
             state.touch.pendingPoint = dotsArray.length - 1;
         }
     }
-
+    
     // Reset temp point
     state.touch.tempPoint = null;
-
+    
     // Reset the touch indicator style to the pending point
     const pendingDot = dotsArray[state.touch.pendingPoint];
     updateTouchIndicator(pendingDot.x, pendingDot.y);
-
+    
     // Redraw canvas
     redrawCanvas();
 }
@@ -389,33 +407,36 @@ function handleSetPoint() {
 function handleCancelPoint() {
     // Only process in sketch or record mode
     if (state.mode !== 'sketch' && state.mode !== 'record') return;
-
+    
     // Clear pending point and temp point
     state.touch.pendingPoint = null;
     state.touch.tempPoint = null;
     state.touch.previewLine = null;
-
+    
     // Hide touch indicator
     touchIndicator.style.display = 'none';
-
+    
     // Redraw canvas
     redrawCanvas();
 }
 
 // Touch Indicator
 function updateTouchIndicator(x, y) {
-    touchIndicator.style.display = 'block';
-    touchIndicator.style.left = x + 'px';
-    touchIndicator.style.top = y + 'px';
-
-    // Update the grid position display
+    // Find the nearest grid point
     const gridPoint = findNearestGridPoint(x, y);
+    
+    // Use the snapped grid coordinates
+    touchIndicator.style.display = 'block';
+    touchIndicator.style.left = gridPoint.canvasX + 'px';
+    touchIndicator.style.top = gridPoint.canvasY + 'px';
+    
+    // Update the grid position display
     positionDisplay.textContent = `Grid: ${gridPoint.x},${gridPoint.y}`;
-
+    
     // Check if we're on an edge
     const isOnEdge = gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
                       gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID;
-
+    
     // Change indicator color if on edge
     if (isOnEdge) {
         touchIndicator.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
@@ -424,23 +445,23 @@ function updateTouchIndicator(x, y) {
         touchIndicator.style.backgroundColor = 'rgba(0, 255, 0, 0.5)';
         touchIndicator.style.borderColor = 'green';
     }
-
+    
     // Set the hover point for drawing
     state.hoveredGridPoint = gridPoint;
 }
 
 function updatePreviewLine() {
     if (!state.touch.pendingPoint || !state.touch.tempPoint) return;
-
+    
     const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
-
+    
     if (state.touch.pendingPoint >= dotsArray.length) return;
-
+    
     state.touch.previewLine = {
         from: state.touch.pendingPoint,
         to: state.touch.tempPoint
     };
-
+    
     redrawCanvas();
 }
 
@@ -555,38 +576,38 @@ function redrawCanvas() {
         // Only draw recording in preview mode
         drawRecording();
     }
-
+    
     // Draw preview line if it exists
     if (state.touch.previewLine) {
         const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
-
+        
         if (state.touch.previewLine.from < dotsArray.length) {
             const fromDot = dotsArray[state.touch.previewLine.from];
             const toDot = state.touch.tempPoint;
-
+            
             gridCtx.strokeStyle = 'rgba(0, 0, 255, 0.7)';
             gridCtx.lineWidth = 2;
             gridCtx.setLineDash([5, 5]);
-
+            
             gridCtx.beginPath();
             gridCtx.moveTo(fromDot.x, fromDot.y);
             gridCtx.lineTo(toDot.x, toDot.y);
             gridCtx.stroke();
-
+            
             gridCtx.setLineDash([]);
         }
     }
-
+    
     // Highlight pending point if it exists
     if (state.touch.pendingPoint !== null) {
         const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
-
+        
         if (state.touch.pendingPoint < dotsArray.length) {
             const dot = dotsArray[state.touch.pendingPoint];
-
+            
             gridCtx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
             gridCtx.lineWidth = 3;
-
+            
             gridCtx.beginPath();
             gridCtx.arc(dot.x, dot.y, DOT_RADIUS + 5, 0, Math.PI * 2);
             gridCtx.stroke();
