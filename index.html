@@ -67,10 +67,12 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s;
             position: relative;
+            background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%);
         }
         
         .color-square:hover {
             transform: scale(1.02);
+            background-image: none;
         }
         
         .color-square h3 {
@@ -133,31 +135,26 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 10px 0;
+            margin: 10px 0 20px 0;
         }
         
-        .difficulty-slider {
-            width: 100%;
-            max-width: 300px;
-            margin: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .difficulty-title {
+            margin-bottom: 15px;
+            font-size: 20px;
+            font-weight: bold;
         }
         
         .slider-container {
-            width: 100%;
-            max-width: 300px;
             display: flex;
-            flex-direction: column;
             align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         
-        .slider-labels {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            margin-top: 5px;
+        .difficulty-label {
+            font-weight: bold;
+            font-size: 16px;
+            transition: opacity 0.3s, font-weight 0.3s;
         }
         
         .toggle-switch {
@@ -203,6 +200,30 @@
         
         input:checked + .slider:before {
             transform: translateX(30px);
+        }
+        
+        .builder-button {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            margin: 10px 0 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            color: white;
+            background-image: linear-gradient(to bottom, rgba(33, 150, 243, 0.5), rgba(33, 150, 243, 1));
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .builder-button:hover {
+            background-image: linear-gradient(to bottom, rgba(33, 150, 243, 1), rgba(33, 150, 243, 1));
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
         }
         
         .game-screen {
@@ -261,13 +282,18 @@
         
         #guessButton {
             padding: 10px 20px;
-            background-color: #4CAF50;
+            background-image: linear-gradient(to bottom, rgba(76, 175, 80, 0.5), rgba(76, 175, 80, 1));
             color: white;
             border: none;
             border-radius: 0 8px 8px 0;
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
+            transition: background-image 0.3s;
+        }
+        
+        #guessButton:hover {
+            background-image: linear-gradient(to bottom, rgba(76, 175, 80, 1), rgba(76, 175, 80, 1));
         }
         
         .wrong-message {
@@ -287,17 +313,22 @@
         .back-button {
             align-self: flex-start;
             padding: 8px 15px;
-            background-color: #333;
+            background-image: linear-gradient(to bottom, rgba(51, 51, 51, 0.5), rgba(51, 51, 51, 1));
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             margin-bottom: 10px;
+            transition: background-image 0.3s;
+        }
+        
+        .back-button:hover {
+            background-image: linear-gradient(to bottom, rgba(51, 51, 51, 1), rgba(51, 51, 51, 1));
         }
         
         .share-button {
             padding: 12px 25px;
-            background-color: #4267B2;
+            background-image: linear-gradient(to bottom, rgba(66, 103, 178, 0.5), rgba(66, 103, 178, 1));
             color: white;
             border: none;
             border-radius: 8px;
@@ -306,6 +337,11 @@
             font-weight: bold;
             margin-top: 20px;
             display: none;
+            transition: background-image 0.3s;
+        }
+        
+        .share-button:hover {
+            background-image: linear-gradient(to bottom, rgba(66, 103, 178, 1), rgba(66, 103, 178, 1));
         }
         
         .begin-overlay {
@@ -325,12 +361,17 @@
         .begin-button {
             padding: 15px 30px;
             font-size: 24px;
-            background-color: #4CAF50;
+            background-image: linear-gradient(to bottom, rgba(76, 175, 80, 0.5), rgba(76, 175, 80, 1));
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
+            transition: background-image 0.3s;
+        }
+        
+        .begin-button:hover {
+            background-image: linear-gradient(to bottom, rgba(76, 175, 80, 1), rgba(76, 175, 80, 1));
         }
         
         @media (max-width: 480px) {
@@ -354,9 +395,9 @@
     <div class="game-container">
         <div class="main-screen">
             <div class="color-grid">
-                <div class="color-square yellow" data-color="yellow" data-category="Household">
-                    <h3>Household</h3>
-                    <p>Everyday Items</p>
+                <div class="color-square yellow" data-color="yellow" data-category="Travel">
+                    <h3>Travel</h3>
+                    <p>Places & Transport</p>
                     <div class="result-overlay" id="yellow-result">
                         <p class="guess-count">Guesses: 0</p>
                         <p class="time-count">Time: 0s</p>
@@ -370,17 +411,17 @@
                         <p class="time-count">Time: 0s</p>
                     </div>
                 </div>
-                <div class="color-square blue" data-color="blue" data-category="Animals">
-                    <h3>Animals</h3>
-                    <p>Living Creatures</p>
+                <div class="color-square blue" data-color="blue" data-category="Man-made">
+                    <h3>Man-made</h3>
+                    <p>Created Objects</p>
                     <div class="result-overlay" id="blue-result">
                         <p class="guess-count">Guesses: 0</p>
                         <p class="time-count">Time: 0s</p>
                     </div>
                 </div>
-                <div class="color-square red" data-color="red" data-category="Misc">
-                    <h3>Miscellaneous</h3>
-                    <p>Random Objects</p>
+                <div class="color-square red" data-color="red" data-category="Leisure">
+                    <h3>Leisure</h3>
+                    <p>Fun & Games</p>
                     <div class="result-overlay" id="red-result">
                         <p class="guess-count">Guesses: 0</p>
                         <p class="time-count">Time: 0s</p>
@@ -389,18 +430,18 @@
             </div>
             
             <div class="difficulty-container">
-                <h3>Difficulty Mode</h3>
+                <h3 class="difficulty-title">Difficulty Mode</h3>
                 <div class="slider-container">
+                    <span class="difficulty-label">Easy</span>
                     <div class="toggle-switch">
                         <input type="checkbox" id="difficultyToggle">
                         <span class="slider"></span>
                     </div>
-                    <div class="slider-labels">
-                        <span>Easy</span>
-                        <span>Hard</span>
-                    </div>
+                    <span class="difficulty-label">Hard</span>
                 </div>
             </div>
+            
+            <a href="anticipation-builder.html" class="builder-button">Create and Share your own Drawings</a>
             
             <button class="share-button" id="shareButton">Share Results</button>
         </div>
@@ -454,34 +495,14 @@
         // Drawing data for each category (fallback if JSON file can't be loaded)
         const gameData = {
             yellow: {
-                name: "VACUUM CLEANER",
+                name: "AIRPLANE",
                 dots: [
-                    {x: 150, y: 200},
-                    {x: 250, y: 200},
-                    {x: 250, y: 150},
-                    {x: 150, y: 150},
-                    {x: 100, y: 250},
-                    {x: 200, y: 250},
-                    {x: 300, y: 100}
-                ],
-                sequence: [
-                    {from: 0, to: 1},
-                    {from: 1, to: 2},
-                    {from: 2, to: 3},
-                    {from: 3, to: 0},
-                    {from: 3, to: 4},
-                    {from: 4, to: 5},
-                    {from: 5, to: 6}
-                ]
-            },
-            green: {
-                name: "BANANA SPLIT",
-                dots: [
-                    {x: 100, y: 150},
-                    {x: 150, y: 200},
+                    {x: 100, y: 200},
+                    {x: 300, y: 200},
+                    {x: 400, y: 150},
+                    {x: 300, y: 100},
+                    {x: 100, y: 100},
                     {x: 200, y: 150},
-                    {x: 250, y: 200},
-                    {x: 300, y: 150},
                     {x: 150, y: 250},
                     {x: 250, y: 250}
                 ],
@@ -490,48 +511,71 @@
                     {from: 1, to: 2},
                     {from: 2, to: 3},
                     {from: 3, to: 4},
-                    {from: 5, to: 6}
+                    {from: 4, to: 0},
+                    {from: 4, to: 5},
+                    {from: 5, to: 3},
+                    {from: 0, to: 6},
+                    {from: 6, to: 7},
+                    {from: 7, to: 1}
                 ]
             },
-            blue: {
-                name: "OCTOPUS",
+            green: {
+                name: "PIZZA",
                 dots: [
                     {x: 200, y: 100},
-                    {x: 150, y: 150},
-                    {x: 250, y: 150},
-                    {x: 200, y: 200},
                     {x: 100, y: 250},
-                    {x: 150, y: 250},
-                    {x: 200, y: 250},
-                    {x: 250, y: 250},
-                    {x: 300, y: 250}
+                    {x: 300, y: 250},
+                    {x: 150, y: 200},
+                    {x: 200, y: 175},
+                    {x: 250, y: 200}
                 ],
                 sequence: [
                     {from: 0, to: 1},
                     {from: 0, to: 2},
-                    {from: 1, to: 3},
-                    {from: 2, to: 3},
-                    {from: 3, to: 4},
-                    {from: 3, to: 5},
-                    {from: 3, to: 6},
-                    {from: 3, to: 7},
-                    {from: 3, to: 8}
+                    {from: 1, to: 2},
+                    {from: 0, to: 3},
+                    {from: 0, to: 4},
+                    {from: 0, to: 5}
                 ]
             },
-            red: {
-                name: "MAGIC WAND",
+            blue: {
+                name: "CHAIR",
                 dots: [
-                    {x: 100, y: 250},
-                    {x: 200, y: 150},
-                    {x: 300, y: 150},
+                    {x: 150, y: 100},
                     {x: 250, y: 100},
-                    {x: 300, y: 50}
+                    {x: 250, y: 200},
+                    {x: 150, y: 200},
+                    {x: 150, y: 300},
+                    {x: 250, y: 300}
                 ],
                 sequence: [
                     {from: 0, to: 1},
                     {from: 1, to: 2},
                     {from: 2, to: 3},
-                    {from: 3, to: 4}
+                    {from: 3, to: 0},
+                    {from: 3, to: 4},
+                    {from: 2, to: 5}
+                ]
+            },
+            red: {
+                name: "TENNIS RACKET",
+                dots: [
+                    {x: 200, y: 100},
+                    {x: 150, y: 150},
+                    {x: 150, y: 200},
+                    {x: 200, y: 250},
+                    {x: 250, y: 200},
+                    {x: 250, y: 150},
+                    {x: 200, y: 300}
+                ],
+                sequence: [
+                    {from: 0, to: 1},
+                    {from: 1, to: 2},
+                    {from: 2, to: 3},
+                    {from: 3, to: 4},
+                    {from: 4, to: 5},
+                    {from: 5, to: 0},
+                    {from: 3, to: 6}
                 ]
             }
         };
@@ -562,7 +606,26 @@
         
         // Event Listeners
         difficultyToggle.addEventListener('change', () => {
+            // Update the difficulty state when toggled
             state.difficulty = difficultyToggle.checked ? 'hard' : 'easy';
+            
+            // Show visual feedback to confirm the change
+            const easyLabel = document.querySelector('.difficulty-label:first-of-type');
+            const hardLabel = document.querySelector('.difficulty-label:last-of-type');
+            
+            if (state.difficulty === 'hard') {
+                easyLabel.style.opacity = '0.5';
+                hardLabel.style.opacity = '1';
+                hardLabel.style.fontWeight = 'bold';
+                easyLabel.style.fontWeight = 'normal';
+            } else {
+                hardLabel.style.opacity = '0.5';
+                easyLabel.style.opacity = '1';
+                easyLabel.style.fontWeight = 'bold';
+                hardLabel.style.fontWeight = 'normal';
+            }
+            
+            console.log(`Difficulty set to: ${state.difficulty}`);
         });
         
         colorSquares.forEach(square => {
@@ -930,8 +993,25 @@
             }
         }
         
-        // Initialize game
+        // Initialize game and difficulty display
         clearCanvas();
+        
+        // Set initial difficulty display
+        const easyLabel = document.querySelector('.difficulty-label:first-of-type');
+        const hardLabel = document.querySelector('.difficulty-label:last-of-type');
+        if (difficultyToggle.checked) {
+            state.difficulty = 'hard';
+            easyLabel.style.opacity = '0.5';
+            hardLabel.style.opacity = '1';
+            hardLabel.style.fontWeight = 'bold';
+            easyLabel.style.fontWeight = 'normal';
+        } else {
+            state.difficulty = 'easy';
+            hardLabel.style.opacity = '0.5';
+            easyLabel.style.opacity = '1';
+            easyLabel.style.fontWeight = 'bold';
+            hardLabel.style.fontWeight = 'normal';
+        }
     </script>
 </body>
 </html>
