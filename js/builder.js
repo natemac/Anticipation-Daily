@@ -998,7 +998,7 @@ function startRecording() {
 
     // Update UI
     recordingIndicator.style.display = 'block';
-    recordBtn.textContent = 'Stop';
+    recordBtn.textContent = 'Stop-11:48';
     recordBtn.classList.remove('tertiary-btn', 'primary-btn');
     recordBtn.classList.add('secondary-btn');
 
