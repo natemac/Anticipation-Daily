@@ -194,6 +194,26 @@ function handleTouchStart(e) {
 
     // Show the touch indicator at the snapped grid position
     updateTouchIndicator(gridPoint.canvasX, gridPoint.canvasY);
+
+    // If we have a pending point, immediately update the preview line for tap events
+    if (state.touch.pendingPoint !== null) {
+        // Skip if we're on grid edges
+        if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+            gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
+            return;
+        }
+
+        // Create tempPoint right away on tap
+        state.touch.tempPoint = {
+            gridX: gridPoint.x,
+            gridY: gridPoint.y,
+            x: gridPoint.canvasX,
+            y: gridPoint.canvasY
+        };
+
+        // Update preview line
+        redrawCanvas();
+    }
 }
 
 function handleTouchMove(e) {
@@ -267,6 +287,26 @@ function handleMouseDown(e) {
 
     // Show the touch indicator at the snapped grid position
     updateTouchIndicator(gridPoint.canvasX, gridPoint.canvasY);
+
+    // If we have a pending point, immediately update the preview line for click events
+    if (state.touch.pendingPoint !== null) {
+        // Skip if we're on grid edges
+        if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+            gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
+            return;
+        }
+
+        // Create tempPoint right away on click
+        state.touch.tempPoint = {
+            gridX: gridPoint.x,
+            gridY: gridPoint.y,
+            x: gridPoint.canvasX,
+            y: gridPoint.canvasY
+        };
+
+        // Update preview line
+        redrawCanvas();
+    }
 }
 
 function handleMouseMove(e) {
