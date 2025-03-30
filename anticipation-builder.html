@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anticipation Builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .builder-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .builder-container {
+            max-width: 600px;
+            width: 100%;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .mode-controls {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        
+        .grid-container {
+            position: relative;
+            aspect-ratio: 1/1;
+            width: 100%;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            touch-action: none;
+            background-color: white;
+        }
+        
+        .grid-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        
+        .button-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .form-row {
+            margin-bottom: 15px;
+        }
+        
+        .form-row label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-row input, .form-row select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        
+        .primary-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .secondary-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .secondary-btn:hover {
+            background-color: #d32f2f;
+        }
+        
+        .tertiary-btn {
+            background-color: #f5f5f5;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+        
+        .tertiary-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .share-code {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .share-code input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        
+        .share-code button {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .modal {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            margin-left: 10px;
+        }
+        
+        .recording-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border-radius: 4px;
+            font-weight: bold;
+            display: none;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .position-display {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            padding: 5px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        #exportModal textarea {
+            width: 100%;
+            height: 200px;
+            margin-top: 10px;
+            font-family: monospace;
+            padding: 10px;
+            resize: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="builder-title">Anticipation Builder</div>
+    
+    <div class="builder-container">
+        <div class="mode-controls">
+            <button id="sketchBtn" class="primary-btn">Sketch</button>
+            <button id="editBtn" class="tertiary-btn">Edit</button>
+            <button id="recordBtn" class="tertiary-btn">Record</button>
+            <button id="previewBtn" class="tertiary-btn">Preview</button>
+        </div>
+        
+        <div class="grid-container">
+            <canvas id="gridCanvas" class="grid-canvas"></canvas>
+            <div class="recording-indicator">RECORDING</div>
+            <div class="position-display" id="positionDisplay">Grid: 0,0</div>
+        </div>
+        
+        <div class="button-row">
+            <button id="backBtn" class="tertiary-btn">Back</button>
+            <button id="doneBtn" class="primary-btn">Done</button>
+        </div>
+        
+        <div class="form-row">
+            <label for="itemName">Item Name:</label>
+            <input type="text" id="itemName" placeholder="Enter the name of the item" maxlength="30">
+        </div>
+        
+        <div class="form-row">
+            <label for="category">Category:</label>
+            <select id="category">
+                <option value="yellow">Household (Yellow)</option>
+                <option value="green">Food (Green)</option>
+                <option value="blue">Animals (Blue)</option>
+                <option value="red">Miscellaneous (Red)</option>
+            </select>
+        </div>
+        
+        <div class="button-row">
+            <button id="submitBtn" class="primary-btn">Submit for Review</button>
+            <button id="shareBtn" class="secondary-btn">Share</button>
+            <button id="exportBtn" class="tertiary-btn">Export Data</button>
+        </div>
+        
+        <div class="share-code" id="shareCode">
+            <input type="text" id="shareLink" readonly>
+            <button class="tertiary-btn" id="copyBtn">Copy</button>
+        </div>
+    </div>
+    
+    <!-- Preview Modal -->
+    <div class="overlay" id="previewOverlay">
+        <div class="modal">
+            <div class="modal-title">Preview Animation</div>
+            <canvas id="previewCanvas" width="400" height="400"></canvas>
+            <div class="modal-buttons">
+                <button class="tertiary-btn" id="closePreviewBtn">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Modal -->
+    <div class="overlay" id="exportOverlay">
+        <div class="modal">
+            <div class="modal-title">Export Drawing Data</div>
+            <p>Copy this data to add your drawing to the game:</p>
+            <textarea id="exportData" readonly></textarea>
+            <div class="modal-buttons">
+                <button class="tertiary-btn" id="copyExportBtn">Copy to Clipboard</button>
+                <button class="tertiary-btn" id="closeExportBtn">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Constants
+        const GRID_SIZE = 15; // 15x15 grid (16x16 points)
+        const DOT_RADIUS = 5;
+        
+        // Global variable to track recording state
+        var isCurrentlyRecording = false;
+        
+        // DOM Elements
+        const gridCanvas = document.getElementById('gridCanvas');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const sketchBtn = document.getElementById('sketchBtn');
+        const editBtn = document.getElementById('editBtn');
+        const recordBtn = document.getElementById('recordBtn');
+        const previewBtn = document.getElementById('previewBtn');
+        const backBtn = document.getElementById('backBtn');
+        const doneBtn = document.getElementById('doneBtn');
+        const itemNameInput = document.getElementById('itemName');
+        const categorySelect = document.getElementById('category');
+        const submitBtn = document.getElementById('submitBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const shareCode = document.getElementById('shareCode');
+        const shareLink = document.getElementById('shareLink');
+        const copyBtn = document.getElementById('copyBtn');
+        const previewOverlay = document.getElementById('previewOverlay');
+        const closePreviewBtn = document.getElementById('closePreviewBtn');
+        const exportOverlay = document.getElementById('exportOverlay');
+        const exportData = document.getElementById('exportData');
+        const copyExportBtn = document.getElementById('copyExportBtn');
+        const closeExportBtn = document.getElementById('closeExportBtn');
+        const recordingIndicator = document.querySelector('.recording-indicator');
+        const positionDisplay = document.getElementById('positionDisplay');
+        
+        // Setup canvas contexts
+        const gridCtx = gridCanvas.getContext('2d');
+        const previewCtx = previewCanvas.getContext('2d');
+        
+        // State - COMPLETELY SEPARATE data structures for sketch and record
+        const state = {
+            mode: 'sketch', // 'sketch', 'edit', 'record', or 'preview'
+            // Sketch data
+            sketch: {
+                dots: [],     // Array of {x, y, gridX, gridY} coordinates
+                lines: [],    // Array of {from, to} indices
+                selectedDot: null // Currently selected dot index for sketch
+            },
+            // Recording data - completely independent from sketch
+            recording: {
+                dots: [],     // Array of {x, y, gridX, gridY} coordinates
+                lines: [],    // Array of {from, to} indices
+                sequence: [], // Animation sequence
+                selectedDot: null, // Currently selected dot index for recording
+                isRecording: false, // Is currently recording
+                isPlaying: false // Is preview playing
+            },
+            hoveredGridPoint: null, // Current grid point being hovered {x, y}
+            gridPointSize: 0  // Size of each grid cell, calculated on init
+        };
+        
+        // Initialize canvas
+        function initCanvas() {
+            const container = gridCanvas.parentElement;
+            gridCanvas.width = container.offsetWidth;
+            gridCanvas.height = container.offsetHeight;
+            
+            // Calculate cell size
+            state.gridPointSize = gridCanvas.width / GRID_SIZE;
+            
+            // Draw grid
+            drawGrid();
+        }
+        
+        // Draw the grid
+        function drawGrid() {
+            gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+            
+            // Draw grid lines
+            gridCtx.strokeStyle = '#ddd';
+            gridCtx.lineWidth = 1;
+            
+            // Draw vertical lines
+            for (let i = 0; i <= GRID_SIZE; i++) {
+                const x = i * state.gridPointSize;
+                gridCtx.beginPath();
+                gridCtx.moveTo(x, 0);
+                gridCtx.lineTo(x, gridCanvas.height);
+                gridCtx.stroke();
+            }
+            
+            // Draw horizontal lines
+            for (let i = 0; i <= GRID_SIZE; i++) {
+                const y = i * state.gridPointSize;
+                gridCtx.beginPath();
+                gridCtx.moveTo(0, y);
+                gridCtx.lineTo(gridCanvas.width, y);
+                gridCtx.stroke();
+            }
+            
+            // Draw grid points
+            gridCtx.fillStyle = '#eee';
+            for (let x = 0; x <= GRID_SIZE; x++) {
+                for (let y = 0; y <= GRID_SIZE; y++) {
+                    const pointX = x * state.gridPointSize;
+                    const pointY = y * state.gridPointSize;
+                    
+                    gridCtx.beginPath();
+                    gridCtx.arc(pointX, pointY, 3, 0, Math.PI * 2);
+                    gridCtx.fill();
+                }
+            }
+            
+            // Highlight hovered grid point
+            if (state.hoveredGridPoint) {
+                gridCtx.fillStyle = '#aaa';
+                gridCtx.beginPath();
+                gridCtx.arc(
+                    state.hoveredGridPoint.x * state.gridPointSize,
+                    state.hoveredGridPoint.y * state.gridPointSize,
+                    4, 0, Math.PI * 2
+                );
+                gridCtx.fill();
+            }
+        }
+        
+        // Redraw canvas with all elements
+        function redrawCanvas() {
+            // Start with grid
+            drawGrid();
+            
+            if (state.mode === 'sketch' || state.mode === 'edit') {
+                // Draw sketch data
+                drawSketch();
+            } else if (state.mode === 'record') {
+                // Draw sketch data with reduced opacity
+                drawSketch(0.3);
+                
+                // Draw recording data on top at full opacity
+                drawRecording();
+            } else if (state.mode === 'preview') {
+                // Only draw recording in preview mode
+                drawRecording();
+            }
+        }
+        
+        // Draw sketch data
+        function drawSketch(opacity = 1.0) {
+            gridCtx.globalAlpha = opacity;
+            
+            // Draw lines
+            gridCtx.strokeStyle = '#000';
+            gridCtx.lineWidth = 2;
+            
+            state.sketch.lines.forEach(line => {
+                const from = state.sketch.dots[line.from];
+                const to = state.sketch.dots[line.to];
+                
+                gridCtx.beginPath();
+                gridCtx.moveTo(from.x, from.y);
+                gridCtx.lineTo(to.x, to.y);
+                gridCtx.stroke();
+            });
+            
+            // Draw dots
+            state.sketch.dots.forEach((dot, index) => {
+                gridCtx.fillStyle = '#333';
+                gridCtx.beginPath();
+                gridCtx.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
+                gridCtx.fill();
+                
+                // Draw dot index
+                gridCtx.fillStyle = '#fff';
+                gridCtx.textAlign = 'center';
+                gridCtx.textBaseline = 'middle';
+                gridCtx.font = '8px Arial';
+                gridCtx.fillText(index.toString(), dot.x, dot.y);
+            });
+            
+            // Highlight selected dot
+            if (state.sketch.selectedDot !== null) {
+                gridCtx.globalAlpha = 1.0; // Always full opacity for selection highlight
+                const dot = state.sketch.dots[state.sketch.selectedDot];
+                gridCtx.strokeStyle = '#f00';
+                gridCtx.lineWidth = 2;
+                gridCtx.beginPath();
+                gridCtx.arc(dot.x, dot.y, DOT_RADIUS + 3, 0, Math.PI * 2);
+                gridCtx.stroke();
+            }
+            
+            // Reset opacity
+            gridCtx.globalAlpha = 1.0;
+        }
+        
+        // Draw recording data
+        function drawRecording() {
+            // Always full opacity for recording data
+            gridCtx.globalAlpha = 1.0;
+            
+            // Draw lines
+            state.recording.lines.forEach(line => {
+                const from = state.recording.dots[line.from];
+                const to = state.recording.dots[line.to];
+                
+                // Check if this line is in the recording sequence
+                const inSequence = state.recording.sequence.some(
+                    seqLine => seqLine.from === line.from && seqLine.to === line.to
+                );
+                
+                if (inSequence) {
+                    gridCtx.strokeStyle = '#4CAF50'; // Green for recorded lines
+                    gridCtx.lineWidth = 4; // Double thickness
+                } else {
+                    gridCtx.strokeStyle = '#000'; // Black for non-recorded lines
+                    gridCtx.lineWidth = 2;
+                }
+                
+                gridCtx.beginPath();
+                gridCtx.moveTo(from.x, from.y);
+                gridCtx.lineTo(to.x, to.y);
+                gridCtx.stroke();
+            });
+            
+            // Draw dots
+            state.recording.dots.forEach((dot, index) => {
+                gridCtx.fillStyle = '#333';
+                gridCtx.beginPath();
+                gridCtx.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
+                gridCtx.fill();
+                
+                // Draw dot index
+                gridCtx.fillStyle = '#fff';
+                gridCtx.textAlign = 'center';
+                gridCtx.textBaseline = 'middle';
+                gridCtx.font = '8px Arial';
+                gridCtx.fillText(index.toString(), dot.x, dot.y);
+            });
+            
+            // Highlight selected dot
+            if (state.recording.selectedDot !== null) {
+                const dot = state.recording.dots[state.recording.selectedDot];
+                gridCtx.strokeStyle = '#f00';
+                gridCtx.lineWidth = 2;
+                gridCtx.beginPath();
+                gridCtx.arc(dot.x, dot.y, DOT_RADIUS + 3, 0, Math.PI * 2);
+                gridCtx.stroke();
+            }
+        }
+        
+        // Find the nearest grid point to coordinates
+        function findNearestGridPoint(x, y) {
+            const gridX = Math.round(x / state.gridPointSize);
+            const gridY = Math.round(y / state.gridPointSize);
+            
+            // Ensure we're within grid bounds
+            const boundedGridX = Math.max(0, Math.min(GRID_SIZE, gridX));
+            const boundedGridY = Math.max(0, Math.min(GRID_SIZE, gridY));
+            
+            return {
+                x: boundedGridX,
+                y: boundedGridY,
+                canvasX: boundedGridX * state.gridPointSize,
+                canvasY: boundedGridY * state.gridPointSize
+            };
+        }
+        
+        // Check if a dot already exists at grid position in the current mode's data
+        function dotExistsAtGridPoint(gridX, gridY) {
+            const dotsArray = (state.mode === 'sketch' || state.mode === 'edit') 
+                ? state.sketch.dots 
+                : state.recording.dots;
+                
+            return dotsArray.some(dot => dot.gridX === gridX && dot.gridY === gridY);
+        }
+        
+        // Find a dot at grid position in the current mode's data
+        function findDotAtGridPoint(gridX, gridY) {
+            const dotsArray = (state.mode === 'sketch' || state.mode === 'edit') 
+                ? state.sketch.dots 
+                : state.recording.dots;
+                
+            for (let i = 0; i < dotsArray.length; i++) {
+                if (dotsArray[i].gridX === gridX && dotsArray[i].gridY === gridY) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        
+        // Add a dot at the grid point to the current mode's data
+        function addDot(gridX, gridY) {
+            // Don't add if a dot already exists here
+            if (dotExistsAtGridPoint(gridX, gridY)) {
+                return findDotAtGridPoint(gridX, gridY);
+            }
+            
+            // Add the new dot
+            const canvasX = gridX * state.gridPointSize;
+            const canvasY = gridY * state.gridPointSize;
+            
+            const newDot = {
+                x: canvasX,
+                y: canvasY,
+                gridX: gridX,
+                gridY: gridY
+            };
+            
+            if (state.mode === 'sketch' || state.mode === 'edit') {
+                state.sketch.dots.push(newDot);
+                return state.sketch.dots.length - 1;
+            } else if (state.mode === 'record') {
+                state.recording.dots.push(newDot);
+                return state.recording.dots.length - 1;
+            }
+            
+            return -1;
+        }
+        
+        // Add a line between dots in the current mode's data
+        function addLine(fromIndex, toIndex) {
+            // Don't add if it's the same point
+            if (fromIndex === toIndex) return;
+            
+            // Get the correct data arrays based on mode
+            const linesArray = (state.mode === 'sketch' || state.mode === 'edit') 
+                ? state.sketch.lines 
+                : state.recording.lines;
+                
+            // Check if the line already exists
+            const lineExists = linesArray.some(line => 
+                (line.from === fromIndex && line.to === toIndex) || 
+                (line.from === toIndex && line.to === fromIndex)
+            );
+            
+            if (!lineExists) {
+                const newLine = { from: fromIndex, to: toIndex };
+                
+                if (state.mode === 'sketch' || state.mode === 'edit') {
+                    state.sketch.lines.push(newLine);
+                } else if (state.mode === 'record') {
+                    state.recording.lines.push(newLine);
+                    
+                    // Also add to recording sequence if we're recording
+                    if (state.recording.isRecording) {
+                        state.recording.sequence.push({ from: fromIndex, to: toIndex });
+                    }
+                }
+            }
+        }
+        
+        // Delete a dot and all connected lines in the current mode's data
+        function deleteDotAndConnectedLines(dotIndex) {
+            // Get the correct data arrays based on mode
+            const dotsArray = (state.mode === 'edit') 
+                ? state.sketch.dots 
+                : state.recording.dots;
+                
+            const linesArray = (state.mode === 'edit') 
+                ? state.sketch.lines 
+                : state.recording.lines;
+                
+            const sequenceArray = (state.mode === 'edit') 
+                ? null 
+                : state.recording.sequence;
+                
+            if (dotIndex < 0 || dotIndex >= dotsArray.length) return;
+            
+            // Find all lines connected to this dot
+            const connectedLines = [];
+            
+            for (let i = 0; i < linesArray.length; i++) {
+                if (linesArray[i].from === dotIndex || linesArray[i].to === dotIndex) {
+                    connectedLines.push(i);
+                }
+            }
+            
+            // Remove lines in reverse order to avoid index shifting problems
+            connectedLines.sort((a, b) => b - a);
+            for (let i = 0; i < connectedLines.length; i++) {
+                const lineIndex = connectedLines[i];
+                
+                // Remove from recording sequence if applicable
+                if (sequenceArray) {
+                    for (let j = 0; j < sequenceArray.length; j++) {
+                        if (sequenceArray[j].from === linesArray[lineIndex].from && 
+                            sequenceArray[j].to === linesArray[lineIndex].to) {
+                            sequenceArray.splice(j, 1);
+                            break;
+                        }
+                    }
+                }
+                
+                linesArray.splice(lineIndex, 1);
+            }
+            
+            // Remove the dot
+            dotsArray.splice(dotIndex, 1);
+            
+            // Update indices in lines that reference dots after the deleted one
+            for (let i = 0; i < linesArray.length; i++) {
+                if (linesArray[i].from > dotIndex) {
+                    linesArray[i].from--;
+                }
+                if (linesArray[i].to > dotIndex) {
+                    linesArray[i].to--;
+                }
+            }
+            
+            // Update indices in recording sequence if applicable
+            if (sequenceArray) {
+                for (let i = 0; i < sequenceArray.length; i++) {
+                    if (sequenceArray[i].from > dotIndex) {
+                        sequenceArray[i].from--;
+                    }
+                    if (sequenceArray[i].to > dotIndex) {
+                        sequenceArray[i].to--;
+                    }
+                }
+            }
+            
+            // Reset selection
+            if (state.mode === 'edit') {
+                state.sketch.selectedDot = null;
+            } else {
+                state.recording.selectedDot = null;
+            }
+            
+            redrawCanvas();
+        }
+        
+        // Handle mouse/touch move
+        function handlePointerMove(e) {
+            e.preventDefault();
+            
+            const rect = gridCanvas.getBoundingClientRect();
+            const mouseX = (e.clientX || e.touches[0].clientX) - rect.left;
+            const mouseY = (e.clientY || e.touches[0].clientY) - rect.top;
+            
+            // Find nearest grid point
+            const gridPoint = findNearestGridPoint(mouseX, mouseY);
+            state.hoveredGridPoint = { x: gridPoint.x, y: gridPoint.y };
+            
+            // Update position display
+            positionDisplay.textContent = `Grid: ${gridPoint.x},${gridPoint.y}`;
+            
+            // Change cursor based on mode
+            if (state.mode === 'edit') {
+                const dotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
+                if (dotIndex !== -1) {
+                    gridCanvas.style.cursor = 'not-allowed'; // Delete cursor
+                } else {
+                    gridCanvas.style.cursor = 'default';
+                }
+            } else if (state.mode === 'sketch' || state.mode === 'record') {
+                gridCanvas.style.cursor = 'crosshair';
+            } else {
+                gridCanvas.style.cursor = 'default';
+            }
+            
+            redrawCanvas();
+        }
+        
+        // Handle mouse/touch down
+        function handlePointerDown(e) {
+            e.preventDefault();
+            
+            if (!state.hoveredGridPoint) return;
+            
+            const gridX = state.hoveredGridPoint.x;
+            const gridY = state.hoveredGridPoint.y;
+            
+            // Get reference to the correct data and selection based on mode
+            let dotsArray, linesArray, selectedDotRef;
+            
+            if (state.mode === 'sketch' || state.mode === 'edit') {
+                dotsArray = state.sketch.dots;
+                linesArray = state.sketch.lines;
+                selectedDotRef = 'sketch.selectedDot';
+            } else if (state.mode === 'record') {
+                dotsArray = state.recording.dots;
+                linesArray = state.recording.lines;
+                selectedDotRef = 'recording.selectedDot';
+            } else {
+                return; // No action in preview mode
+            }
+            
+            // Check if there's a dot at this grid point
+            const existingDotIndex = findDotAtGridPoint(gridX, gridY);
+            
+            // Handle based on current mode
+            if (state.mode === 'edit') {
+                // Edit mode - remove dots and connected lines
+                if (existingDotIndex !== -1) {
+                    deleteDotAndConnectedLines(existingDotIndex);
+                }
+            } else if (state.mode === 'sketch' || state.mode === 'record') {
+                // Draw or Record mode
+                if (existingDotIndex !== -1) {
+                    // Clicked on existing dot
+                    
+                    // If we already have a selected dot and it's the same as this one,
+                    // deselect it (allowing for double-click to create a standalone point)
+                    if (state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] === existingDotIndex) {
+                        state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = null;
+                    }
+                    // If we have a selected dot and it's different, create a line
+                    else if (state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] !== null) {
+                        addLine(state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]], existingDotIndex);
+                        state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = null;
+                    } 
+                    // Otherwise, select this dot
+                    else {
+                        state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = existingDotIndex;
+                    }
+                } else {
+                    // Clicked on empty grid point - create a new dot
+                    const newDotIndex = addDot(gridX, gridY);
+                    
+                    // If we had a dot selected, create a line and reset selection
+                    if (state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] !== null) {
+                        addLine(state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]], newDotIndex);
+                        state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = null;
+                    } else {
+                        // Just create the dot and select it
+                        state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = newDotIndex;
+                    }
+                }
+            }
+            
+            redrawCanvas();
+        }
+        
+        // Set mode
+        function setMode(mode) {
+            // Don't change mode if we're recording
+            if (isCurrentlyRecording && mode !== 'record') {
+                console.log("Can't change mode during recording");
+                return;
+            }
+            
+            state.mode = mode;
+            
+            // Reset all buttons to inactive state except record button
+            sketchBtn.className = 'tertiary-btn';
+            editBtn.className = 'tertiary-btn';
+            previewBtn.className = 'tertiary-btn';
+            
+            // Don't touch the record button styling
+            
+            // Set appropriate button to active state based on mode
+            switch(mode) {
+                case 'sketch':
+                    sketchBtn.className = 'primary-btn';
+                    gridCanvas.style.cursor = 'crosshair';
+                    break;
+                    
+                case 'edit':
+                    editBtn.className = 'primary-btn';
+                    gridCanvas.style.cursor = 'not-allowed';
+                    break;
+                    
+                case 'record':
+                    // Don't modify the record button - it's handled separately
+                    gridCanvas.style.cursor = 'crosshair';
+                    break;
+                    
+                case 'preview':
+                    previewBtn.className = 'primary-btn';
+                    gridCanvas.style.cursor = 'default';
+                    break;
+            }
+            
+            // Reset selections
+            state.sketch.selectedDot = null;
+            state.recording.selectedDot = null;
+            
+            redrawCanvas();
+        }
+        
+        // Start recording
+        function startRecording() {
+            // No need to check for dots anymore since they're separate
+            state.recording.isRecording = true;
+            recordingIndicator.style.display = 'block';
+            recordBtn.textContent = 'Stop';
+            recordBtn.classList.remove('primary-btn');
+            recordBtn.classList.add('secondary-btn');
+            
+            console.log('Recording started');
+        }
+        
+        // Stop recording
+        function stopRecording() {
+            state.recording.isRecording = false;
+            recordingIndicator.style.display = 'none';
+            recordBtn.textContent = 'Record';
+            recordBtn.classList.remove('secondary-btn');
+            recordBtn.classList.add('primary-btn');
+            
+            console.log('Recording stopped. Sequence:', state.recording.sequence);
+        }
+        
+        // Preview animation
+        function previewAnimation() {
+            if (state.recording.sequence.length === 0) {
+                alert('Please record a drawing sequence first.');
+                return;
+            }
+            
+            previewOverlay.style.display = 'flex';
+            
+            // Set mode to preview without clearing recording state
+            state.mode = 'preview';
+            
+            // Update UI for preview mode
+            sketchBtn.classList.remove('primary-btn');
+            sketchBtn.classList.add('tertiary-btn');
+            editBtn.classList.remove('primary-btn');
+            editBtn.classList.add('tertiary-btn');
+            recordBtn.classList.remove('primary-btn', 'secondary-btn');
+            recordBtn.classList.add('tertiary-btn');
+            previewBtn.classList.remove('tertiary-btn');
+            previewBtn.classList.add('primary-btn');
+            
+            // Setup preview canvas
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            
+            // Make sure preview canvas is properly sized
+            const previewSize = Math.min(400, window.innerWidth * 0.8);
+            previewCanvas.width = previewSize;
+            previewCanvas.height = previewSize;
+            
+            // Calculate scale factor for preview canvas
+            const scaleX = previewCanvas.width / gridCanvas.width;
+            const scaleY = previewCanvas.height / gridCanvas.height;
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Draw grid
+            previewCtx.strokeStyle = '#eee';
+            previewCtx.lineWidth = 1;
+            
+            for (let i = 0; i <= GRID_SIZE; i++) {
+                const x = i * state.gridPointSize * scale;
+                previewCtx.beginPath();
+                previewCtx.moveTo(x, 0);
+                previewCtx.lineTo(x, previewCanvas.height);
+                previewCtx.stroke();
+                
+                const y = i * state.gridPointSize * scale;
+                previewCtx.beginPath();
+                previewCtx.moveTo(0, y);
+                previewCtx.lineTo(previewCanvas.width, y);
+                previewCtx.stroke();
+            }
+            
+            // Collect only dots used in the recording sequence
+            const usedDotIndices = new Set();
+            state.recording.sequence.forEach(line => {
+                usedDotIndices.add(line.from);
+                usedDotIndices.add(line.to);
+            });
+            
+            // Animation variables
+            let step = 0;
+            let drawnLines = [];
+            state.recording.isPlaying = true;
+            
+            function drawNextLine() {
+                if (step < state.recording.sequence.length && state.recording.isPlaying) {
+                    // Add the current line to our drawn lines
+                    drawnLines.push(state.recording.sequence[step]);
+                    
+                    // Clear canvas and redraw grid
+                    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                    
+                    // Draw grid
+                    previewCtx.strokeStyle = '#eee';
+                    previewCtx.lineWidth = 1;
+                    
+                    for (let i = 0; i <= GRID_SIZE; i++) {
+                        const x = i * state.gridPointSize * scale;
+                        previewCtx.beginPath();
+                        previewCtx.moveTo(x, 0);
+                        previewCtx.lineTo(x, previewCanvas.height);
+                        previewCtx.stroke();
+                        
+                        const y = i * state.gridPointSize * scale;
+                        previewCtx.beginPath();
+                        previewCtx.moveTo(0, y);
+                        previewCtx.lineTo(previewCanvas.width, y);
+                        previewCtx.stroke();
+                    }
+                    
+                    // Calculate which dots should be visible based on drawn lines
+                    const visibleDots = new Set();
+                    drawnLines.forEach(line => {
+                        visibleDots.add(line.from);
+                        visibleDots.add(line.to);
+                    });
+                    
+                    // Draw all lines drawn so far
+                    previewCtx.strokeStyle = '#4CAF50'; // Green for recording lines
+                    previewCtx.lineWidth = 4; // Double thickness
+                    
+                    for (let i = 0; i < drawnLines.length; i++) {
+                        const line = drawnLines[i];
+                        const from = state.recording.dots[line.from];
+                        const to = state.recording.dots[line.to];
+                        
+                        previewCtx.beginPath();
+                        previewCtx.moveTo(from.x * scale, from.y * scale);
+                        previewCtx.lineTo(to.x * scale, to.y * scale);
+                        previewCtx.stroke();
+                    }
+                    
+                    // Draw only dots that are connected by lines that have been drawn so far
+                    previewCtx.fillStyle = '#333';
+                    visibleDots.forEach(dotIndex => {
+                        if (state.recording.dots[dotIndex]) { // Safety check
+                            const dot = state.recording.dots[dotIndex];
+                            previewCtx.beginPath();
+                            previewCtx.arc(dot.x * scale, dot.y * scale, DOT_RADIUS, 0, Math.PI * 2);
+                            previewCtx.fill();
+                            
+                            // Draw index number for debugging
+                            previewCtx.fillStyle = '#fff';
+                            previewCtx.textAlign = 'center';
+                            previewCtx.textBaseline = 'middle';
+                            previewCtx.font = '8px Arial';
+                            previewCtx.fillText(dotIndex.toString(), dot.x * scale, dot.y * scale);
+                            previewCtx.fillStyle = '#333';
+                        }
+                    });
+                    
+                    step++;
+                    setTimeout(drawNextLine, 500); // 0.5 second per line
+                }
+            }
+            
+            // Start animation
+            drawNextLine();
+        }
+        
+        // Stop preview
+        function stopPreview() {
+            state.recording.isPlaying = false;
+            previewOverlay.style.display = 'none';
+            setMode('record');
+        }
+        
+        // Generate random ID
+        function generateRandomId(length = 8) {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // Validate recording data
+        function validateRecording() {
+            if (state.recording.dots.length < 2) {
+                alert('Please create at least 2 points in the recording.');
+                return false;
+            }
+            
+            if (state.recording.sequence.length === 0) {
+                alert('Please record a drawing sequence.');
+                return false;
+            }
+            
+            if (!itemNameInput.value.trim()) {
+                alert('Please enter a name for the item.');
+                itemNameInput.focus();
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Get recording data for export
+        function getExportData() {
+            // Collect only dots used in the recording sequence
+            const usedDotIndices = new Set();
+            state.recording.sequence.forEach(line => {
+                usedDotIndices.add(line.from);
+                usedDotIndices.add(line.to);
+            });
+            
+            // Create a map from old indices to new indices
+            const indexMap = {};
+            const usedDots = [];
+            
+            // Add only the used dots to the exported data
+            Array.from(usedDotIndices).sort((a, b) => a - b).forEach((oldIndex, newIndex) => {
+                indexMap[oldIndex] = newIndex;
+                usedDots.push({
+                    x: state.recording.dots[oldIndex].x,
+                    y: state.recording.dots[oldIndex].y
+                });
+            });
+            
+            // Remap the line indices
+            const remappedSequence = state.recording.sequence.map(line => ({
+                from: indexMap[line.from],
+                to: indexMap[line.to]
+            }));
+            
+            // Return clean data for export
+            return {
+                name: itemNameInput.value.trim().toUpperCase(),
+                category: categorySelect.value,
+                dots: usedDots,
+                sequence: remappedSequence,
+            };
+        }
+        
+        // Share drawing
+        function shareDrawing() {
+            if (!validateRecording()) return;
+            
+            const shareId = generateRandomId();
+            
+            // In a real app, you would save to server here
+            
+            shareLink.value = `https://yourdomain.com/share/${shareId}`;
+            shareCode.style.display = 'flex';
+        }
+        
+        // Submit drawing
+        function submitDrawing() {
+            if (!validateRecording()) return;
+            
+            const exportData = getExportData();
+            
+            // In a real app, you would send to server here
+            
+            alert('Drawing submitted for review!');
+        }
+        
+        // Export drawing data
+        function exportDrawingData() {
+            if (!validateRecording()) return;
+            
+            const exportData = getExportData();
+            exportData.value = JSON.stringify(exportData, null, 2);
+            exportOverlay.style.display = 'flex';
+        }
+        
+        // Copy to clipboard
+        function copyExportDataToClipboard() {
+            exportData.select();
+            document.execCommand('copy');
+            alert('Drawing data copied to clipboard!');
+        }
+        
+        // Copy share link
+        function copyShareLinkToClipboard() {
+            shareLink.select();
+            document.execCommand('copy');
+            alert('Share link copied to clipboard!');
+        }
+        
+        // Clear the current drawing based on mode
+        function clearDrawing() {
+            if (state.mode === 'sketch' || state.mode === 'edit') {
+                state.sketch.dots = [];
+                state.sketch.lines = [];
+                state.sketch.selectedDot = null;
+            } else if (state.mode === 'record') {
+                state.recording.dots = [];
+                state.recording.lines = [];
+                state.recording.sequence = [];
+                state.recording.selectedDot = null;
+                state.recording.isRecording = false;
+                recordingIndicator.style.display = 'none';
+                recordBtn.textContent = 'Record';
+                recordBtn.classList.remove('secondary-btn');
+                recordBtn.classList.add('primary-btn');
+            }
+            
+            redrawCanvas();
+        }
+        
+        // Event listeners
+        window.addEventListener('resize', () => {
+            initCanvas();
+            redrawCanvas();
+        });
+        
+        // Canvas event listeners
+        gridCanvas.addEventListener('mousemove', handlePointerMove);
+        gridCanvas.addEventListener('touchmove', handlePointerMove);
+        
+        gridCanvas.addEventListener('mousedown', handlePointerDown);
+        gridCanvas.addEventListener('touchstart', handlePointerDown);
+        
+        // Button event listeners
+        sketchBtn.addEventListener('click', () => {
+            setMode('sketch');
+        });
+        
+        editBtn.addEventListener('click', () => {
+            setMode('edit');
+        });
+        
+        recordBtn.addEventListener('click', () => {
+            if (state.recording.isRecording) {
+                // Stop the current recording
+                stopRecording();
+                
+                // Clear the recording sequence to start fresh
+                state.recording.sequence = [];
+                
+                // Start a new recording
+                startRecording();
+            } else {
+                startRecording();
+            }
+            setMode('record');
+        });
+        
+        previewBtn.addEventListener('click', () => {
+            previewAnimation();
+        });
+        
+        backBtn.addEventListener('click', () => {
+            if (confirm('This will clear your current drawing. Are you sure?')) {
+                // Stop recording if active
+                if (state.recording.isRecording) {
+                    // Update state
+                    state.recording.isRecording = false;
+                    
+                    // Update UI
+                    recordingIndicator.style.display = 'none';
+                    recordBtn.textContent = 'Record';
+                    recordBtn.classList.remove('secondary-btn');
+                    recordBtn.classList.add('primary-btn');
+                }
+                
+                clearDrawing();
+            }
+        });
+        
+        // Update the Done button to properly handle recording
+        doneBtn.onclick = function() {
+            if (isCurrentlyRecording) {
+                // Update global state
+                isCurrentlyRecording = false;
+                state.recording.isRecording = false;
+                
+                // Update UI
+                recordingIndicator.style.display = 'none';
+                document.getElementById('recordBtn').textContent = 'Record';
+                document.getElementById('recordBtn').className = 'primary-btn';
+                
+                alert('Recording completed!');
+                console.log('Recording stopped (done button). Sequence:', state.recording.sequence);
+            } else {
+                alert('Your drawing is ready to be submitted or shared.');
+            }
+            
+            redrawCanvas();
+        };
+        
+        submitBtn.addEventListener('click', submitDrawing);
+        shareBtn.addEventListener('click', shareDrawing);
+        exportBtn.addEventListener('click', exportDrawingData);
+        
+        copyBtn.addEventListener('click', copyShareLinkToClipboard);
+        closePreviewBtn.addEventListener('click', stopPreview);
+        copyExportBtn.addEventListener('click', copyExportDataToClipboard);
+        closeExportBtn.addEventListener('click', () => {
+            exportOverlay.style.display = 'none';
+        });
+        
+        // Initialize
+        initCanvas();
+        setMode('sketch'); // Start in sketch mode
+    </script>
+</body>
+</html>
