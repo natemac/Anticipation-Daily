@@ -119,6 +119,8 @@ function setupEventListeners() {
 // Difficulty toggle functionality
 function initDifficultyToggle() {
     const difficultyToggle = document.getElementById('difficultyToggle');
+    const easyLabel = document.querySelector('.difficulty-label:first-of-type');
+    const hardLabel = document.querySelector('.difficulty-label:last-of-type');
 
     // Set initial state based on stored preference (if any)
     const storedDifficulty = localStorage.getItem('difficultyMode');
@@ -132,22 +134,40 @@ function initDifficultyToggle() {
         updateDifficultyUI(false);
     }
 
-    // Add event listener for toggle changes
-    difficultyToggle.addEventListener('change', function() {
+    // Ensure the toggle is properly initialized with the event listener
+    // Remove any existing listeners first to prevent duplicates
+    difficultyToggle.removeEventListener('change', difficultyChangeHandler);
+
+    // Add the event listener
+    difficultyToggle.addEventListener('change', difficultyChangeHandler);
+
+    // Define the handler function to properly update state and UI
+    function difficultyChangeHandler() {
         // Update the game state
-        state.difficulty = this.checked ? 'hard' : 'easy';
+        state.difficulty = difficultyToggle.checked ? 'hard' : 'easy';
 
         // Save preference to localStorage
         localStorage.setItem('difficultyMode', state.difficulty);
 
         // Update visual feedback
-        updateDifficultyUI(this.checked);
+        updateDifficultyUI(difficultyToggle.checked);
 
         console.log(`Difficulty set to: ${state.difficulty}`);
+    }
+
+    // Also add direct click handlers to labels for better mobile experience
+    easyLabel.addEventListener('click', function() {
+        difficultyToggle.checked = false;
+        difficultyToggle.dispatchEvent(new Event('change'));
+    });
+
+    hardLabel.addEventListener('click', function() {
+        difficultyToggle.checked = true;
+        difficultyToggle.dispatchEvent(new Event('change'));
     });
 }
 
-// Update the UI based on difficulty setting
+// Ensure updateDifficultyUI is properly implemented
 function updateDifficultyUI(isHard) {
     const easyLabel = document.querySelector('.difficulty-label:first-of-type');
     const hardLabel = document.querySelector('.difficulty-label:last-of-type');

@@ -134,6 +134,7 @@
     font-size: 16px;
     transition: opacity 0.3s, font-weight 0.3s;
     user-select: none;
+    cursor: pointer;
 }
 
 .toggle-switch {
@@ -372,6 +373,11 @@ input:checked + .slider:before {
     .color-square p {
         font-size: 12px;
     }
+    
+    .difficulty-label {
+        font-size: 18px;
+        padding: 5px;
+    }
 
     .toggle-switch {
         width: 70px;
@@ -383,11 +389,12 @@ input:checked + .slider:before {
         height: 26px;
     }
 
-    .difficulty-label {
-        font-size: 18px;
-    }
-
     input:checked + .slider:before {
         transform: translateX(36px);
+    }
+
+    /* Ensure larger touch targets on mobile */
+    .slider-container {
+        padding: 10px 0;
     }
 }
