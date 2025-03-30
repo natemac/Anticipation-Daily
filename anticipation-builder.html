@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anticipation Builder</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/builder.css">
+</head>
+<body>
+    <div class="builder-title">Anticipation Builder</div>
+
+    <div class="builder-container">
+        <div class="mode-controls">
+            <button id="sketchBtn" class="primary-btn">Sketch</button>
+            <button id="editBtn" class="tertiary-btn">Edit</button>
+            <button id="recordBtn" class="tertiary-btn">Record</button>
+            <button id="previewBtn" class="tertiary-btn">Preview</button>
+        </div>
+
+        <div class="grid-container">
+            <canvas id="gridCanvas" class="grid-canvas"></canvas>
+            <div class="recording-indicator">RECORDING</div>
+            <div class="position-display" id="positionDisplay">Grid: 0,0</div>
+        </div>
+
+        <div class="form-row">
+            <input type="text" id="itemName" placeholder="Enter the name of the item" maxlength="30">
+        </div>
+
+        <div class="form-row">
+            <label for="category">Category:</label>
+            <select id="category">
+                <option value="yellow">Household (Yellow)</option>
+                <option value="green">Food (Green)</option>
+                <option value="blue">Animals (Blue)</option>
+                <option value="red">Miscellaneous (Red)</option>
+            </select>
+        </div>
+
+        <div class="button-row">
+            <button id="exportBtn" class="primary-btn">Export Drawing Data</button>
+            <div style="display: flex; gap: 10px;">
+                <button id="submitBtn" class="tertiary-btn" disabled title="Feature coming soon">Submit for Review</button>
+                <button id="shareBtn" class="tertiary-btn" disabled title="Feature coming soon">Share</button>
+            </div>
+        </div>
+
+        <div class="share-code" id="shareCode">
+            <input type="text" id="shareLink" readonly>
+            <button class="tertiary-btn" id="copyBtn">Copy</button>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="overlay" id="previewOverlay">
+        <div class="modal">
+            <div class="modal-title">Preview Animation</div>
+            <canvas id="previewCanvas" width="400" height="400"></canvas>
+            <div class="modal-buttons">
+                <button class="tertiary-btn" id="closePreviewBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="exportOverlay">
+        <div class="modal">
+            <div class="modal-title">Export Drawing Data</div>
+            <p>Your drawing has been exported as a JSON file. You can also copy the data below:</p>
+            <textarea id="exportData" readonly></textarea>
+            <div class="modal-buttons">
+                <button class="tertiary-btn" id="copyExportBtn">Copy to Clipboard</button>
+                <button class="tertiary-btn" id="closeExportBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/builder.js"></script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+:root {
+    --yellow-color: #FFD700;
+    --green-color: #4CAF50;
+    --blue-color: #2196F3;
+    --red-color: #F44336;
+}
+
+.game-title {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.game-container {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.main-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.color-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    aspect-ratio: 1/1;
+    width: 100%;
+}
+
+.color-square {
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    position: relative;
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%);
+}
+
+.color-square:hover {
+    transform: scale(1.02);
+    background-image: none;
+}
+
+.color-square h3 {
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.color-square p {
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    font-size: 14px;
+}
+
+.yellow {
+    background-color: var(--yellow-color);
+}
+
+.green {
+    background-color: var(--green-color);
+}
+
+.blue {
+    background-color: var(--blue-color);
+}
+
+.red {
+    background-color: var(--red-color);
+}
+
+.result-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.result-overlay.visible {
+    opacity: 1;
+}
+
+.result-overlay p {
+    color: white;
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+.difficulty-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 10px 0 20px 0;
+}
+
+.difficulty-title {
+    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.difficulty-label {
+    font-weight: bold;
+    font-size: 16px;
+    transition: opacity 0.3s, font-weight 0.3s;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(30px);
+}
+
+.builder-button {
+    display: block;
+    width: 100%;
+    padding: 15px 20px;
+    margin: 10px 0 20px 0;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    color: white;
+    background-image: linear-gradient(to bottom, rgba(33, 150, 243, 0.5), rgba(33, 150, 243, 1));
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.builder-button:hover {
+    background-image: linear-gradient(to bottom, rgba(33, 150, 243, 1), rgba(33, 150, 243, 1));
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.game-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.canvas-container {
+    width: 100%;
+    aspect-ratio: 1/1;
+    margin: 20px 0;
+    position: relative;
+}
+
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.timer-container {
+    width: 100%;
+    height: 30px;
+    background-color: #eee;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.timer-bar {
+    height: 100%;
+    width: 100%;
+    background-color: #4CAF50;
+    transition: width 0.1s linear;
+}
+
+.input-container {
+    width: 100%;
+    display: flex;
+    margin: 10px 0;
+}
+
+#guessInput {
+    flex-grow: 1;
+    padding: 10px 15px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px 0 0 8px;
+    outline: none;
+}
+
+#guessButton {
+    padding: 10px 20px;
+    background-image: linear-gradient(to bottom, rgba(76, 175, 80, 0.5), rgba(76, 175, 80, 1));
+    color: white;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-image 0.3s;
+}
+
+#guessButton:hover {
+    background-image: linear-gradient(to bottom, rgba(76, 175, 80, 1), rgba(76, 175, 80, 1));
+}
+
+.wrong-message {
+    color: #F44336;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.wrong-message.visible {
+    opacity: 1;
+}
+
+.back-button {
+    align-self: flex-start;
+    padding: 8px 15px;
+    background-image: linear-gradient(to bottom, rgba(51, 51, 51, 0.5), rgba(51, 51, 51, 1));
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: background-image 0.3s;
+}
+
+.back-button:hover {
+    background-image: linear-gradient(to bottom, rgba(51, 51, 51, 1), rgba(51, 51, 51, 1));
+}
+
+.share-button {
+    padding: 12px 25px;
+    background-image: linear-gradient(to bottom, rgba(66, 103, 178, 0.5), rgba(66, 103, 178, 1));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 20px;
+    display: none;
+    transition: background-image 0.3s;
+}
+
+.share-button:hover {
+    background-image: linear-gradient(to bottom, rgba(66, 103, 178, 1), rgba(66, 103, 178, 1));
+}
+
+.begin-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    border-radius: 8px;
+}
+
+.begin-button {
+    padding: 15px 30px;
+    font-size: 24px;
+    background-image: linear-gradient(to bottom, rgba(76, 175, 80, 0.5), rgba(76, 175, 80, 1));
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-image 0.3s;
+}
+
+.begin-button:hover {
+    background-image: linear-gradient(to bottom, rgba(76, 175, 80, 1), rgba(76, 175, 80, 1));
+}
+
+@media (max-width: 480px) {
+    .game-title {
+        font-size: 24px;
+    }
+
+    .color-square h3 {
+        font-size: 16px;
+    }
+
+    .color-square p {
+        font-size: 12px;
+    }
+}
