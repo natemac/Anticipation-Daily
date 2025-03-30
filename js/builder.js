@@ -235,24 +235,22 @@ function handleTouchMove(e) {
         // Update the touch indicator at the snapped grid position
         updateTouchIndicator(gridPoint.canvasX, gridPoint.canvasY);
 
-        // If we have a pending point, always show preview line
-        if (state.touch.pendingPoint !== null) {
-            // Skip if we're on grid edges
-            if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
-                gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
-                return;
-            }
-
-            state.touch.tempPoint = {
-                gridX: gridPoint.x,
-                gridY: gridPoint.y,
-                x: gridPoint.canvasX,
-                y: gridPoint.canvasY
-            };
-
-            // Always update the preview line when we have a pending point
-            updatePreviewLine();
+        // Skip if we're on grid edges
+        if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+            gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
+            return;
         }
+
+        // Always update tempPoint, regardless of whether we have a pending point
+        state.touch.tempPoint = {
+            gridX: gridPoint.x,
+            gridY: gridPoint.y,
+            x: gridPoint.canvasX,
+            y: gridPoint.canvasY
+        };
+
+        // Always redraw - the canvas drawing function will only show preview lines when appropriate
+        redrawCanvas();
     }
 }
 
@@ -321,24 +319,22 @@ function handleMouseMove(e) {
     // Update the touch indicator at the snapped grid position
     updateTouchIndicator(gridPoint.canvasX, gridPoint.canvasY);
 
-    // If we have a pending point, always show preview line
-    if (state.touch.pendingPoint !== null) {
-        // Skip if we're on grid edges
-        if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
-            gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
-            return;
-        }
-
-        state.touch.tempPoint = {
-            gridX: gridPoint.x,
-            gridY: gridPoint.y,
-            x: gridPoint.canvasX,
-            y: gridPoint.canvasY
-        };
-
-        // Always update the preview line when we have a pending point
-        updatePreviewLine();
+    // Skip if we're on grid edges
+    if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+        gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
+        return;
     }
+
+    // Always update tempPoint, regardless of whether we have a pending point
+    state.touch.tempPoint = {
+        gridX: gridPoint.x,
+        gridY: gridPoint.y,
+        x: gridPoint.canvasX,
+        y: gridPoint.canvasY
+    };
+
+    // Always redraw - the canvas drawing function will only show preview lines when appropriate
+    redrawCanvas();
 }
 
 function handleMouseUp(e) {
