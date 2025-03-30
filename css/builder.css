@@ -15,6 +15,62 @@
     margin: 0 auto; /* Center the container */
 }
 
+/* Touch indicator (red circle for touch position) */
+.touch-indicator {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(255, 0, 0, 0.5);
+    border: 2px solid red;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    display: none;
+    z-index: 10;
+}
+
+/* Touch controls */
+.touch-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.touch-btn {
+    flex: 1;
+    padding: 15px 10px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 8px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.touch-btn:active {
+    background-color: #ddd;
+}
+
+#setPointBtn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#setPointBtn:active {
+    background-color: #45a049;
+}
+
+#cancelPointBtn {
+    background-color: #f44336;
+    color: white;
+}
+
+#cancelPointBtn:active {
+    background-color: #d32f2f;
+}
+
 .mode-controls {
     display: flex;
     justify-content: space-around;
@@ -122,24 +178,24 @@
     .builder-title {
         font-size: 24px;
     }
-    
+
     .mode-controls {
         flex-wrap: wrap;
         gap: 8px;
     }
-    
+
     .mode-controls button {
         flex: 1 0 calc(50% - 8px);
         margin-bottom: 8px;
         font-size: 14px;
         padding: 8px 5px;
     }
-    
+
     .button-row {
         flex-direction: column;
         gap: 10px;
     }
-    
+
     .button-row > div {
         width: 100%;
     }
