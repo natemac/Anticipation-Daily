@@ -27,6 +27,7 @@
     transform: translate(-50%, -50%);
     display: none;
     z-index: 10;
+    transition: left 0.1s, top 0.1s; /* Add smooth transition for snapping */
 }
 
 /* Touch controls */
