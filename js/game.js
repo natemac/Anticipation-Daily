@@ -48,39 +48,32 @@ function initGame() {
     // Set event listeners
     setupEventListeners();
 
+    // Initialize difficulty toggle
+    initDifficultyToggle();
+
     // Initialize game state
     clearCanvas();
-    setInitialDifficulty();
+}
+
+// Resize canvas to match container
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
 }
 
 // Set up event listeners
 function setupEventListeners() {
     // Window resize event
     window.addEventListener('resize', () => {
-        resizeCanvas(canvas);
+        resizeCanvas();
     });
 
     // Difficulty toggle
     difficultyToggle.addEventListener('change', () => {
         // Update the difficulty state when toggled
         state.difficulty = difficultyToggle.checked ? 'hard' : 'easy';
-
-        // Show visual feedback to confirm the change
-        const easyLabel = document.querySelector('.difficulty-label:first-of-type');
-        const hardLabel = document.querySelector('.difficulty-label:last-of-type');
-
-        if (state.difficulty === 'hard') {
-            easyLabel.style.opacity = '0.5';
-            hardLabel.style.opacity = '1';
-            hardLabel.style.fontWeight = 'bold';
-            easyLabel.style.fontWeight = 'normal';
-        } else {
-            hardLabel.style.opacity = '0.5';
-            easyLabel.style.opacity = '1';
-            easyLabel.style.fontWeight = 'bold';
-            hardLabel.style.fontWeight = 'normal';
-        }
-
+        updateDifficultyUI(difficultyToggle.checked);
         console.log(`Difficulty set to: ${state.difficulty}`);
     });
 
@@ -123,22 +116,54 @@ function setupEventListeners() {
     });
 }
 
-// Set initial difficulty display
-function setInitialDifficulty() {
+// Difficulty toggle functionality
+function initDifficultyToggle() {
+    const difficultyToggle = document.getElementById('difficultyToggle');
+
+    // Set initial state based on stored preference (if any)
+    const storedDifficulty = localStorage.getItem('difficultyMode');
+    if (storedDifficulty === 'hard') {
+        difficultyToggle.checked = true;
+        state.difficulty = 'hard';
+        updateDifficultyUI(true);
+    } else {
+        difficultyToggle.checked = false;
+        state.difficulty = 'easy';
+        updateDifficultyUI(false);
+    }
+
+    // Add event listener for toggle changes
+    difficultyToggle.addEventListener('change', function() {
+        // Update the game state
+        state.difficulty = this.checked ? 'hard' : 'easy';
+
+        // Save preference to localStorage
+        localStorage.setItem('difficultyMode', state.difficulty);
+
+        // Update visual feedback
+        updateDifficultyUI(this.checked);
+
+        console.log(`Difficulty set to: ${state.difficulty}`);
+    });
+}
+
+// Update the UI based on difficulty setting
+function updateDifficultyUI(isHard) {
     const easyLabel = document.querySelector('.difficulty-label:first-of-type');
     const hardLabel = document.querySelector('.difficulty-label:last-of-type');
-    if (difficultyToggle.checked) {
-        state.difficulty = 'hard';
+
+    if (isHard) {
+        // Hard mode selected
         easyLabel.style.opacity = '0.5';
+        easyLabel.style.fontWeight = 'normal';
         hardLabel.style.opacity = '1';
         hardLabel.style.fontWeight = 'bold';
-        easyLabel.style.fontWeight = 'normal';
     } else {
-        state.difficulty = 'easy';
+        // Easy mode selected
         hardLabel.style.opacity = '0.5';
+        hardLabel.style.fontWeight = 'normal';
         easyLabel.style.opacity = '1';
         easyLabel.style.fontWeight = 'bold';
-        hardLabel.style.fontWeight = 'normal';
     }
 }
 
@@ -243,7 +268,7 @@ function startDrawing() {
 
     // Start countdown timer
     state.countdownTime = 10;
-    updateTimerBar(timerBar, state.countdownTime, 10);
+    updateTimerBar(state.countdownTime, 10);
 
     // Draw initial state immediately
     clearCanvas();
@@ -260,7 +285,7 @@ function startDrawing() {
 
     state.countdownTimer = setInterval(() => {
         state.countdownTime--;
-        updateTimerBar(timerBar, state.countdownTime, 10);
+        updateTimerBar(state.countdownTime, 10);
 
         // Update drawing progress
         state.drawingProgress = Math.floor((10 - state.countdownTime) / 10 * state.drawingData.sequence.length);
@@ -283,12 +308,12 @@ function startDrawing() {
 function startGuessTimer() {
     state.guessTime = 20;
     state.timerActive = true;
-    updateTimerBar(timerBar, state.guessTime, 20);
+    updateTimerBar(state.guessTime, 20);
 
     state.guessTimer = setInterval(() => {
         state.guessTime--;
         state.elapsedTime++;
-        updateTimerBar(timerBar, state.guessTime, 20);
+        updateTimerBar(state.guessTime, 20);
 
         if (state.guessTime <= 0) {
             clearInterval(state.guessTimer);
@@ -391,6 +416,9 @@ function clearCanvas() {
 }
 
 function drawDots() {
+    // Only draw dots in easy mode
+    if (state.difficulty === 'hard') return;
+
     const data = state.drawingData;
     const dotRadius = 5;
 
@@ -423,6 +451,9 @@ function drawLines() {
 }
 
 function drawWordSpaces() {
+    // Only draw word spaces in easy mode
+    if (state.difficulty === 'hard') return;
+
     const answer = state.drawingData.name;
     const canvasWidth = canvas.width;
     const charWidth = canvasWidth / (answer.length + 2);
@@ -442,6 +473,20 @@ function drawWordSpaces() {
             ctx.lineTo(x + charWidth - 5, y);
             ctx.stroke();
         }
+    }
+}
+
+function updateTimerBar(current, total) {
+    const percentage = (current / total) * 100;
+    timerBar.style.width = `${percentage}%`;
+
+    // Change color based on time remaining
+    if (percentage > 60) {
+        timerBar.style.backgroundColor = '#4CAF50'; // Green
+    } else if (percentage > 30) {
+        timerBar.style.backgroundColor = '#FFC107'; // Yellow
+    } else {
+        timerBar.style.backgroundColor = '#F44336'; // Red
     }
 }
 
