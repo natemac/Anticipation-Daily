@@ -1018,6 +1018,9 @@ function stopRecording() {
     recordBtn.classList.add('primary-btn');
 
     console.log('Recording stopped. Sequence:', state.recording.sequence);
+
+    // Switch back to sketch mode
+    setMode('sketch');
 }
 
 // Preview animation - shows how drawing will look in the game
