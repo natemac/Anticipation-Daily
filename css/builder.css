@@ -12,6 +12,7 @@
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
+    margin: 0 auto; /* Center the container */
 }
 
 .mode-controls {
@@ -24,10 +25,11 @@
     position: relative;
     aspect-ratio: 1/1;
     width: 100%;
-    margin-bottom: 20px;
+    margin: 0 auto 20px auto; /* Center the grid */
     border: 1px solid #ccc;
     touch-action: none;
     background-color: white;
+    max-width: 600px; /* Limit width on larger screens */
 }
 
 .grid-canvas {
@@ -120,24 +122,24 @@
     .builder-title {
         font-size: 24px;
     }
-
+    
     .mode-controls {
         flex-wrap: wrap;
         gap: 8px;
     }
-
+    
     .mode-controls button {
         flex: 1 0 calc(50% - 8px);
         margin-bottom: 8px;
         font-size: 14px;
         padding: 8px 5px;
     }
-
+    
     .button-row {
         flex-direction: column;
         gap: 10px;
     }
-
+    
     .button-row > div {
         width: 100%;
     }
