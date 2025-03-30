@@ -11,6 +11,8 @@ var isCurrentlyRecording = false;
 // DOM Elements
 let gridCanvas, previewCanvas;
 let sketchBtn, editBtn, recordBtn, previewBtn;
+let setPointBtn, cancelPointBtn;
+let touchIndicator;
 let itemNameInput, categorySelect;
 let submitBtn, shareBtn, exportBtn;
 let shareCode, shareLink, copyBtn;
@@ -24,23 +26,32 @@ let gridCtx, previewCtx;
 // State - COMPLETELY SEPARATE data structures for sketch and record
 const state = {
     mode: 'sketch', // 'sketch', 'edit', 'record', or 'preview'
+    // Touch input state
+    touch: {
+        active: false,         // Is a point currently being set
+        tempPoint: null,       // Temporary point location {x, y, gridX, gridY}
+        pendingPoint: null,    // Index of point waiting for connection
+        previewLine: null,     // Preview line from pendingPoint to tempPoint
+        lastTouchX: 0,         // Last touch X position
+        lastTouchY: 0          // Last touch Y position
+    },
     // Sketch data
     sketch: {
-        dots: [],     // Array of {x, y, gridX, gridY} coordinates
-        lines: [],    // Array of {from, to} indices
-        selectedDot: null // Currently selected dot index for sketch
+        dots: [],              // Array of {x, y, gridX, gridY} coordinates
+        lines: [],             // Array of {from, to} indices
+        selectedDot: null      // Currently selected dot index for sketch
     },
     // Recording data - completely independent from sketch
     recording: {
-        dots: [],     // Array of {x, y, gridX, gridY} coordinates
-        lines: [],    // Array of {from, to} indices
-        sequence: [], // Animation sequence
-        selectedDot: null, // Currently selected dot index for recording
-        isRecording: false, // Is currently recording
-        isPlaying: false // Is preview playing
+        dots: [],              // Array of {x, y, gridX, gridY} coordinates
+        lines: [],             // Array of {from, to} indices
+        sequence: [],          // Animation sequence
+        selectedDot: null,     // Currently selected dot index for recording
+        isRecording: false,    // Is currently recording
+        isPlaying: false       // Is preview playing
     },
-    hoveredGridPoint: null, // Current grid point being hovered {x, y}
-    gridPointSize: 0  // Size of each grid cell, calculated on init
+    hoveredGridPoint: null,    // Current grid point being hovered {x, y}
+    gridPointSize: 0           // Size of each grid cell, calculated on init
 };
 
 // Initialize the builder
@@ -52,6 +63,9 @@ function initBuilder() {
     editBtn = document.getElementById('editBtn');
     recordBtn = document.getElementById('recordBtn');
     previewBtn = document.getElementById('previewBtn');
+    setPointBtn = document.getElementById('setPointBtn');
+    cancelPointBtn = document.getElementById('cancelPointBtn');
+    touchIndicator = document.getElementById('touchIndicator');
     itemNameInput = document.getElementById('itemName');
     categorySelect = document.getElementById('category');
     submitBtn = document.getElementById('submitBtn');
@@ -104,14 +118,21 @@ function setupEventListeners() {
         redrawCanvas();
     });
 
-    // Canvas event listeners
-    gridCanvas.addEventListener('mousemove', handlePointerMove);
-    gridCanvas.addEventListener('touchmove', handlePointerMove);
+    // Touch-specific canvas event listeners
+    gridCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    gridCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    gridCanvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
-    gridCanvas.addEventListener('mousedown', handlePointerDown);
-    gridCanvas.addEventListener('touchstart', handlePointerDown);
+    // Mouse event listeners (for desktop)
+    gridCanvas.addEventListener('mousedown', handleMouseDown);
+    gridCanvas.addEventListener('mousemove', handleMouseMove);
+    gridCanvas.addEventListener('mouseup', handleMouseUp);
 
-    // Button event listeners
+    // Touch control buttons
+    setPointBtn.addEventListener('click', handleSetPoint);
+    cancelPointBtn.addEventListener('click', handleCancelPoint);
+
+    // Mode buttons
     sketchBtn.addEventListener('click', () => {
         setMode('sketch');
     });
@@ -150,6 +171,301 @@ function setupEventListeners() {
     closeExportBtn.addEventListener('click', () => {
         exportOverlay.style.display = 'none';
     });
+}
+
+// Touch Event Handlers
+function handleTouchStart(e) {
+    e.preventDefault();
+
+    // Only process in sketch or record mode
+    if (state.mode !== 'sketch' && state.mode !== 'record') return;
+
+    const touch = e.touches[0];
+    const rect = gridCanvas.getBoundingClientRect();
+    const touchX = touch.clientX - rect.left;
+    const touchY = touch.clientY - rect.top;
+
+    state.touch.lastTouchX = touchX;
+    state.touch.lastTouchY = touchY;
+
+    // Show the touch indicator
+    updateTouchIndicator(touchX, touchY);
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+
+    // Only process in sketch or record mode
+    if (state.mode !== 'sketch' && state.mode !== 'record') return;
+
+    if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = gridCanvas.getBoundingClientRect();
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+
+        state.touch.lastTouchX = touchX;
+        state.touch.lastTouchY = touchY;
+
+        // Update the touch indicator
+        updateTouchIndicator(touchX, touchY);
+
+        // If we have a pending point, show preview line
+        if (state.touch.pendingPoint !== null) {
+            const gridPoint = findNearestGridPoint(touchX, touchY);
+
+            // Skip if we're on grid edges
+            if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+                gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
+                return;
+            }
+
+            state.touch.tempPoint = {
+                gridX: gridPoint.x,
+                gridY: gridPoint.y,
+                x: gridPoint.canvasX,
+                y: gridPoint.canvasY
+            };
+
+            // Update the preview line
+            updatePreviewLine();
+        }
+    }
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+
+    // Only process in sketch or record mode
+    if (state.mode !== 'sketch' && state.mode !== 'record') return;
+
+    // Keep the touch indicator visible at the last position
+    // User will confirm with Set Point button
+}
+
+// Mouse Event Handlers (for desktop)
+function handleMouseDown(e) {
+    // Only process in sketch or record mode
+    if (state.mode !== 'sketch' && state.mode !== 'record') return;
+
+    const rect = gridCanvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    state.touch.lastTouchX = mouseX;
+    state.touch.lastTouchY = mouseY;
+
+    // Show the touch indicator
+    updateTouchIndicator(mouseX, mouseY);
+}
+
+function handleMouseMove(e) {
+    // Only process in sketch or record mode
+    if (state.mode !== 'sketch' && state.mode !== 'record') return;
+
+    const rect = gridCanvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    state.touch.lastTouchX = mouseX;
+    state.touch.lastTouchY = mouseY;
+
+    // Update the touch indicator
+    updateTouchIndicator(mouseX, mouseY);
+
+    // If we have a pending point, show preview line
+    if (state.touch.pendingPoint !== null) {
+        const gridPoint = findNearestGridPoint(mouseX, mouseY);
+
+        // Skip if we're on grid edges
+        if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+            gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
+            return;
+        }
+
+        state.touch.tempPoint = {
+            gridX: gridPoint.x,
+            gridY: gridPoint.y,
+            x: gridPoint.canvasX,
+            y: gridPoint.canvasY
+        };
+
+        // Update the preview line
+        updatePreviewLine();
+    }
+}
+
+function handleMouseUp(e) {
+    // Only process in sketch or record mode
+    if (state.mode !== 'sketch' && state.mode !== 'record') return;
+
+    // Keep the touch indicator visible
+    // User will confirm with Set Point button
+}
+
+// Button Handlers
+function handleSetPoint() {
+    // Only process in sketch or record mode
+    if (state.mode !== 'sketch' && state.mode !== 'record') return;
+
+    const lastX = state.touch.lastTouchX;
+    const lastY = state.touch.lastTouchY;
+
+    if (lastX === 0 && lastY === 0) return; // No touch registered
+
+    const gridPoint = findNearestGridPoint(lastX, lastY);
+
+    // Prevent placing points on the edges
+    if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+        gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
+        showEdgeWarning();
+        return;
+    }
+
+    // Get the data arrays based on current mode
+    const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
+
+    // If we have a pending point, create a line
+    if (state.touch.pendingPoint !== null) {
+        // Check if there's already a dot at this location
+        const existingDotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
+        let newDotIndex;
+
+        if (existingDotIndex !== -1) {
+            // Use existing dot
+            newDotIndex = existingDotIndex;
+        } else {
+            // Create a new dot
+            const newDot = {
+                gridX: gridPoint.x,
+                gridY: gridPoint.y,
+                x: gridPoint.canvasX,
+                y: gridPoint.canvasY
+            };
+
+            dotsArray.push(newDot);
+            newDotIndex = dotsArray.length - 1;
+        }
+
+        // Add line between pending point and new point
+        if (state.touch.pendingPoint !== newDotIndex) { // Prevent self-connections
+            addLine(state.touch.pendingPoint, newDotIndex);
+
+            // Make the new dot the pending point for continued line drawing
+            state.touch.pendingPoint = newDotIndex;
+        }
+    } else {
+        // No pending point, just create or select a dot
+        const existingDotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
+
+        if (existingDotIndex !== -1) {
+            // Use existing dot as the pending point
+            state.touch.pendingPoint = existingDotIndex;
+        } else {
+            // Create a new dot
+            const newDot = {
+                gridX: gridPoint.x,
+                gridY: gridPoint.y,
+                x: gridPoint.canvasX,
+                y: gridPoint.canvasY
+            };
+
+            dotsArray.push(newDot);
+            state.touch.pendingPoint = dotsArray.length - 1;
+        }
+    }
+
+    // Reset temp point
+    state.touch.tempPoint = null;
+
+    // Reset the touch indicator style to the pending point
+    const pendingDot = dotsArray[state.touch.pendingPoint];
+    updateTouchIndicator(pendingDot.x, pendingDot.y);
+
+    // Redraw canvas
+    redrawCanvas();
+}
+
+function handleCancelPoint() {
+    // Only process in sketch or record mode
+    if (state.mode !== 'sketch' && state.mode !== 'record') return;
+
+    // Clear pending point and temp point
+    state.touch.pendingPoint = null;
+    state.touch.tempPoint = null;
+    state.touch.previewLine = null;
+
+    // Hide touch indicator
+    touchIndicator.style.display = 'none';
+
+    // Redraw canvas
+    redrawCanvas();
+}
+
+// Touch Indicator
+function updateTouchIndicator(x, y) {
+    touchIndicator.style.display = 'block';
+    touchIndicator.style.left = x + 'px';
+    touchIndicator.style.top = y + 'px';
+
+    // Update the grid position display
+    const gridPoint = findNearestGridPoint(x, y);
+    positionDisplay.textContent = `Grid: ${gridPoint.x},${gridPoint.y}`;
+
+    // Check if we're on an edge
+    const isOnEdge = gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+                      gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID;
+
+    // Change indicator color if on edge
+    if (isOnEdge) {
+        touchIndicator.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
+        touchIndicator.style.borderColor = 'red';
+    } else {
+        touchIndicator.style.backgroundColor = 'rgba(0, 255, 0, 0.5)';
+        touchIndicator.style.borderColor = 'green';
+    }
+
+    // Set the hover point for drawing
+    state.hoveredGridPoint = gridPoint;
+}
+
+function updatePreviewLine() {
+    if (!state.touch.pendingPoint || !state.touch.tempPoint) return;
+
+    const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
+
+    if (state.touch.pendingPoint >= dotsArray.length) return;
+
+    state.touch.previewLine = {
+        from: state.touch.pendingPoint,
+        to: state.touch.tempPoint
+    };
+
+    redrawCanvas();
+}
+
+function showEdgeWarning() {
+    // Create a temporary flash element
+    const flash = document.createElement('div');
+    flash.style.position = 'absolute';
+    flash.style.top = '50%';
+    flash.style.left = '50%';
+    flash.style.transform = 'translate(-50%, -50%)';
+    flash.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+    flash.style.padding = '10px 20px';
+    flash.style.borderRadius = '5px';
+    flash.style.color = 'white';
+    flash.style.fontWeight = 'bold';
+    flash.style.zIndex = '10';
+    flash.textContent = 'Cannot draw on edges';
+
+    // Add it to the grid container
+    gridCanvas.parentElement.appendChild(flash);
+
+    // Remove after duration
+    setTimeout(() => {
+        gridCanvas.parentElement.removeChild(flash);
+    }, 300);
 }
 
 // Draw the grid
@@ -238,6 +554,43 @@ function redrawCanvas() {
     } else if (state.mode === 'preview') {
         // Only draw recording in preview mode
         drawRecording();
+    }
+
+    // Draw preview line if it exists
+    if (state.touch.previewLine) {
+        const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
+
+        if (state.touch.previewLine.from < dotsArray.length) {
+            const fromDot = dotsArray[state.touch.previewLine.from];
+            const toDot = state.touch.tempPoint;
+
+            gridCtx.strokeStyle = 'rgba(0, 0, 255, 0.7)';
+            gridCtx.lineWidth = 2;
+            gridCtx.setLineDash([5, 5]);
+
+            gridCtx.beginPath();
+            gridCtx.moveTo(fromDot.x, fromDot.y);
+            gridCtx.lineTo(toDot.x, toDot.y);
+            gridCtx.stroke();
+
+            gridCtx.setLineDash([]);
+        }
+    }
+
+    // Highlight pending point if it exists
+    if (state.touch.pendingPoint !== null) {
+        const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
+
+        if (state.touch.pendingPoint < dotsArray.length) {
+            const dot = dotsArray[state.touch.pendingPoint];
+
+            gridCtx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
+            gridCtx.lineWidth = 3;
+
+            gridCtx.beginPath();
+            gridCtx.arc(dot.x, dot.y, DOT_RADIUS + 5, 0, Math.PI * 2);
+            gridCtx.stroke();
+        }
     }
 }
 
@@ -384,35 +737,6 @@ function findDotAtGridPoint(gridX, gridY) {
     return -1;
 }
 
-// Add a dot at the grid point to the current mode's data
-function addDot(gridX, gridY) {
-    // Don't add if a dot already exists here
-    if (dotExistsAtGridPoint(gridX, gridY)) {
-        return findDotAtGridPoint(gridX, gridY);
-    }
-
-    // Add the new dot
-    const canvasX = gridX * state.gridPointSize;
-    const canvasY = gridY * state.gridPointSize;
-
-    const newDot = {
-        x: canvasX,
-        y: canvasY,
-        gridX: gridX,
-        gridY: gridY
-    };
-
-    if (state.mode === 'sketch' || state.mode === 'edit') {
-        state.sketch.dots.push(newDot);
-        return state.sketch.dots.length - 1;
-    } else if (state.mode === 'record') {
-        state.recording.dots.push(newDot);
-        return state.recording.dots.length - 1;
-    }
-
-    return -1;
-}
-
 // Add a line between dots in the current mode's data
 function addLine(fromIndex, toIndex) {
     // Don't add if it's the same point
@@ -445,20 +769,11 @@ function addLine(fromIndex, toIndex) {
     }
 }
 
-// Delete a dot and all connected lines in the current mode's data
+// Delete a dot and all connected lines in edit mode
 function deleteDotAndConnectedLines(dotIndex) {
     // Get the correct data arrays based on mode
-    const dotsArray = (state.mode === 'edit')
-        ? state.sketch.dots
-        : state.recording.dots;
-
-    const linesArray = (state.mode === 'edit')
-        ? state.sketch.lines
-        : state.recording.lines;
-
-    const sequenceArray = (state.mode === 'edit')
-        ? null
-        : state.recording.sequence;
+    const dotsArray = state.sketch.dots;
+    const linesArray = state.sketch.lines;
 
     if (dotIndex < 0 || dotIndex >= dotsArray.length) return;
 
@@ -475,18 +790,6 @@ function deleteDotAndConnectedLines(dotIndex) {
     connectedLines.sort((a, b) => b - a);
     for (let i = 0; i < connectedLines.length; i++) {
         const lineIndex = connectedLines[i];
-
-        // Remove from recording sequence if applicable
-        if (sequenceArray) {
-            for (let j = 0; j < sequenceArray.length; j++) {
-                if (sequenceArray[j].from === linesArray[lineIndex].from &&
-                    sequenceArray[j].to === linesArray[lineIndex].to) {
-                    sequenceArray.splice(j, 1);
-                    break;
-                }
-            }
-        }
-
         linesArray.splice(lineIndex, 1);
     }
 
@@ -503,163 +806,14 @@ function deleteDotAndConnectedLines(dotIndex) {
         }
     }
 
-    // Update indices in recording sequence if applicable
-    if (sequenceArray) {
-        for (let i = 0; i < sequenceArray.length; i++) {
-            if (sequenceArray[i].from > dotIndex) {
-                sequenceArray[i].from--;
-            }
-            if (sequenceArray[i].to > dotIndex) {
-                sequenceArray[i].to--;
-            }
-        }
-    }
-
     // Reset selection
-    if (state.mode === 'edit') {
-        state.sketch.selectedDot = null;
-    } else {
-        state.recording.selectedDot = null;
-    }
+    state.sketch.selectedDot = null;
 
-    redrawCanvas();
-}
-
-// Handle mouse/touch move
-function handlePointerMove(e) {
-    e.preventDefault();
-
-    const rect = gridCanvas.getBoundingClientRect();
-    const mouseX = (e.clientX || e.touches[0].clientX) - rect.left;
-    const mouseY = (e.clientY || e.touches[0].clientY) - rect.top;
-
-    // Find nearest grid point
-    const gridPoint = findNearestGridPoint(mouseX, mouseY);
-    state.hoveredGridPoint = { x: gridPoint.x, y: gridPoint.y };
-
-    // Update position display
-    positionDisplay.textContent = `Grid: ${gridPoint.x},${gridPoint.y}`;
-
-    // Check if we're on the edge of the grid
-    const isOnEdge = gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
-                     gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID;
-
-    // Change cursor based on mode and position
-    if (isOnEdge && (state.mode === 'sketch' || state.mode === 'record')) {
-        gridCanvas.style.cursor = 'not-allowed'; // Show not-allowed cursor on edges
-    } else if (state.mode === 'edit') {
-        const dotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
-        if (dotIndex !== -1) {
-            gridCanvas.style.cursor = 'not-allowed'; // Delete cursor
-        } else {
-            gridCanvas.style.cursor = 'default';
-        }
-    } else if (state.mode === 'sketch' || state.mode === 'record') {
-        gridCanvas.style.cursor = 'crosshair';
-    } else {
-        gridCanvas.style.cursor = 'default';
-    }
-
-    redrawCanvas();
-}
-
-// Handle mouse/touch down
-function handlePointerDown(e) {
-    e.preventDefault();
-
-    if (!state.hoveredGridPoint) return;
-
-    const gridX = state.hoveredGridPoint.x;
-    const gridY = state.hoveredGridPoint.y;
-
-    // Prevent drawing on the edges
-    if (gridX < MIN_DRAW_GRID || gridX > MAX_DRAW_GRID ||
-        gridY < MIN_DRAW_GRID || gridY > MAX_DRAW_GRID) {
-        // Show visual feedback that edges are off-limits
-        const flashDuration = 300; // milliseconds
-
-        // Create a temporary flash element
-        const flash = document.createElement('div');
-        flash.style.position = 'absolute';
-        flash.style.top = '50%';
-        flash.style.left = '50%';
-        flash.style.transform = 'translate(-50%, -50%)';
-        flash.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
-        flash.style.padding = '10px 20px';
-        flash.style.borderRadius = '5px';
-        flash.style.color = 'white';
-        flash.style.fontWeight = 'bold';
-        flash.style.zIndex = '10';
-        flash.textContent = 'Cannot draw on edges';
-
-        // Add it to the grid container
-        gridCanvas.parentElement.appendChild(flash);
-
-        // Remove after duration
-        setTimeout(() => {
-            gridCanvas.parentElement.removeChild(flash);
-        }, flashDuration);
-
-        return;
-    }
-
-    // Get reference to the correct data and selection based on mode
-    let dotsArray, linesArray, selectedDotRef;
-
-    if (state.mode === 'sketch' || state.mode === 'edit') {
-        dotsArray = state.sketch.dots;
-        linesArray = state.sketch.lines;
-        selectedDotRef = 'sketch.selectedDot';
-    } else if (state.mode === 'record') {
-        dotsArray = state.recording.dots;
-        linesArray = state.recording.lines;
-        selectedDotRef = 'recording.selectedDot';
-    } else {
-        return; // No action in preview mode
-    }
-
-    // Check if there's a dot at this grid point
-    const existingDotIndex = findDotAtGridPoint(gridX, gridY);
-
-    // Handle based on current mode
-    if (state.mode === 'edit') {
-        // Edit mode - remove dots and connected lines
-        if (existingDotIndex !== -1) {
-            deleteDotAndConnectedLines(existingDotIndex);
-        }
-    } else if (state.mode === 'sketch' || state.mode === 'record') {
-        // Draw or Record mode
-        if (existingDotIndex !== -1) {
-            // Clicked on existing dot
-
-            // If we already have a selected dot and it's the same as this one,
-            // deselect it (allowing for double-click to create a standalone point)
-            if (state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] === existingDotIndex) {
-                state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = null;
-            }
-            // If we have a selected dot and it's different, create a line
-            else if (state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] !== null) {
-                addLine(state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]], existingDotIndex);
-                state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = null;
-            }
-            // Otherwise, select this dot
-            else {
-                state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = existingDotIndex;
-            }
-        } else {
-            // Clicked on empty grid point - create a new dot
-            const newDotIndex = addDot(gridX, gridY);
-
-            // If we had a dot selected, create a line and reset selection
-            if (state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] !== null) {
-                addLine(state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]], newDotIndex);
-                state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = null;
-            } else {
-                // Just create the dot and select it
-                state[selectedDotRef.split('.')[0]][selectedDotRef.split('.')[1]] = newDotIndex;
-            }
-        }
-    }
+    // Reset touch state
+    state.touch.pendingPoint = null;
+    state.touch.tempPoint = null;
+    state.touch.previewLine = null;
+    touchIndicator.style.display = 'none';
 
     redrawCanvas();
 }
@@ -679,34 +833,41 @@ function setMode(mode) {
     editBtn.className = 'tertiary-btn';
     previewBtn.className = 'tertiary-btn';
 
-    // Don't touch the record button styling
-
     // Set appropriate button to active state based on mode
     switch(mode) {
         case 'sketch':
             sketchBtn.className = 'primary-btn';
-            gridCanvas.style.cursor = 'crosshair';
             break;
 
         case 'edit':
             editBtn.className = 'primary-btn';
-            gridCanvas.style.cursor = 'not-allowed';
+            // In edit mode, change behavior of touch controls
+            setPointBtn.style.display = 'none';
+            cancelPointBtn.textContent = 'Cancel Edit';
             break;
 
         case 'record':
             // Don't modify the record button - it's handled separately
-            gridCanvas.style.cursor = 'crosshair';
             break;
 
         case 'preview':
             previewBtn.className = 'primary-btn';
-            gridCanvas.style.cursor = 'default';
             break;
     }
 
-    // Reset selections
+    // Reset selections and touch state
     state.sketch.selectedDot = null;
     state.recording.selectedDot = null;
+    state.touch.pendingPoint = null;
+    state.touch.tempPoint = null;
+    state.touch.previewLine = null;
+    touchIndicator.style.display = 'none';
+
+    // Reset touch controls
+    if (mode !== 'edit') {
+        setPointBtn.style.display = 'block';
+        cancelPointBtn.textContent = 'Cancel Point';
+    }
 
     redrawCanvas();
 }
@@ -741,7 +902,7 @@ function stopRecording() {
     console.log('Recording stopped. Sequence:', state.recording.sequence);
 }
 
-// Preview animation
+// Preview animation - shows how drawing will look in the game
 function previewAnimation() {
     if (state.recording.sequence.length === 0) {
         alert('Please record a drawing sequence first.');
@@ -1066,27 +1227,6 @@ function copyShareLinkToClipboard() {
     shareLink.select();
     document.execCommand('copy');
     alert('Share link copied to clipboard!');
-}
-
-// Clear the current drawing based on mode
-function clearDrawing() {
-    if (state.mode === 'sketch' || state.mode === 'edit') {
-        state.sketch.dots = [];
-        state.sketch.lines = [];
-        state.sketch.selectedDot = null;
-    } else if (state.mode === 'record') {
-        state.recording.dots = [];
-        state.recording.lines = [];
-        state.recording.sequence = [];
-        state.recording.selectedDot = null;
-        state.recording.isRecording = false;
-        recordingIndicator.style.display = 'none';
-        recordBtn.textContent = 'Record';
-        recordBtn.classList.remove('secondary-btn');
-        recordBtn.classList.add('primary-btn');
-    }
-
-    redrawCanvas();
 }
 
 // Initialize the builder when the DOM is loaded
