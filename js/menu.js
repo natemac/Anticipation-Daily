@@ -191,8 +191,13 @@ function showMainMenu() {
 }
 
 function showGameScreen() {
-    mainScreen.style.display = 'none';
-    gameScreen.style.display = 'flex';
+    document.querySelector('.game-screen').style.display = 'flex';
+    // Force a repaint of the canvas with white background
+    setTimeout(() => {
+        clearCanvas();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }, 10);
 }
 
 // Initialize the menu when the DOM is loaded
