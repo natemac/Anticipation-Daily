@@ -271,7 +271,8 @@ function startGameWithData(color, category, data) {
     timerDisplay.textContent = '00:00';
     beginButton.querySelector('span').textContent = 'Begin';
     canvas.classList.remove('incorrect');
-    buttonTimer.style.opacity = '0';
+    buttonTimer.classList.remove('active');
+    buttonTimer.style.width = '0%';
 
     // Reset canvas and draw initial state - force immediate redraw
     clearCanvas();
@@ -370,7 +371,7 @@ function updateTimerDisplay() {
     timerDisplay.textContent = `${seconds}:${hundredths}`;
 }
 
-// New function for the guess timer
+// Function for the guess timer
 function startGuessTimer() {
     // Reset the guess timer
     state.guessTimeRemaining = 10;
@@ -414,14 +415,7 @@ function startGuessTimer() {
     }, 100); // Update every 100ms for smooth animation
 }
 
-
-// Function to update button gradient based on remaining time
-function updateGuessButtonGradient() {
-    const percentage = (state.guessTimeRemaining / 10) * 100;
-    buttonTimer.style.width = `${percentage}%`;
-}
-
-ffunction enterGuessMode() {
+function enterGuessMode() {
     // If already in guess mode, reset the timer instead of toggling
     if (state.guessMode) {
         startGuessTimer(); // Restart the timer
@@ -448,7 +442,6 @@ ffunction enterGuessMode() {
     }
 }
 
-// Updated exitGuessMode function
 function exitGuessMode() {
     // Resume animation and timer
     state.guessMode = false;
@@ -468,7 +461,6 @@ function exitGuessMode() {
     guessInput.blur();
 }
 
-// Make sure this is updated in the handleLetterInput function too
 function handleLetterInput(input) {
     const currentWord = state.drawingData.name;
     const upperInput = input.toUpperCase();
@@ -564,8 +556,9 @@ function endGame(success) {
     clearInterval(state.elapsedTimer);
     clearInterval(state.guessTimer);
 
-    // Hide the timer overlay
-    buttonTimer.style.opacity = '0';
+    // Hide the timer overlay and reset it
+    buttonTimer.classList.remove('active');
+    buttonTimer.style.width = '0%';
 
     // Reset state
     state.gameStarted = false;
