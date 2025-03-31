@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
-    <div class="game-title">Daily Anticipation - 7:32pm</div>
+    <div class="game-title">Daily Anticipation - 7:47pm</div>
 
     <div class="game-container">
         <div class="main-screen">
@@ -77,7 +77,10 @@
             <div class="wrong-message" id="wrongMessage">WRONG!</div>
 
             <div class="game-controls">
-                <button id="beginButton" class="begin-button">Begin</button>
+                <button id="beginButton">
+                    <div id="buttonTimer"></div>
+                    <span>Begin</span>
+                </button>
                 <input type="text" id="guessInput" placeholder="Type your guess here...">
             </div>
         </div>

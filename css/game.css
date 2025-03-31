@@ -297,20 +297,6 @@ input:checked + .slider:before {
     gap: 10px;
 }
 
-#beginButton {
-    padding: 15px 0;
-    width: 100%;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 20px;
-    font-weight: bold;
-    transition: background-color 0.3s, transform 0.2s;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
 #beginButton:hover {
     background-color: #3d8b40;
     transform: translateY(-2px);
@@ -320,6 +306,25 @@ input:checked + .slider:before {
 #beginButton:active {
     transform: translateY(1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Timer overlay for the button */
+#buttonTimer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(to right, #4CAF50, #cccccc);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: -1; /* Behind the text */
+}
+
+/* Make sure the button text sits on top of the timer */
+#beginButton span {
+    position: relative;
+    z-index: 2;
 }
 
 #guessInput {

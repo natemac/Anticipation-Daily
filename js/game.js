@@ -20,12 +20,16 @@ const state = {
     elapsedTimeHundredths: 0,
     guessMode: false,
     currentInput: '',
-    correctLetters: []
+    correctLetters: [],
+    // New guess timer properties
+    guessTimeRemaining: 10,
+    guessTimerActive: false,
+    guessTimer: null
 };
 
 // DOM elements
 let mainScreen, gameScreen, colorSquares, difficultyToggle, backButton, canvas,
-    ctx, timerDisplay, guessInput, beginButton, wrongMessage, shareButton;
+    ctx, timerDisplay, guessInput, beginButton, wrongMessage, shareButton, buttonTimer;
 
 // Initialize the game
 function initGame() {
@@ -41,6 +45,7 @@ function initGame() {
     beginButton = document.getElementById('beginButton');
     wrongMessage = document.getElementById('wrongMessage');
     shareButton = document.getElementById('shareButton');
+    buttonTimer = document.getElementById('buttonTimer');
 
     // Set up canvas
     ctx = canvas.getContext('2d');
@@ -249,6 +254,8 @@ function startGameWithData(color, category, data) {
     state.guessMode = false;
     state.currentInput = '';
     state.correctLetters = Array(data.name.length).fill(null);
+    state.guessTimeRemaining = 10;
+    state.guessTimerActive = false;
 
     // Switch to game screen
     mainScreen.style.display = 'none';
@@ -262,8 +269,9 @@ function startGameWithData(color, category, data) {
     guessInput.style.display = 'none';
     wrongMessage.classList.remove('visible');
     timerDisplay.textContent = '00:00';
-    beginButton.textContent = 'Begin';
+    beginButton.querySelector('span').textContent = 'Begin';
     canvas.classList.remove('incorrect');
+    buttonTimer.style.opacity = '0';
 
     // Reset canvas and draw initial state - force immediate redraw
     clearCanvas();
@@ -279,11 +287,12 @@ function startDrawing() {
     // Change to game started state
     state.gameStarted = true;
     state.timerActive = true;
-    beginButton.textContent = 'Guess';
+    beginButton.querySelector('span').textContent = 'Guess';
 
     // Clear any existing timers
     if (state.animationTimer) clearInterval(state.animationTimer);
     if (state.elapsedTimer) clearInterval(state.elapsedTimer);
+    if (state.guessTimer) clearInterval(state.guessTimer);
 
     // Debug: Log the drawing data
     console.log("Drawing data:", state.drawingData);
@@ -361,9 +370,60 @@ function updateTimerDisplay() {
     timerDisplay.textContent = `${seconds}:${hundredths}`;
 }
 
+// New function for the guess timer
+function startGuessTimer() {
+    // Reset the guess timer
+    state.guessTimeRemaining = 10;
+    state.guessTimerActive = true;
+
+    // Show the timer overlay and set initial width
+    buttonTimer.style.opacity = '1';
+    buttonTimer.style.width = '100%';
+    
+    // Clear any existing timer
+    if (state.guessTimer) {
+        clearInterval(state.guessTimer);
+    }
+
+    // Start the timer
+    state.guessTimer = setInterval(() => {
+        state.guessTimeRemaining -= 0.1; // Decrease by 0.1 seconds for smoother transition
+
+        // Update the button timer width
+        updateGuessButtonGradient();
+
+        // If time runs out
+        if (state.guessTimeRemaining <= 0) {
+            clearInterval(state.guessTimer);
+            state.guessTimerActive = false;
+
+            // Hide the timer overlay
+            buttonTimer.style.opacity = '0';
+
+            // Exit guess mode and continue gameplay
+            exitGuessMode();
+
+            // Flash red to indicate time ran out
+            canvas.classList.add('incorrect');
+            setTimeout(() => {
+                canvas.classList.remove('incorrect');
+            }, 500);
+        }
+    }, 100); // Update every 100ms for smooth animation
+}
+
+// Function to update button gradient based on remaining time
+function updateGuessButtonGradient() {
+    const percentage = (state.guessTimeRemaining / 10) * 100;
+    buttonTimer.style.width = `${percentage}%`;
+}
+
 function enterGuessMode() {
     // Pause animation and timer
     state.guessMode = true;
+
+    // Start the guess timer
+    startGuessTimer();
 
     // Show input field
     guessInput.style.display = 'block';
@@ -381,6 +441,15 @@ function enterGuessMode() {
 function exitGuessMode() {
     // Resume animation and timer
     state.guessMode = false;
+
+    // Stop the guess timer
+    if (state.guessTimer) {
+        clearInterval(state.guessTimer);
+        state.guessTimerActive = false;
+    }
+
+    // Hide the timer overlay
+    buttonTimer.style.opacity = '0';
 
     // Hide input field
     guessInput.style.display = 'none';
@@ -437,6 +506,15 @@ function handleLetterInput(input) {
 
     // Check if complete correct answer
     if (allCorrect && upperInput === currentWord) {
+        // Stop the guess timer
+        if (state.guessTimer) {
+            clearInterval(state.guessTimer);
+            state.guessTimerActive = false;
+        }
+
+        // Hide the timer overlay
+        buttonTimer.style.opacity = '0';
+
         setTimeout(() => {
             endGame(true);
         }, 500);
@@ -467,14 +545,19 @@ function redrawCanvas() {
 }
 
 function endGame(success) {
-    // Clear timers
+    // Clear all timers
     clearInterval(state.animationTimer);
     clearInterval(state.elapsedTimer);
+    clearInterval(state.guessTimer);
+
+    // Hide the timer overlay
+    buttonTimer.style.opacity = '0';
 
     // Reset state
     state.gameStarted = false;
     state.timerActive = false;
     state.guessMode = false;
+    state.guessTimerActive = false;
 
     // Update puzzle state
     if (success) {
