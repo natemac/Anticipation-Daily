@@ -280,7 +280,7 @@ function startDrawing() {
     // Change to game started state
     state.gameStarted = true;
     state.timerActive = true;
-    beginButton.querySelector('span').textContent = 'Guess';
+    beginButton.querySelector('span').textContent = 'Guess - 8:53pm';
 
     // Clear any existing timers
     if (state.animationTimer) clearInterval(state.animationTimer);
