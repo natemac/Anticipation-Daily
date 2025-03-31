@@ -220,11 +220,27 @@ input:checked + .slider:before {
     height: 100%;
 }
 
+/* Timer Display */
+.timer-display {
+    width: 100%;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    font-family: monospace;
+    padding: 10px 0;
+    margin-bottom: 10px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 .canvas-container {
     width: 100%;
     aspect-ratio: 1/1;
-    margin: 20px 0;
+    margin: 0 0 20px 0;
     position: relative;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 #gameCanvas {
@@ -233,53 +249,30 @@ input:checked + .slider:before {
     border: 2px solid #333;
     border-radius: 8px;
     background-color: white;
+    transition: background-color 0.3s;
 }
 
-.timer-container {
-    width: 100%;
-    height: 30px;
-    background-color: #eee;
-    border-radius: 15px;
-    overflow: hidden;
-    margin-bottom: 10px;
+#gameCanvas.incorrect {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    background-color: rgba(255, 0, 0, 0.2);
 }
 
-.timer-bar {
-    height: 100%;
-    width: 100%;
-    background-color: #4CAF50;
-    transition: width 0.1s linear;
-}
+@keyframes shake {
+    10%, 90% {
+        transform: translate3d(-1px, 0, 0);
+    }
 
-.input-container {
-    width: 100%;
-    display: flex;
-    margin: 10px 0;
-}
+    20%, 80% {
+        transform: translate3d(2px, 0, 0);
+    }
 
-#guessInput {
-    flex-grow: 1;
-    padding: 10px 15px;
-    font-size: 16px;
-    border: 2px solid #ddd;
-    border-radius: 8px 0 0 8px;
-    outline: none;
-}
+    30%, 50%, 70% {
+        transform: translate3d(-4px, 0, 0);
+    }
 
-#guessButton {
-    padding: 10px 20px;
-    background-image: linear-gradient(to bottom, rgba(76, 175, 80, 0.5), rgba(76, 175, 80, 1));
-    color: white;
-    border: none;
-    border-radius: 0 8px 8px 0;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: background-image 0.3s;
-}
-
-#guessButton:hover {
-    background-image: linear-gradient(to bottom, rgba(76, 175, 80, 1), rgba(76, 175, 80, 1));
+    40%, 60% {
+        transform: translate3d(4px, 0, 0);
+    }
 }
 
 .wrong-message {
@@ -294,6 +287,56 @@ input:checked + .slider:before {
 
 .wrong-message.visible {
     opacity: 1;
+}
+
+/* Game Controls */
+.game-controls {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#beginButton {
+    padding: 15px 0;
+    width: 100%;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#beginButton:hover {
+    background-color: #3d8b40;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+#beginButton:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#guessInput {
+    padding: 12px 15px;
+    font-size: 18px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    display: none;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#guessInput:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .back-button {
@@ -330,36 +373,6 @@ input:checked + .slider:before {
     background-image: linear-gradient(to bottom, rgba(66, 103, 178, 1), rgba(66, 103, 178, 1));
 }
 
-.begin-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
-    border-radius: 8px;
-}
-
-.begin-button {
-    padding: 15px 30px;
-    font-size: 24px;
-    background-image: linear-gradient(to bottom, rgba(76, 175, 80, 0.5), rgba(76, 175, 80, 1));
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-image 0.3s;
-}
-
-.begin-button:hover {
-    background-image: linear-gradient(to bottom, rgba(76, 175, 80, 1), rgba(76, 175, 80, 1));
-}
-
 /* Add touch-friendly improvements for mobile devices */
 @media (max-width: 480px) {
     .game-title {
@@ -373,7 +386,7 @@ input:checked + .slider:before {
     .color-square p {
         font-size: 12px;
     }
-    
+
     .difficulty-label {
         font-size: 18px;
         padding: 5px;
@@ -393,8 +406,17 @@ input:checked + .slider:before {
         transform: translateX(36px);
     }
 
-    /* Ensure larger touch targets on mobile */
-    .slider-container {
-        padding: 10px 0;
+    .timer-display {
+        font-size: 24px;
+    }
+
+    #beginButton {
+        padding: 12px 0;
+        font-size: 18px;
+    }
+
+    #guessInput {
+        padding: 10px;
+        font-size: 16px;
     }
 }

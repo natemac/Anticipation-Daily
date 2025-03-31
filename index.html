@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
-    <div class="game-title">Daily Anticipation - 6:52pm</div>
+    <div class="game-title">Daily Anticipation - 7:20pm</div>
 
     <div class="game-container">
         <div class="main-screen">
@@ -67,20 +67,18 @@
         <div class="game-screen">
             <button class="back-button" id="backButton">← Back</button>
 
-            <div class="timer-container">
-                <div class="timer-bar" id="timerBar"></div>
-            </div>
+            <!-- New timer display that counts up -->
+            <div class="timer-display" id="timerDisplay">00:00</div>
 
             <div class="canvas-container">
                 <canvas id="gameCanvas"></canvas>
-                <!-- Begin overlay will be added here dynamically -->
             </div>
 
             <div class="wrong-message" id="wrongMessage">WRONG!</div>
 
-            <div class="input-container">
+            <div class="game-controls">
+                <button id="beginButton" class="begin-button">Begin</button>
                 <input type="text" id="guessInput" placeholder="Type your guess here...">
-                <button id="guessButton">Guess</button>
             </div>
         </div>
     </div>
