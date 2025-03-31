@@ -24,7 +24,10 @@ const state = {
     // New guess timer properties
     guessTimeRemaining: 10,
     guessTimerActive: false,
-    guessTimer: null
+    guessTimer: null,
+    // Canvas rendering flags
+    canvasInitialized: false,
+    renderAttempts: 0
 };
 
 // DOM elements
@@ -33,6 +36,8 @@ let mainScreen, gameScreen, colorSquares, difficultyToggle, backButton, canvas,
 
 // Initialize the game
 function initGame() {
+    console.log("Initializing game...");
+
     // Get DOM elements
     mainScreen = document.querySelector('.main-screen');
     gameScreen = document.querySelector('.game-screen');
@@ -47,30 +52,8 @@ function initGame() {
     shareButton = document.getElementById('shareButton');
     buttonTimer = document.getElementById('buttonTimer');
 
-    // Set up canvas
-    ctx = canvas.getContext('2d');
-    resizeCanvas(canvas);
-
-    // Force initial canvas rendering by drawing something immediately
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Add touch event listener to canvas to ensure it responds
-    canvas.addEventListener('touchstart', function(e) {
-        // Prevent default to avoid scrolling
-        e.preventDefault();
-        // Force redraw if the game has started
-        if (state.gameStarted) {
-            redrawCanvas();
-        }
-    }, { passive: false });
-
-    // Also add a click event for desktop
-    canvas.addEventListener('click', function() {
-        if (state.gameStarted) {
-            redrawCanvas();
-        }
-    });
+    // Set up canvas with aggressive initialization
+    setupCanvas();
 
     // Set event listeners
     setupEventListeners();
@@ -78,35 +61,132 @@ function initGame() {
     // Initialize difficulty toggle
     initDifficultyToggle();
 
-    // Initialize game state
-    clearCanvas();
+    // Force initial canvas render
+    forceCanvasRedraw();
+}
+
+// Set up canvas with aggressive techniques to ensure it renders
+function setupCanvas() {
+    console.log("Setting up canvas...");
+
+    // Get and set up the context
+    ctx = canvas.getContext('2d', { alpha: false }); // Disable alpha for better performance
+
+    // Set explicit dimensions
+    resizeCanvas();
+
+    // Ensure visible background
+    canvas.style.backgroundColor = '#ffffff';
+
+    // Force a repaint by toggling a property
+    canvas.style.display = 'none';
+    void canvas.offsetHeight; // Force reflow
+    canvas.style.display = 'block';
+
+    // Try drawing something immediately
+    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.rect(10, 10, canvas.width-20, canvas.height-20);
+    ctx.stroke();
+
+    state.canvasInitialized = true;
+    console.log("Canvas setup complete. Size:", canvas.width, "x", canvas.height);
+}
+
+// Function to force canvas redraw on mobile
+function forceCanvasRedraw() {
+    console.log("Forcing canvas redraw...");
+    state.renderAttempts++;
+
+    // Change a property to force reflow
+    canvas.style.opacity = '0.99';
+    setTimeout(() => {
+        canvas.style.opacity = '1';
+
+        // Force immediate redraw
+        ctx.save();
+        clearCanvas();
+
+        // Try drawing a simple shape to kickstart rendering
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+        // If we're in a game, redraw the game state
+        if (state.gameStarted) {
+            redrawCanvas();
+        }
+
+        ctx.restore();
+    }, 50);
 }
 
 // Resize canvas to match container
 function resizeCanvas() {
     const container = canvas.parentElement;
+    const oldWidth = canvas.width;
+    const oldHeight = canvas.height;
+
     canvas.width = container.offsetWidth;
     canvas.height = container.offsetHeight;
 
+    console.log("Canvas resized from", oldWidth, "x", oldHeight, "to", canvas.width, "x", canvas.height);
+
     // Force a redraw after resize
     if (state.gameStarted) {
-        setTimeout(redrawCanvas, 10);
+        setTimeout(forceCanvasRedraw, 10);
     }
 }
 
 // Set up event listeners
 function setupEventListeners() {
+    console.log("Setting up event listeners...");
+
     // Window resize event
     window.addEventListener('resize', () => {
         resizeCanvas();
-        redrawCanvas();
     });
 
-    // Add visibility change event to handle tab switching
+    // Visibility change event to handle tab switching
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden && state.gameStarted) {
-            // Force redraw when tab becomes visible again
-            setTimeout(redrawCanvas, 10);
+            console.log("Page became visible, forcing redraw");
+            setTimeout(forceCanvasRedraw, 100);
+        }
+    });
+
+    // Add various events to force canvas rendering
+    document.addEventListener('touchstart', function(e) {
+        if (state.gameStarted && state.renderAttempts < 5) {
+            console.log("Touch detected, forcing redraw");
+            forceCanvasRedraw();
+        }
+    }, {passive: false});
+
+    canvas.addEventListener('touchstart', function(e) {
+        // Prevent default to avoid scrolling
+        e.preventDefault();
+        console.log("Canvas touch detected");
+
+        // Force redraw if the game has started
+        if (state.gameStarted) {
+            forceCanvasRedraw();
+        }
+    }, { passive: false });
+
+    // Also add a click event for desktop
+    canvas.addEventListener('click', function() {
+        console.log("Canvas click detected");
+        if (state.gameStarted) {
+            forceCanvasRedraw();
         }
     });
 
@@ -156,6 +236,8 @@ function setupEventListeners() {
     shareButton.addEventListener('click', () => {
         shareResults();
     });
+
+    console.log("Event listeners setup complete");
 }
 
 // Difficulty toggle functionality
@@ -223,6 +305,7 @@ function updateDifficultyUI(isHard) {
 
 // Game Functions
 async function startGame(color, category) {
+    console.log(`Starting game: ${category} (${color})`);
     try {
         // Try to load the exported JSON file from the items folder
         const itemData = await loadJsonData(`items/${color}.json`);
@@ -236,13 +319,14 @@ async function startGame(color, category) {
             startGameWithData(color, category, gameData[color]);
         }
     } catch (error) {
-        console.log('Error in game startup, using default data');
+        console.log('Error in game startup, using default data:', error);
         startGameWithData(color, category, gameData[color]);
     }
 }
 
 // Function to start game with provided data
 function startGameWithData(color, category, data) {
+    console.log("Starting game with data:", data);
     state.currentColor = color;
     state.currentCategory = category;
     state.drawingData = data;
@@ -256,6 +340,7 @@ function startGameWithData(color, category, data) {
     state.correctLetters = Array(data.name.length).fill(null);
     state.guessTimeRemaining = 10;
     state.guessTimerActive = false;
+    state.renderAttempts = 0;
 
     // Switch to game screen
     mainScreen.style.display = 'none';
@@ -274,17 +359,27 @@ function startGameWithData(color, category, data) {
     buttonTimer.classList.remove('active');
     buttonTimer.style.width = '0%';
 
-    // Reset canvas and draw initial state - force immediate redraw
+    // Aggressively reset and re-render the canvas
+    ctx.save();
     clearCanvas();
-    // Draw a white background to ensure canvas is rendering
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#000000';
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
 
-    // Force a layout recalculation to make sure canvas is visible
-    void canvas.offsetWidth;
+    // Force canvas to show by changing layout properties
+    canvas.style.display = 'none';
+    void canvas.offsetHeight; // Force reflow
+    canvas.style.display = 'block';
+
+    // Force additional redraw after a short delay
+    setTimeout(forceCanvasRedraw, 100);
 }
 
 function startDrawing() {
+    console.log("Starting drawing animation");
     // Change to game started state
     state.gameStarted = true;
     state.timerActive = true;
@@ -317,33 +412,53 @@ function startDrawing() {
     // Start the timer counting up
     startElapsedTimer();
 
-    // Start drawing animation
-    const totalSequenceLength = state.drawingData.sequence.length;
-    const timePerLine = 10000 / totalSequenceLength; // Complete drawing in 10 seconds
-
     // Force an immediate initial draw
     clearCanvas();
     redrawCanvas();
 
-    // Set a small delay to make sure the canvas has had time to render
-    setTimeout(() => {
+    // Force immediate repaint
+    forceCanvasRedraw();
+
+    // Use requestAnimationFrame to ensure smooth rendering
+    requestAnimationFrame(() => {
+        // Draw something immediately to "kick" the rendering engine
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+        // Start drawing animation
+        const totalSequenceLength = state.drawingData.sequence.length;
+        const timePerLine = 10000 / totalSequenceLength; // Complete drawing in 10 seconds
+
+        // Now start the animation with setInterval
         state.animationTimer = setInterval(() => {
             if (!state.guessMode && state.gameStarted) {
                 state.drawingProgress++;
+                console.log(`Drawing progress: ${state.drawingProgress}/${totalSequenceLength}`);
+
+                // Make the redraw more aggressive
+                ctx.save();
 
                 // Redraw the canvas with updated progress
                 redrawCanvas();
 
+                ctx.restore();
+
                 // When drawing is complete, stop the animation timer but keep the time counting
                 if (state.drawingProgress >= totalSequenceLength) {
+                    console.log("Drawing animation complete");
                     clearInterval(state.animationTimer);
                 }
             }
         }, timePerLine);
-    }, 100);
+    });
 }
 
 function startElapsedTimer() {
+    console.log("Starting elapsed timer");
     // Clear any existing timer
     if (state.elapsedTimer) {
         clearInterval(state.elapsedTimer);
@@ -373,6 +488,7 @@ function updateTimerDisplay() {
 
 // Function for the guess timer
 function startGuessTimer() {
+    console.log("Starting guess timer");
     // Reset the guess timer
     state.guessTimeRemaining = 10;
     state.guessTimerActive = true;
@@ -416,6 +532,7 @@ function startGuessTimer() {
 }
 
 function enterGuessMode() {
+    console.log("Entering guess mode");
     // If already in guess mode, reset the timer instead of toggling
     if (state.guessMode) {
         startGuessTimer(); // Restart the timer
@@ -443,6 +560,7 @@ function enterGuessMode() {
 }
 
 function exitGuessMode() {
+    console.log("Exiting guess mode");
     // Resume animation and timer
     state.guessMode = false;
 
@@ -459,6 +577,9 @@ function exitGuessMode() {
     // Hide input field
     guessInput.style.display = 'none';
     guessInput.blur();
+
+    // Force canvas redraw
+    forceCanvasRedraw();
 }
 
 function handleLetterInput(input) {
@@ -494,6 +615,7 @@ function handleLetterInput(input) {
     }
 
     if (anyIncorrect) {
+        console.log("Incorrect input");
         // Show incorrect feedback animation
         canvas.classList.add('incorrect');
         setTimeout(() => {
@@ -511,6 +633,7 @@ function handleLetterInput(input) {
 
     // Check if complete correct answer
     if (allCorrect && upperInput === currentWord) {
+        console.log("Correct answer!");
         // Stop the guess timer
         if (state.guessTimer) {
             clearInterval(state.guessTimer);
@@ -536,11 +659,19 @@ function handleLetterInput(input) {
 }
 
 function redrawCanvas() {
+    // Don't bother redrawing if canvas isn't initialized
+    if (!state.canvasInitialized) return;
+
     clearCanvas();
 
     // Force a visual change to the canvas to ensure it repaints
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw a border to ensure something is visible
+    ctx.strokeStyle = '#eeeeee';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
     if (state.difficulty === 'easy') {
         drawDots();
@@ -551,6 +682,7 @@ function redrawCanvas() {
 }
 
 function endGame(success) {
+    console.log("Ending game, success:", success);
     // Clear all timers
     clearInterval(state.animationTimer);
     clearInterval(state.elapsedTimer);
@@ -639,11 +771,21 @@ function drawDots() {
     // Only draw dots in easy mode
     if (state.difficulty === 'hard') return;
 
+    if (!state.drawingData || !state.drawingData.dots) {
+        console.error("No dot data to draw");
+        return;
+    }
+
     const data = state.drawingData;
     const dotRadius = 5;
 
     ctx.fillStyle = '#333';
-    data.dots.forEach(dot => {
+    data.dots.forEach((dot, index) => {
+        if (!dot) {
+            console.error(`Invalid dot at index ${index}`);
+            return;
+        }
+
         // Scale dot positions to fit canvas size
         const x = (dot.x / 400) * canvas.width;
         const y = (dot.y / 400) * canvas.height;
@@ -656,7 +798,10 @@ function drawDots() {
 
 function drawLines() {
     const data = state.drawingData;
-    if (!data || !data.sequence || !data.dots) return;
+    if (!data || !data.sequence || !data.dots) {
+        console.error("No line data to draw");
+        return;
+    }
 
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 3;
@@ -664,10 +809,18 @@ function drawLines() {
     for (let i = 0; i < state.drawingProgress; i++) {
         if (i < data.sequence.length) {
             const line = data.sequence[i];
+            if (!line || line.from === undefined || line.to === undefined) {
+                console.error(`Invalid line at index ${i}`);
+                continue;
+            }
+
             const from = data.dots[line.from];
             const to = data.dots[line.to];
 
-            if (!from || !to) continue; // Skip invalid lines
+            if (!from || !to) {
+                console.error(`Invalid dot reference in line ${i}: from=${line.from}, to=${line.to}`);
+                continue; // Skip invalid lines
+            }
 
             // Scale line positions to fit canvas size
             const fromX = (from.x / 400) * canvas.width;
@@ -685,7 +838,7 @@ function drawLines() {
 
 function drawWordSpaces() {
     // Only draw word spaces in easy mode
-    if (state.difficulty === 'hard') return;
+    if (state.difficulty === 'hard' || !state.drawingData) return;
 
     const answer = state.drawingData.name;
     const canvasWidth = canvas.width;
@@ -729,7 +882,7 @@ document.addEventListener('DOMContentLoaded', initGame);
 // Add an extra redraw on window focus
 window.addEventListener('focus', function() {
     if (state.gameStarted) {
-        setTimeout(redrawCanvas, 100);
+        setTimeout(forceCanvasRedraw, 100);
     }
 });
 
@@ -738,8 +891,140 @@ window.addEventListener('load', function() {
     // Give extra time for all resources to load
     setTimeout(function() {
         if (canvas) {
-            // Force an additional redraw
-            redrawCanvas();
+            console.log("Window load complete, forcing canvas redraw");
+            forceCanvasRedraw();
         }
     }, 200);
+
+    // Additional force redraw after a longer delay
+    setTimeout(function() {
+        if (canvas && state.gameStarted) {
+            console.log("Final attempt to force canvas redraw");
+            forceCanvasRedraw();
+        }
+    }, 1000);
 });
+
+// Mobile-specific workaround for iOS/Safari
+if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+    console.log("iOS device detected, adding special handling");
+
+    // Add a touchmove handler that might help trigger repaints
+    document.addEventListener('touchmove', function() {
+        if (state.gameStarted && !state.guessMode) {
+            // This creates a tiny visual change that forces browser repaint
+            canvas.style.transform = 'translateZ(0)';
+            setTimeout(() => {
+                canvas.style.transform = '';
+            }, 50);
+        }
+    }, { passive: true });
+
+    // iOS specific hack: create a tiny animation to keep rendering active
+    function keepCanvasAlive() {
+        if (state.gameStarted) {
+            // This invisible animation keeps the rendering engine active
+            canvas.style.transform = 'translateZ(0.001px)';
+            setTimeout(() => {
+                canvas.style.transform = '';
+                requestAnimationFrame(keepCanvasAlive);
+            }, 100);
+        }
+    }
+
+    // Start the keep-alive when the game starts
+    document.addEventListener('click', function() {
+        if (state.gameStarted) {
+            keepCanvasAlive();
+        }
+    }, { once: true });
+}
+
+// Extra backup drawing method if all else fails
+function emergencyRedraw() {
+    console.log("Emergency redraw triggered");
+
+    // If the canvas is still not showing after multiple attempts
+    if (state.gameStarted && state.renderAttempts > 5) {
+        console.log("Using emergency fallback drawing method");
+
+        // Change canvas rendering approach
+        // Create a new offscreen canvas
+        const offscreen = document.createElement('canvas');
+        offscreen.width = canvas.width;
+        offscreen.height = canvas.height;
+        const offCtx = offscreen.getContext('2d');
+
+        // Draw everything to the offscreen canvas
+        offCtx.fillStyle = '#ffffff';
+        offCtx.fillRect(0, 0, offscreen.width, offscreen.height);
+
+        // Draw dots and lines if we have data
+        if (state.drawingData && state.drawingData.dots && state.drawingData.sequence) {
+            // Draw dots
+            if (state.difficulty === 'easy') {
+                offCtx.fillStyle = '#333';
+                state.drawingData.dots.forEach(dot => {
+                    if (dot) {
+                        const x = (dot.x / 400) * offscreen.width;
+                        const y = (dot.y / 400) * offscreen.height;
+
+                        offCtx.beginPath();
+                        offCtx.arc(x, y, 5, 0, Math.PI * 2);
+                        offCtx.fill();
+                    }
+                });
+            }
+
+            // Draw lines
+            offCtx.strokeStyle = '#000';
+            offCtx.lineWidth = 3;
+
+            for (let i = 0; i < state.drawingProgress; i++) {
+                if (i < state.drawingData.sequence.length) {
+                    const line = state.drawingData.sequence[i];
+                    if (line && state.drawingData.dots[line.from] && state.drawingData.dots[line.to]) {
+                        const from = state.drawingData.dots[line.from];
+                        const to = state.drawingData.dots[line.to];
+
+                        const fromX = (from.x / 400) * offscreen.width;
+                        const fromY = (from.y / 400) * offscreen.height;
+                        const toX = (to.x / 400) * offscreen.width;
+                        const toY = (to.y / 400) * offscreen.height;
+
+                        offCtx.beginPath();
+                        offCtx.moveTo(fromX, fromY);
+                        offCtx.lineTo(toX, toY);
+                        offCtx.stroke();
+                    }
+                }
+            }
+        }
+
+        // Transfer the offscreen canvas to the visible canvas using drawImage
+        ctx.drawImage(offscreen, 0, 0);
+
+        // Draw an attention-grabbing border
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+// Create a MutationObserver to detect when the canvas becomes visible
+const canvasObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.attributeName === 'style' && canvas.offsetWidth > 0 && canvas.offsetHeight > 0) {
+            console.log("Canvas became visible, forcing redraw");
+            setTimeout(forceCanvasRedraw, 10);
+        }
+    });
+});
+
+// Start observing the canvas
+if (canvas) {
+    canvasObserver.observe(canvas, { attributes: true });
+}
+
+// Last resort - try emergency redraw after a delay
+setTimeout(emergencyRedraw, 3000);
