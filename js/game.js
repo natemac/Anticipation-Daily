@@ -5,7 +5,6 @@ const gameState = {
     currentCategory: null,
     drawingData: null,
     drawingProgress: 0,
-    animationTimer: null,
     elapsedTimer: null,
     gameStarted: false,
     timerActive: false,
@@ -57,9 +56,9 @@ function initGame() {
     log("Game initialized");
 }
 
-// Initialize the canvas with correct dimensions - use approach from test file
+// Initialize the canvas with correct dimensions
 function setupCanvas() {
-    log("Setting up canvas with test approach...");
+    log("Setting up canvas...");
 
     // Get and set up the context with alpha disabled for better performance
     ctx = canvas.getContext('2d', { alpha: false });
@@ -183,7 +182,7 @@ function startGameWithData(color, category, data) {
     guessInput.style.display = 'none';
     wrongMessage.classList.remove('visible');
     timerDisplay.textContent = '00:00';
-    beginButton.querySelector('span').textContent = 'Begin - 9:13am';
+    beginButton.querySelector('span').textContent = 'Begin';
     canvas.classList.remove('incorrect');
     buttonTimer.classList.remove('active');
     buttonTimer.style.width = '0%';
@@ -199,9 +198,9 @@ function startGameWithData(color, category, data) {
     ctx.strokeRect(0, 0, canvas.width, canvas.height);
 }
 
-// Start the drawing animation - use approach from test file
+// Start the drawing animation
 function startDrawing() {
-    log("Starting drawing animation with test approach");
+    log("Starting drawing animation");
 
     // Change to game started state
     gameState.gameStarted = true;
@@ -209,7 +208,6 @@ function startDrawing() {
     beginButton.querySelector('span').textContent = 'Guess';
 
     // Clear any existing timers
-    if (gameState.animationTimer) clearInterval(gameState.animationTimer);
     if (gameState.elapsedTimer) clearInterval(gameState.elapsedTimer);
     if (gameState.guessTimer) clearInterval(gameState.guessTimer);
 
@@ -229,9 +227,9 @@ function startDrawing() {
         drawWordSpaces();
     }
 
-    // Set up animation similar to our test file
+    // Set up animation
     const totalSequenceLength = gameState.drawingData.sequence.length;
-    const timePerLine = 300; // Match test file - 300ms per line for clearer animation
+    const timePerLine = 300; // 300ms per line for clearer animation
 
     log(`Animation setup: ${totalSequenceLength} lines, ${timePerLine}ms per line`);
 
@@ -239,7 +237,7 @@ function startDrawing() {
     gameState.drawingProgress = 0;
     redrawCanvas();
 
-    // Use direct animation approach from test file
+    // Use direct animation approach
     let currentLine = 0;
 
     function drawNextLine() {
@@ -466,7 +464,7 @@ function handleLetterInput(input) {
     redrawCanvas();
 }
 
-// Redraw canvas - use approach from test file
+// Redraw canvas
 function redrawCanvas() {
     // Clear the canvas
     clearCanvas();
@@ -496,7 +494,6 @@ function endGame(success) {
     log("Ending game, success:", success);
 
     // Clear all timers
-    clearInterval(gameState.animationTimer);
     clearInterval(gameState.elapsedTimer);
     clearInterval(gameState.guessTimer);
 
