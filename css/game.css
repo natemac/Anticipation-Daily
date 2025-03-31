@@ -213,8 +213,9 @@ input:checked + .slider {
     margin: 0 0 20px 0;
     position: relative;
     border-radius: 8px;
-    overflow: hidden;
-    /* Removed transform: translateZ(0) */
+    overflow: visible; /* Change from hidden to visible */
+    transform: translateZ(0); /* Re-add hardware acceleration */
+    z-index: 1; /* Add a base z-index */
 }
 
 #gameCanvas {
@@ -223,7 +224,9 @@ input:checked + .slider {
     border: 2px solid #333;
     border-radius: 8px;
     background-color: white;
-    display: block; /* Ensure it's always visible */
+    display: block;
+    position: relative; /* Make sure it participates in stacking context */
+    z-index: 5; /* Make sure canvas is above other elements */
 }
 
 #gameCanvas.incorrect {
