@@ -196,14 +196,21 @@ function showGameScreen() {
 
     // Force a redraw after the game screen becomes visible
     setTimeout(() => {
-        if (canvas) {
+        if (typeof canvas !== 'undefined' && canvas) {
             log("Forcing canvas redraw after screen transition");
-            clearCanvas();
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = '#ccc';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            if (typeof clearCanvas === 'function') {
+                clearCanvas();
+            } else if (typeof ctx !== 'undefined' && ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            if (typeof ctx !== 'undefined' && ctx) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            }
         }
     }, 10);
 }
