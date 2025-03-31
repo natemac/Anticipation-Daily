@@ -187,7 +187,7 @@ input:checked + .slider {
 }
 
 .game-screen {
-    display: none;
+    display: none; /* It’s hidden initially. We'll show it on "Begin" */
     flex-direction: column;
     align-items: center;
     width: 100%;
@@ -331,7 +331,6 @@ input:checked + .slider {
     display: none;
 }
 
-/* Add touch-friendly improvements for mobile devices */
 @media (max-width: 480px) {
     .game-title {
         font-size: 24px;

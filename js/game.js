@@ -310,6 +310,7 @@ function startGameWithData(color, category, data) {
 }
 
 // Start the drawing animation
+// Add this change to the startDrawing() function in game.js
 function startDrawing() {
     log("Starting drawing animation");
 
@@ -337,8 +338,12 @@ function startDrawing() {
     // Force multiple redraws to ensure canvas is visible
     forceCanvasRedraw();
 
-    // Multi-step initialization with delays to ensure proper rendering
+    // Force a simulated resize to trigger proper rendering
+    const originalWidth = canvas.width;
+    canvas.width = originalWidth - 1;
     setTimeout(() => {
+        canvas.width = originalWidth;
+
         // Start the timer counting up
         startElapsedTimer();
 
@@ -354,10 +359,10 @@ function startDrawing() {
         // Force another redraw after adding dots
         forceCanvasRedraw();
 
-        // Start actual animation after a brief delay
+        // Add a slightly longer delay before starting animation
         setTimeout(() => {
             startDrawingAnimation();
-        }, 100);
+        }, 300); // Increased from 100ms to 300ms
     }, 50);
 }
 
