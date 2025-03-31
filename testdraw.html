@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Test Drawing</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        #drawingCanvas {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background-color: white;
+            border: 2px solid #333;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            transform: translateZ(0); /* Force hardware acceleration */
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Canvas Test Drawing</h1>
+        <canvas id="drawingCanvas"></canvas>
+        <div>
+            <button id="drawButton">Draw</button>
+            <button id="clearButton">Clear</button>
+        </div>
+        <div id="status">Status: Ready</div>
+    </div>
+
+    <script>
+        // Simple logging function that updates the status div
+        function log(message) {
+            console.log(message);
+            document.getElementById('status').textContent = "Status: " + message;
+        }
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('drawingCanvas');
+            const ctx = canvas.getContext('2d');
+            const drawButton = document.getElementById('drawButton');
+            const clearButton = document.getElementById('clearButton');
+
+            // Sample data (will be replaced by actual JSON)
+            let drawingData = null;
+
+            // Initialize canvas with the correct dimensions
+            function initCanvas() {
+                log("Initializing canvas...");
+                // Set the canvas dimensions based on its display size
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+
+                // Draw a border to confirm the canvas is working
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+                log("Canvas initialized: " + canvas.width + "x" + canvas.height);
+            }
+
+            // Load the JSON data
+            async function loadData() {
+                log("Loading JSON data...");
+                try {
+                    const response = await fetch('items/yellow.json');
+                    if (!response.ok) {
+                        // If yellow.json doesn't exist, use hardcoded sample data
+                        log("Could not load JSON, using sample data");
+                        drawingData = {
+                            "name": "AIRPLANE",
+                            "dots": [
+                                {"x": 100, "y": 200},
+                                {"x": 300, "y": 200},
+                                {"x": 400, "y": 150},
+                                {"x": 300, "y": 100},
+                                {"x": 100, "y": 100},
+                                {"x": 200, "y": 150},
+                                {"x": 150, "y": 250},
+                                {"x": 250, "y": 250}
+                            ],
+                            "sequence": [
+                                {"from": 0, "to": 1},
+                                {"from": 1, "to": 2},
+                                {"from": 2, "to": 3},
+                                {"from": 3, "to": 4},
+                                {"from": 4, "to": 0},
+                                {"from": 4, "to": 5},
+                                {"from": 5, "to": 3},
+                                {"from": 0, "to": 6},
+                                {"from": 6, "to": 7},
+                                {"from": 7, "to": 1}
+                            ]
+                        };
+                    } else {
+                        drawingData = await response.json();
+                        log("JSON data loaded successfully");
+                    }
+                } catch (error) {
+                    log("Error loading data: " + error.message);
+                    // Use the hardcoded sample data as fallback
+                    drawingData = {
+                        "name": "AIRPLANE",
+                        "dots": [
+                            {"x": 100, "y": 200},
+                            {"x": 300, "y": 200},
+                            {"x": 400, "y": 150},
+                            {"x": 300, "y": 100},
+                            {"x": 100, "y": 100},
+                            {"x": 200, "y": 150},
+                            {"x": 150, "y": 250},
+                            {"x": 250, "y": 250}
+                        ],
+                        "sequence": [
+                            {"from": 0, "to": 1},
+                            {"from": 1, "to": 2},
+                            {"from": 2, "to": 3},
+                            {"from": 3, "to": 4},
+                            {"from": 4, "to": 0},
+                            {"from": 4, "to": 5},
+                            {"from": 5, "to": 3},
+                            {"from": 0, "to": 6},
+                            {"from": 6, "to": 7},
+                            {"from": 7, "to": 1}
+                        ]
+                    };
+                }
+            }
+
+            // Draw the dots and lines on the canvas
+            function drawOnCanvas() {
+                log("Drawing on canvas...");
+                if (!drawingData) {
+                    log("No drawing data available");
+                    return;
+                }
+
+                // Clear the canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw a visible border
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+                // Draw dots
+                drawDots();
+
+                // Draw lines
+                drawLines();
+
+                log("Drawing complete");
+            }
+
+            // Draw dots from the data
+            function drawDots() {
+                if (!drawingData || !drawingData.dots) return;
+
+                log("Drawing dots...");
+                const dotRadius = 5;
+                ctx.fillStyle = '#333';
+
+                drawingData.dots.forEach((dot, index) => {
+                    // Scale dot positions to fit canvas size
+                    const x = (dot.x / 400) * canvas.width;
+                    const y = (dot.y / 400) * canvas.height;
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Draw dot index for debugging
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = '8px Arial';
+                    ctx.fillText(index.toString(), x, y);
+                    ctx.fillStyle = '#333';
+                });
+            }
+
+            // Draw lines from the data
+            function drawLines() {
+                if (!drawingData || !drawingData.sequence) return;
+
+                log("Drawing lines...");
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+
+                drawingData.sequence.forEach(line => {
+                    const from = drawingData.dots[line.from];
+                    const to = drawingData.dots[line.to];
+
+                    // Scale line positions to fit canvas size
+                    const fromX = (from.x / 400) * canvas.width;
+                    const fromY = (from.y / 400) * canvas.height;
+                    const toX = (to.x / 400) * canvas.width;
+                    const toY = (to.y / 400) * canvas.height;
+
+                    ctx.beginPath();
+                    ctx.moveTo(fromX, fromY);
+                    ctx.lineTo(toX, toY);
+                    ctx.stroke();
+                });
+            }
+
+            // Animate drawing of lines
+            function animateDrawing() {
+                log("Animating drawing...");
+                if (!drawingData || !drawingData.sequence) {
+                    log("No sequence data available");
+                    return;
+                }
+
+                // Clear the canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw a visible border
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+                // Draw all dots first
+                drawDots();
+
+                // Setup for animation
+                let currentLine = 0;
+                const totalLines = drawingData.sequence.length;
+                const timePerLine = 300; // milliseconds per line
+
+                // Draw each line with a delay
+                function drawNextLine() {
+                    if (currentLine >= totalLines) {
+                        log("Animation complete");
+                        return;
+                    }
+
+                    const line = drawingData.sequence[currentLine];
+                    const from = drawingData.dots[line.from];
+                    const to = drawingData.dots[line.to];
+
+                    // Scale line positions to fit canvas size
+                    const fromX = (from.x / 400) * canvas.width;
+                    const fromY = (from.y / 400) * canvas.height;
+                    const toX = (to.x / 400) * canvas.width;
+                    const toY = (to.y / 400) * canvas.height;
+
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(fromX, fromY);
+                    ctx.lineTo(toX, toY);
+                    ctx.stroke();
+
+                    currentLine++;
+                    log(`Drawing line ${currentLine} of ${totalLines}`);
+
+                    // Continue animation
+                    setTimeout(drawNextLine, timePerLine);
+                }
+
+                // Start the animation
+                drawNextLine();
+            }
+
+            // Button click handlers
+            drawButton.addEventListener('click', animateDrawing);
+            clearButton.addEventListener('click', function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.width);
+                log("Canvas cleared");
+            });
+
+            // Initialize and load data
+            initCanvas();
+            loadData().then(() => {
+                log("Ready to draw");
+            });
+
+            // Listen for window resize and reinitialize canvas
+            window.addEventListener('resize', function() {
+                initCanvas();
+                drawOnCanvas();
+            });
+
+            // Force a repaint on visibility change
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    log("Page visible again, refreshing canvas");
+                    setTimeout(function() {
+                        initCanvas();
+                        drawOnCanvas();
+                    }, 100);
+                }
+            });
+
+            // Add touch handler for mobile devices
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault(); // Prevent scrolling
+                log("Canvas touched - redrawing");
+                drawOnCanvas();
+            }, { passive: false });
+        });
+    </script>
+</body>
+</html>
