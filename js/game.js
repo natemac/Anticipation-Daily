@@ -58,16 +58,22 @@ function initGame() {
 
 // Initialize the canvas with correct dimensions
 function setupCanvas() {
-    // Get and set up the context WITH alpha (remove the alpha: false)
-    ctx = canvas.getContext('2d');
+    log("Setting up canvas...");
+
+    // Get and set up the context with alpha disabled for better performance
+    ctx = canvas.getContext('2d', { alpha: false });
 
     // Set initial dimensions
     resizeCanvas();
 
-    // Fill with white immediately
-    clearCanvas();
+    // Draw a border to ensure the canvas is visible initially
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+    log("Canvas setup complete: " + canvas.width + " x " + canvas.height);
 }
 
 // Resize canvas to match container
