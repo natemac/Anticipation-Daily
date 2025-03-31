@@ -193,6 +193,19 @@ function showMainMenu() {
 function showGameScreen() {
     mainScreen.style.display = 'none';
     gameScreen.style.display = 'flex';
+
+    // Force a redraw after the game screen becomes visible
+    setTimeout(() => {
+        if (canvas) {
+            log("Forcing canvas redraw after screen transition");
+            clearCanvas();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+        }
+    }, 10);
 }
 
 // Initialize the menu when the DOM is loaded

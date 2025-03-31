@@ -60,18 +60,16 @@ function initGame() {
 function setupCanvas() {
     log("Setting up canvas...");
 
-    // Get and set up the context with alpha disabled for better performance
-    ctx = canvas.getContext('2d', { alpha: false });
+    // Remove alpha: false to allow transparency
+    ctx = canvas.getContext('2d');
 
     // Set initial dimensions
     resizeCanvas();
 
-    // Draw a border to ensure the canvas is visible initially
+    // Draw initial white background
+    clearCanvas();
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#ccc';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
     log("Canvas setup complete: " + canvas.width + " x " + canvas.height);
 }
@@ -211,15 +209,16 @@ function startDrawing() {
     if (gameState.elapsedTimer) clearInterval(gameState.elapsedTimer);
     if (gameState.guessTimer) clearInterval(gameState.guessTimer);
 
-    // Clear the canvas and prepare for drawing
+    // Ensure canvas is properly cleared and white
     clearCanvas();
-
-    // Set white background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Start the timer counting up
-    startElapsedTimer();
+    // Force a redraw to ensure the canvas is white
+    requestAnimationFrame(() => {
+        // Continue with the rest of the function...
+        // Start the timer counting up
+        startElapsedTimer();
 
     // Immediately draw all dots if in easy mode
     if (gameState.difficulty === 'easy') {
