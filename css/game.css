@@ -241,6 +241,7 @@ input:checked + .slider:before {
     position: relative;
     border-radius: 8px;
     overflow: hidden;
+    transform: translateZ(0); /* Force hardware acceleration */
 }
 
 #gameCanvas {
@@ -250,6 +251,7 @@ input:checked + .slider:before {
     border-radius: 8px;
     background-color: white;
     transition: background-color 0.3s;
+    display: block; /* Ensure it's always visible */
 }
 
 #gameCanvas.incorrect {
@@ -295,9 +297,9 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    z-index: 20; /* Ensure controls are above canvas */
 }
 
-/* Update the button styling for the timer */
 #beginButton {
     position: relative;
     padding: 15px 0;
