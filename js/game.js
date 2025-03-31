@@ -376,10 +376,10 @@ function startGuessTimer() {
     state.guessTimeRemaining = 10;
     state.guessTimerActive = true;
 
-    // Show the timer overlay and set initial width
-    buttonTimer.style.opacity = '1';
-    buttonTimer.style.width = '100%';
-    
+    // Reset and show the timer overlay
+    buttonTimer.style.width = '0%';
+    buttonTimer.classList.add('active');
+
     // Clear any existing timer
     if (state.guessTimer) {
         clearInterval(state.guessTimer);
@@ -389,8 +389,9 @@ function startGuessTimer() {
     state.guessTimer = setInterval(() => {
         state.guessTimeRemaining -= 0.1; // Decrease by 0.1 seconds for smoother transition
 
-        // Update the button timer width
-        updateGuessButtonGradient();
+        // Update the button timer width (grows from right to left)
+        const percentage = 100 - ((state.guessTimeRemaining / 10) * 100);
+        buttonTimer.style.width = `${percentage}%`;
 
         // If time runs out
         if (state.guessTimeRemaining <= 0) {
@@ -398,7 +399,8 @@ function startGuessTimer() {
             state.guessTimerActive = false;
 
             // Hide the timer overlay
-            buttonTimer.style.opacity = '0';
+            buttonTimer.classList.remove('active');
+            buttonTimer.style.width = '0%';
 
             // Exit guess mode and continue gameplay
             exitGuessMode();
@@ -412,13 +414,21 @@ function startGuessTimer() {
     }, 100); // Update every 100ms for smooth animation
 }
 
+
 // Function to update button gradient based on remaining time
 function updateGuessButtonGradient() {
     const percentage = (state.guessTimeRemaining / 10) * 100;
     buttonTimer.style.width = `${percentage}%`;
 }
 
-function enterGuessMode() {
+ffunction enterGuessMode() {
+    // If already in guess mode, reset the timer instead of toggling
+    if (state.guessMode) {
+        startGuessTimer(); // Restart the timer
+        guessInput.focus(); // Re-focus the input
+        return;
+    }
+
     // Pause animation and timer
     state.guessMode = true;
 
@@ -438,6 +448,7 @@ function enterGuessMode() {
     }
 }
 
+// Updated exitGuessMode function
 function exitGuessMode() {
     // Resume animation and timer
     state.guessMode = false;
@@ -448,14 +459,16 @@ function exitGuessMode() {
         state.guessTimerActive = false;
     }
 
-    // Hide the timer overlay
-    buttonTimer.style.opacity = '0';
+    // Hide the timer overlay and reset it
+    buttonTimer.classList.remove('active');
+    buttonTimer.style.width = '0%';
 
     // Hide input field
     guessInput.style.display = 'none';
     guessInput.blur();
 }
 
+// Make sure this is updated in the handleLetterInput function too
 function handleLetterInput(input) {
     const currentWord = state.drawingData.name;
     const upperInput = input.toUpperCase();
@@ -512,8 +525,9 @@ function handleLetterInput(input) {
             state.guessTimerActive = false;
         }
 
-        // Hide the timer overlay
-        buttonTimer.style.opacity = '0';
+        // Hide the timer overlay and reset it
+        buttonTimer.classList.remove('active');
+        buttonTimer.style.width = '0%';
 
         setTimeout(() => {
             endGame(true);

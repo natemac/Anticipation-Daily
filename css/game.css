@@ -297,8 +297,24 @@ input:checked + .slider:before {
     gap: 10px;
 }
 
+/* Update the button styling for the timer */
+#beginButton {
+    position: relative;
+    padding: 15px 0;
+    width: 100%;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    transition: transform 0.2s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Important for the timer overlay */
+}
+
 #beginButton:hover {
-    background-color: #3d8b40;
     transform: translateY(-2px);
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
 }
@@ -312,19 +328,26 @@ input:checked + .slider:before {
 #buttonTimer {
     position: absolute;
     top: 0;
-    left: 0;
+    right: 0; /* Start from right side */
     height: 100%;
-    width: 100%;
-    background: linear-gradient(to right, #4CAF50, #cccccc);
-    opacity: 0;
+    width: 0%; /* Start at 0% width */
+    background-color: #cccccc; /* Gray overlay */
+    opacity: 0; /* Hidden by default */
+    z-index: 1; /* Behind the text */
     transition: opacity 0.3s;
-    z-index: -1; /* Behind the text */
+    pointer-events: none; /* Don't block clicks */
 }
 
 /* Make sure the button text sits on top of the timer */
 #beginButton span {
     position: relative;
     z-index: 2;
+    pointer-events: none; /* Ensures clicks go to the button */
+}
+
+/* Active timer state */
+#buttonTimer.active {
+    opacity: 1;
 }
 
 #guessInput {
@@ -409,6 +432,11 @@ input:checked + .slider:before {
 
     input:checked + .slider:before {
         transform: translateX(36px);
+    }
+
+    /* Ensure larger touch targets on mobile */
+    .slider-container {
+        padding: 10px 0;
     }
 
     .timer-display {
