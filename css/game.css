@@ -97,3 +97,91 @@
 .result-overlay.visible {
     opacity: 1;
 }
+
+.difficulty-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 10px 0 20px 0;
+}
+
+.difficulty-title {
+    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.difficulty-label {
+    font-weight: bold;
+    font-size: 16px;
+    transition: opacity 0.3s, font-weight 0.3s;
+    user-select: none;
+    cursor: pointer;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+    margin: 0 10px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+.builder-button {
+    display: block;
+    width: 100%;
+    padding: 15px 20px;
+    margin: 10px 0 20px 0;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    color: white;
+    background-image: linear-gradient(to bottom, rgba(33, 150, 243, 0.5), rgba(33, 150, 243, 1));
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
