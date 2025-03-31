@@ -57,17 +57,19 @@ function initGame() {
     log("Game initialized");
 }
 
-// Initialize the canvas with correct dimensions
+// Initialize the canvas with correct dimensions - use approach from test file
 function setupCanvas() {
-    log("Setting up canvas...");
+    log("Setting up canvas with test approach...");
 
-    // Get and set up the context
-    ctx = canvas.getContext('2d');
+    // Get and set up the context with alpha disabled for better performance
+    ctx = canvas.getContext('2d', { alpha: false });
 
     // Set initial dimensions
     resizeCanvas();
 
     // Draw a border to ensure the canvas is visible initially
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = '#ccc';
     ctx.lineWidth = 1;
     ctx.strokeRect(0, 0, canvas.width, canvas.height);
@@ -181,7 +183,7 @@ function startGameWithData(color, category, data) {
     guessInput.style.display = 'none';
     wrongMessage.classList.remove('visible');
     timerDisplay.textContent = '00:00';
-    beginButton.querySelector('span').textContent = 'Begin - 9:02am';
+    beginButton.querySelector('span').textContent = 'Begin - 9:13am';
     canvas.classList.remove('incorrect');
     buttonTimer.classList.remove('active');
     buttonTimer.style.width = '0%';
@@ -190,14 +192,16 @@ function startGameWithData(color, category, data) {
     clearCanvas();
 
     // Draw a visible border to ensure canvas is active
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = '#ccc';
     ctx.lineWidth = 1;
     ctx.strokeRect(0, 0, canvas.width, canvas.height);
 }
 
-// Start the drawing animation
+// Start the drawing animation - use approach from test file
 function startDrawing() {
-    log("Starting drawing animation");
+    log("Starting drawing animation with test approach");
 
     // Change to game started state
     gameState.gameStarted = true;
@@ -209,14 +213,15 @@ function startDrawing() {
     if (gameState.elapsedTimer) clearInterval(gameState.elapsedTimer);
     if (gameState.guessTimer) clearInterval(gameState.guessTimer);
 
-    // Debug: Log the drawing data
-    log("Drawing data loaded and ready");
+    // Clear the canvas and prepare for drawing
+    clearCanvas();
+
+    // Set white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Start the timer counting up
     startElapsedTimer();
-
-    // Clear the canvas and prepare for drawing
-    clearCanvas();
 
     // Immediately draw all dots if in easy mode
     if (gameState.difficulty === 'easy') {
@@ -224,29 +229,44 @@ function startDrawing() {
         drawWordSpaces();
     }
 
-    // Set up animation, similar to our test file
+    // Set up animation similar to our test file
     const totalSequenceLength = gameState.drawingData.sequence.length;
-    const timePerLine = 10000 / totalSequenceLength; // Complete drawing in 10 seconds
+    const timePerLine = 300; // Match test file - 300ms per line for clearer animation
 
     log(`Animation setup: ${totalSequenceLength} lines, ${timePerLine}ms per line`);
 
-    // Start drawing animation
-    gameState.animationTimer = setInterval(() => {
-        if (!gameState.guessMode && gameState.gameStarted) {
-            gameState.drawingProgress++;
+    // Start with no lines drawn
+    gameState.drawingProgress = 0;
+    redrawCanvas();
 
-            // Redraw canvas with updated progress
-            redrawCanvas();
+    // Use direct animation approach from test file
+    let currentLine = 0;
 
-            log(`Drawing progress: ${gameState.drawingProgress}/${totalSequenceLength}`);
-
-            // When drawing is complete, stop the animation timer
-            if (gameState.drawingProgress >= totalSequenceLength) {
-                log("Drawing animation complete");
-                clearInterval(gameState.animationTimer);
-            }
+    function drawNextLine() {
+        if (gameState.guessMode || !gameState.gameStarted || currentLine >= totalSequenceLength) {
+            log("Animation complete or interrupted");
+            return;
         }
-    }, timePerLine);
+
+        // Increment progress
+        gameState.drawingProgress = currentLine + 1;
+
+        // Redraw canvas with updated progress
+        redrawCanvas();
+
+        log(`Drawing line ${currentLine + 1} of ${totalSequenceLength}`);
+
+        // Move to next line
+        currentLine++;
+
+        // Continue animation if not paused
+        if (!gameState.guessMode && gameState.gameStarted) {
+            setTimeout(drawNextLine, timePerLine);
+        }
+    }
+
+    // Start the animation immediately
+    drawNextLine();
 }
 
 // Start the elapsed timer
@@ -446,7 +466,7 @@ function handleLetterInput(input) {
     redrawCanvas();
 }
 
-// Redraw the canvas
+// Redraw canvas - use approach from test file
 function redrawCanvas() {
     // Clear the canvas
     clearCanvas();
@@ -455,17 +475,18 @@ function redrawCanvas() {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw a faint border
-    ctx.strokeStyle = '#eeeeee';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
+    // Draw all dots first if in easy mode
     if (gameState.difficulty === 'easy') {
         drawDots();
-        drawWordSpaces();
     }
 
+    // Then draw lines
     drawLines();
+
+    // Finally draw word spaces in easy mode
+    if (gameState.difficulty === 'easy') {
+        drawWordSpaces();
+    }
 
     log("Canvas redrawn");
 }
@@ -510,33 +531,41 @@ function clearCanvas() {
 
 // Draw the dots
 function drawDots() {
-    if (!gameState.drawingData || !gameState.drawingData.dots) return;
+    if (!gameState.drawingData || !gameState.drawingData.dots) {
+        log("No dot data to draw");
+        return;
+    }
 
     const dotRadius = 5;
-    ctx.fillStyle = '#333';
 
     gameState.drawingData.dots.forEach((dot, index) => {
-        // Scale dot positions to fit canvas size
-        const x = (dot.x / 400) * canvas.width;
-        const y = (dot.y / 400) * canvas.height;
+        if (!dot) return;
 
+        // Scale dot positions to fit canvas size
+        const x = Math.round((dot.x / 400) * canvas.width);
+        const y = Math.round((dot.y / 400) * canvas.height);
+
+        // Draw dot
+        ctx.fillStyle = '#333';
         ctx.beginPath();
         ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw dot index for debugging
+        // Draw dot index
         ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.font = '8px Arial';
         ctx.fillText(index.toString(), x, y);
-        ctx.fillStyle = '#333';
     });
 }
 
 // Draw the lines
 function drawLines() {
-    if (!gameState.drawingData || !gameState.drawingData.sequence) return;
+    if (!gameState.drawingData || !gameState.drawingData.sequence) {
+        log("No line data to draw");
+        return;
+    }
 
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 3;
@@ -552,10 +581,10 @@ function drawLines() {
             if (!from || !to) continue;
 
             // Scale line positions to fit canvas size
-            const fromX = (from.x / 400) * canvas.width;
-            const fromY = (from.y / 400) * canvas.height;
-            const toX = (to.x / 400) * canvas.width;
-            const toY = (to.y / 400) * canvas.height;
+            const fromX = Math.round((from.x / 400) * canvas.width);
+            const fromY = Math.round((from.y / 400) * canvas.height);
+            const toX = Math.round((to.x / 400) * canvas.width);
+            const toY = Math.round((to.y / 400) * canvas.height);
 
             ctx.beginPath();
             ctx.moveTo(fromX, fromY);
