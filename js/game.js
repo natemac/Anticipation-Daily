@@ -1,15 +1,8 @@
 // Game state and variables
-const state = {
+const gameState = {
     difficulty: 'easy',
     currentColor: null,
     currentCategory: null,
-    completedCategories: 0,
-    puzzles: {
-        yellow: { completed: false, guesses: 0, time: 0 },
-        green: { completed: false, guesses: 0, time: 0 },
-        blue: { completed: false, guesses: 0, time: 0 },
-        red: { completed: false, guesses: 0, time: 0 }
-    },
     drawingData: null,
     drawingProgress: 0,
     animationTimer: null,
@@ -21,15 +14,14 @@ const state = {
     guessMode: false,
     currentInput: '',
     correctLetters: [],
-    // New guess timer properties
+    // Guess timer properties
     guessTimeRemaining: 10,
     guessTimerActive: false,
     guessTimer: null
 };
 
 // DOM elements
-let mainScreen, gameScreen, colorSquares, difficultyToggle, backButton, canvas,
-    ctx, timerDisplay, guessInput, beginButton, wrongMessage, shareButton, buttonTimer;
+let canvas, ctx, timerDisplay, guessInput, beginButton, wrongMessage, backButton, buttonTimer;
 
 // Simple logging function for debugging
 function log(message) {
@@ -41,27 +33,28 @@ function initGame() {
     log("Initializing game...");
 
     // Get DOM elements
-    mainScreen = document.querySelector('.main-screen');
-    gameScreen = document.querySelector('.game-screen');
-    colorSquares = document.querySelectorAll('.color-square');
-    difficultyToggle = document.getElementById('difficultyToggle');
-    backButton = document.getElementById('backButton');
     canvas = document.getElementById('gameCanvas');
     timerDisplay = document.getElementById('timerDisplay');
     guessInput = document.getElementById('guessInput');
     beginButton = document.getElementById('beginButton');
     wrongMessage = document.getElementById('wrongMessage');
-    shareButton = document.getElementById('shareButton');
+    backButton = document.getElementById('backButton');
     buttonTimer = document.getElementById('buttonTimer');
 
-    // Set up canvas - using approach from test file
+    // Set up canvas
     setupCanvas();
 
     // Set event listeners
-    setupEventListeners();
+    setupGameEventListeners();
 
-    // Initialize difficulty toggle
-    initDifficultyToggle();
+    // Get difficulty setting from localStorage or menu state
+    if (localStorage.getItem('difficultyMode') === 'hard') {
+        gameState.difficulty = 'hard';
+    } else {
+        gameState.difficulty = 'easy';
+    }
+
+    log("Game initialized");
 }
 
 // Initialize the canvas with correct dimensions
@@ -89,13 +82,13 @@ function resizeCanvas() {
     canvas.height = container.offsetHeight;
 
     // Force a redraw if the game is active
-    if (state.gameStarted) {
+    if (gameState.gameStarted) {
         redrawCanvas();
     }
 }
 
-// Set up event listeners
-function setupEventListeners() {
+// Set up game-specific event listeners
+function setupGameEventListeners() {
     // Window resize event
     window.addEventListener('resize', () => {
         resizeCanvas();
@@ -103,29 +96,10 @@ function setupEventListeners() {
 
     // Add visibility change event
     document.addEventListener('visibilitychange', function() {
-        if (!document.hidden && state.gameStarted) {
+        if (!document.hidden && gameState.gameStarted) {
             log("Page became visible, redrawing canvas");
             setTimeout(redrawCanvas, 100);
         }
-    });
-
-    // Difficulty toggle
-    difficultyToggle.addEventListener('change', () => {
-        state.difficulty = difficultyToggle.checked ? 'hard' : 'easy';
-        updateDifficultyUI(difficultyToggle.checked);
-    });
-
-    // Color squares click events
-    colorSquares.forEach(square => {
-        square.addEventListener('click', () => {
-            const color = square.dataset.color;
-            const category = square.dataset.category;
-
-            // Don't allow replaying completed puzzles
-            if (state.puzzles[color].completed) return;
-
-            startGame(color, category);
-        });
     });
 
     // Back button
@@ -135,7 +109,7 @@ function setupEventListeners() {
 
     // Begin/Guess button
     beginButton.addEventListener('click', () => {
-        if (!state.gameStarted) {
+        if (!gameState.gameStarted) {
             startDrawing();
         } else {
             enterGuessMode();
@@ -144,14 +118,9 @@ function setupEventListeners() {
 
     // Guess input
     guessInput.addEventListener('input', (e) => {
-        if (state.guessMode) {
+        if (gameState.guessMode) {
             handleLetterInput(e.target.value);
         }
-    });
-
-    // Share button
-    shareButton.addEventListener('click', () => {
-        shareResults();
     });
 
     // Add touch event to canvas to force rendering
@@ -161,62 +130,13 @@ function setupEventListeners() {
         log("Canvas touch detected");
 
         // Force redraw if the game has started
-        if (state.gameStarted) {
+        if (gameState.gameStarted) {
             redrawCanvas();
         }
     }, { passive: false });
 }
 
-// Difficulty toggle functionality
-function initDifficultyToggle() {
-    const easyLabel = document.getElementById('easyLabel');
-    const hardLabel = document.getElementById('hardLabel');
-
-    // Set initial state based on stored preference (if any)
-    const storedDifficulty = localStorage.getItem('difficultyMode');
-    if (storedDifficulty === 'hard') {
-        difficultyToggle.checked = true;
-        state.difficulty = 'hard';
-        updateDifficultyUI(true);
-    } else {
-        difficultyToggle.checked = false;
-        state.difficulty = 'easy';
-        updateDifficultyUI(false);
-    }
-
-    // Also add direct click handlers to labels for better mobile experience
-    easyLabel.addEventListener('click', function() {
-        difficultyToggle.checked = false;
-        difficultyToggle.dispatchEvent(new Event('change'));
-    });
-
-    hardLabel.addEventListener('click', function() {
-        difficultyToggle.checked = true;
-        difficultyToggle.dispatchEvent(new Event('change'));
-    });
-}
-
-// Update difficulty UI
-function updateDifficultyUI(isHard) {
-    const easyLabel = document.getElementById('easyLabel');
-    const hardLabel = document.getElementById('hardLabel');
-
-    if (isHard) {
-        // Hard mode selected
-        easyLabel.style.opacity = '0.5';
-        easyLabel.style.fontWeight = 'normal';
-        hardLabel.style.opacity = '1';
-        hardLabel.style.fontWeight = 'bold';
-    } else {
-        // Easy mode selected
-        hardLabel.style.opacity = '0.5';
-        hardLabel.style.fontWeight = 'normal';
-        easyLabel.style.opacity = '1';
-        easyLabel.style.fontWeight = 'bold';
-    }
-}
-
-// Game Functions
+// Start a new game with the selected category
 async function startGame(color, category) {
     log(`Starting game: ${category} (${color})`);
     try {
@@ -234,23 +154,24 @@ async function startGame(color, category) {
 // Function to start game with provided data
 function startGameWithData(color, category, data) {
     log("Starting game with data");
-    state.currentColor = color;
-    state.currentCategory = category;
-    state.drawingData = data;
-    state.drawingProgress = 0;
-    state.gameStarted = false;
-    state.timerActive = false;
-    state.elapsedTime = 0;
-    state.elapsedTimeHundredths = 0;
-    state.guessMode = false;
-    state.currentInput = '';
-    state.correctLetters = Array(data.name.length).fill(null);
-    state.guessTimeRemaining = 10;
-    state.guessTimerActive = false;
+    gameState.currentColor = color;
+    gameState.currentCategory = category;
+    gameState.drawingData = data;
+    gameState.drawingProgress = 0;
+    gameState.gameStarted = false;
+    gameState.timerActive = false;
+    gameState.elapsedTime = 0;
+    gameState.elapsedTimeHundredths = 0;
+    gameState.guessMode = false;
+    gameState.currentInput = '';
+    gameState.correctLetters = Array(data.name.length).fill(null);
+    gameState.guessTimeRemaining = 10;
+    gameState.guessTimerActive = false;
 
-    // Switch to game screen
-    mainScreen.style.display = 'none';
-    gameScreen.style.display = 'flex';
+    // Switch to game screen using the menu function
+    if (typeof showGameScreen === 'function') {
+        showGameScreen();
+    }
 
     // Set background color
     document.body.style.backgroundColor = `var(--${color}-color)`;
@@ -260,7 +181,7 @@ function startGameWithData(color, category, data) {
     guessInput.style.display = 'none';
     wrongMessage.classList.remove('visible');
     timerDisplay.textContent = '00:00';
-    beginButton.querySelector('span').textContent = 'Begin';
+    beginButton.querySelector('span').textContent = 'Begin - 9:02am';
     canvas.classList.remove('incorrect');
     buttonTimer.classList.remove('active');
     buttonTimer.style.width = '0%';
@@ -274,18 +195,19 @@ function startGameWithData(color, category, data) {
     ctx.strokeRect(0, 0, canvas.width, canvas.height);
 }
 
+// Start the drawing animation
 function startDrawing() {
     log("Starting drawing animation");
 
     // Change to game started state
-    state.gameStarted = true;
-    state.timerActive = true;
-    beginButton.querySelector('span').textContent = 'Guess - 8:53pm';
+    gameState.gameStarted = true;
+    gameState.timerActive = true;
+    beginButton.querySelector('span').textContent = 'Guess';
 
     // Clear any existing timers
-    if (state.animationTimer) clearInterval(state.animationTimer);
-    if (state.elapsedTimer) clearInterval(state.elapsedTimer);
-    if (state.guessTimer) clearInterval(state.guessTimer);
+    if (gameState.animationTimer) clearInterval(gameState.animationTimer);
+    if (gameState.elapsedTimer) clearInterval(gameState.elapsedTimer);
+    if (gameState.guessTimer) clearInterval(gameState.guessTimer);
 
     // Debug: Log the drawing data
     log("Drawing data loaded and ready");
@@ -297,49 +219,49 @@ function startDrawing() {
     clearCanvas();
 
     // Immediately draw all dots if in easy mode
-    if (state.difficulty === 'easy') {
+    if (gameState.difficulty === 'easy') {
         drawDots();
         drawWordSpaces();
     }
 
     // Set up animation, similar to our test file
-    const totalSequenceLength = state.drawingData.sequence.length;
+    const totalSequenceLength = gameState.drawingData.sequence.length;
     const timePerLine = 10000 / totalSequenceLength; // Complete drawing in 10 seconds
 
     log(`Animation setup: ${totalSequenceLength} lines, ${timePerLine}ms per line`);
 
     // Start drawing animation
-    let currentLine = 0;
-    state.animationTimer = setInterval(() => {
-        if (!state.guessMode && state.gameStarted) {
-            state.drawingProgress++;
+    gameState.animationTimer = setInterval(() => {
+        if (!gameState.guessMode && gameState.gameStarted) {
+            gameState.drawingProgress++;
 
             // Redraw canvas with updated progress
             redrawCanvas();
 
-            log(`Drawing progress: ${state.drawingProgress}/${totalSequenceLength}`);
+            log(`Drawing progress: ${gameState.drawingProgress}/${totalSequenceLength}`);
 
             // When drawing is complete, stop the animation timer
-            if (state.drawingProgress >= totalSequenceLength) {
+            if (gameState.drawingProgress >= totalSequenceLength) {
                 log("Drawing animation complete");
-                clearInterval(state.animationTimer);
+                clearInterval(gameState.animationTimer);
             }
         }
     }, timePerLine);
 }
 
+// Start the elapsed timer
 function startElapsedTimer() {
     // Clear any existing timer
-    if (state.elapsedTimer) clearInterval(state.elapsedTimer);
+    if (gameState.elapsedTimer) clearInterval(gameState.elapsedTimer);
 
     // Update timer every 10ms for hundredths of seconds precision
-    state.elapsedTimer = setInterval(() => {
-        if (!state.guessMode && state.timerActive) {
-            state.elapsedTimeHundredths += 1;
+    gameState.elapsedTimer = setInterval(() => {
+        if (!gameState.guessMode && gameState.timerActive) {
+            gameState.elapsedTimeHundredths += 1;
 
-            if (state.elapsedTimeHundredths >= 100) {
-                state.elapsedTime += 1;
-                state.elapsedTimeHundredths = 0;
+            if (gameState.elapsedTimeHundredths >= 100) {
+                gameState.elapsedTime += 1;
+                gameState.elapsedTimeHundredths = 0;
             }
 
             // Format and display timer
@@ -348,37 +270,38 @@ function startElapsedTimer() {
     }, 10);
 }
 
+// Update the timer display
 function updateTimerDisplay() {
-    const seconds = String(state.elapsedTime).padStart(2, '0');
-    const hundredths = String(state.elapsedTimeHundredths).padStart(2, '0');
+    const seconds = String(gameState.elapsedTime).padStart(2, '0');
+    const hundredths = String(gameState.elapsedTimeHundredths).padStart(2, '0');
     timerDisplay.textContent = `${seconds}:${hundredths}`;
 }
 
 // Function for the guess timer
 function startGuessTimer() {
     // Reset the guess timer
-    state.guessTimeRemaining = 10;
-    state.guessTimerActive = true;
+    gameState.guessTimeRemaining = 10;
+    gameState.guessTimerActive = true;
 
     // Reset and show the timer overlay
     buttonTimer.style.width = '0%';
     buttonTimer.classList.add('active');
 
     // Clear any existing timer
-    if (state.guessTimer) clearInterval(state.guessTimer);
+    if (gameState.guessTimer) clearInterval(gameState.guessTimer);
 
     // Start the timer
-    state.guessTimer = setInterval(() => {
-        state.guessTimeRemaining -= 0.1; // Decrease by 0.1 seconds for smoother transition
+    gameState.guessTimer = setInterval(() => {
+        gameState.guessTimeRemaining -= 0.1; // Decrease by 0.1 seconds for smoother transition
 
         // Update the button timer width (grows from right to left)
-        const percentage = 100 - ((state.guessTimeRemaining / 10) * 100);
+        const percentage = 100 - ((gameState.guessTimeRemaining / 10) * 100);
         buttonTimer.style.width = `${percentage}%`;
 
         // If time runs out
-        if (state.guessTimeRemaining <= 0) {
-            clearInterval(state.guessTimer);
-            state.guessTimerActive = false;
+        if (gameState.guessTimeRemaining <= 0) {
+            clearInterval(gameState.guessTimer);
+            gameState.guessTimerActive = false;
 
             // Hide the timer overlay
             buttonTimer.classList.remove('active');
@@ -396,18 +319,19 @@ function startGuessTimer() {
     }, 100); // Update every 100ms for smooth animation
 }
 
+// Enter guess mode
 function enterGuessMode() {
     log("Entering guess mode");
 
     // If already in guess mode, reset the timer instead of toggling
-    if (state.guessMode) {
+    if (gameState.guessMode) {
         startGuessTimer(); // Restart the timer
         guessInput.focus(); // Re-focus the input
         return;
     }
 
     // Pause animation and timer
-    state.guessMode = true;
+    gameState.guessMode = true;
 
     // Start the guess timer
     startGuessTimer();
@@ -415,7 +339,7 @@ function enterGuessMode() {
     // Show input field
     guessInput.style.display = 'block';
     guessInput.focus();
-    guessInput.value = state.currentInput;
+    guessInput.value = gameState.currentInput;
 
     // Focus and show keyboard on mobile
     if (window.innerWidth <= 768) {
@@ -425,15 +349,16 @@ function enterGuessMode() {
     }
 }
 
+// Exit guess mode
 function exitGuessMode() {
     log("Exiting guess mode");
 
     // Resume animation and timer
-    state.guessMode = false;
+    gameState.guessMode = false;
 
     // Stop the guess timer
-    if (state.guessTimer) clearInterval(state.guessTimer);
-    state.guessTimerActive = false;
+    if (gameState.guessTimer) clearInterval(gameState.guessTimer);
+    gameState.guessTimerActive = false;
 
     // Hide the timer overlay and reset it
     buttonTimer.classList.remove('active');
@@ -444,10 +369,11 @@ function exitGuessMode() {
     guessInput.blur();
 }
 
+// Handle user input when guessing
 function handleLetterInput(input) {
-    const currentWord = state.drawingData.name;
+    const currentWord = gameState.drawingData.name;
     const upperInput = input.toUpperCase();
-    state.currentInput = upperInput;
+    gameState.currentInput = upperInput;
 
     // Compare input with answer, tracking correct letters
     let allCorrect = true;
@@ -458,7 +384,7 @@ function handleLetterInput(input) {
         if (i < currentWord.length) {
             if (upperInput[i] === currentWord[i]) {
                 // Mark this letter as correct
-                state.correctLetters[i] = upperInput[i];
+                gameState.correctLetters[i] = upperInput[i];
             } else {
                 // Not a correct letter
                 allCorrect = false;
@@ -487,10 +413,10 @@ function handleLetterInput(input) {
 
         // Reset input to show only correct letters collected so far
         let correctInput = '';
-        for (let i = 0; i < state.correctLetters.length; i++) {
-            correctInput += state.correctLetters[i] ? state.correctLetters[i] : '';
+        for (let i = 0; i < gameState.correctLetters.length; i++) {
+            correctInput += gameState.correctLetters[i] ? gameState.correctLetters[i] : '';
         }
-        state.currentInput = correctInput;
+        gameState.currentInput = correctInput;
         guessInput.value = correctInput;
     }
 
@@ -499,8 +425,8 @@ function handleLetterInput(input) {
         log("Correct answer!");
 
         // Stop the guess timer
-        if (state.guessTimer) clearInterval(state.guessTimer);
-        state.guessTimerActive = false;
+        if (gameState.guessTimer) clearInterval(gameState.guessTimer);
+        gameState.guessTimerActive = false;
 
         // Hide the timer overlay and reset it
         buttonTimer.classList.remove('active');
@@ -520,6 +446,7 @@ function handleLetterInput(input) {
     redrawCanvas();
 }
 
+// Redraw the canvas
 function redrawCanvas() {
     // Clear the canvas
     clearCanvas();
@@ -533,7 +460,7 @@ function redrawCanvas() {
     ctx.lineWidth = 1;
     ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
-    if (state.difficulty === 'easy') {
+    if (gameState.difficulty === 'easy') {
         drawDots();
         drawWordSpaces();
     }
@@ -543,86 +470,37 @@ function redrawCanvas() {
     log("Canvas redrawn");
 }
 
+// End the current game
 function endGame(success) {
     log("Ending game, success:", success);
 
     // Clear all timers
-    clearInterval(state.animationTimer);
-    clearInterval(state.elapsedTimer);
-    clearInterval(state.guessTimer);
+    clearInterval(gameState.animationTimer);
+    clearInterval(gameState.elapsedTimer);
+    clearInterval(gameState.guessTimer);
 
     // Hide the timer overlay and reset it
     buttonTimer.classList.remove('active');
     buttonTimer.style.width = '0%';
 
     // Reset state
-    state.gameStarted = false;
-    state.timerActive = false;
-    state.guessMode = false;
-    state.guessTimerActive = false;
+    gameState.gameStarted = false;
+    gameState.timerActive = false;
+    gameState.guessMode = false;
+    gameState.guessTimerActive = false;
 
-    // Update puzzle state
+    // Update puzzle state in menu if successful
     if (success) {
-        state.puzzles[state.currentColor].completed = true;
-        state.puzzles[state.currentColor].time = state.elapsedTime + (state.elapsedTimeHundredths / 100);
-
-        // Update result overlay
-        const resultOverlay = document.getElementById(`${state.currentColor}-result`);
-        resultOverlay.querySelector('.time-count').textContent = `Time: ${state.elapsedTime}.${String(state.elapsedTimeHundredths).padStart(2, '0')}s`;
-        resultOverlay.classList.add('visible');
-
-        state.completedCategories++;
-    }
-
-    // Show share button if all categories completed
-    if (state.completedCategories === 4) {
-        shareButton.style.display = 'block';
-    }
-
-    // Reset UI
-    mainScreen.style.display = 'flex';
-    gameScreen.style.display = 'none';
-    document.body.style.backgroundColor = '#f5f5f5';
-}
-
-function shareResults() {
-    let shareText = "Daily Anticipation Results:\n";
-
-    for (const color of ['yellow', 'green', 'blue', 'red']) {
-        const puzzle = state.puzzles[color];
-        const category = document.querySelector(`.color-square[data-color="${color}"]`).dataset.category;
-
-        if (puzzle.completed) {
-            shareText += `${category}: ✓ (${puzzle.time.toFixed(2)}s)\n`;
-        } else {
-            shareText += `${category}: ✗\n`;
+        const time = gameState.elapsedTime + (gameState.elapsedTimeHundredths / 100);
+        if (typeof updatePuzzleCompletion === 'function') {
+            updatePuzzleCompletion(gameState.currentColor, time);
         }
     }
 
-    // Try to use the Share API if available
-    if (navigator.share) {
-        navigator.share({
-            title: 'Daily Anticipation Results',
-            text: shareText
-        }).catch(err => {
-            console.error('Error sharing:', err);
-            fallbackShare(shareText);
-        });
-    } else {
-        fallbackShare(shareText);
+    // Switch to main menu
+    if (typeof showMainMenu === 'function') {
+        showMainMenu();
     }
-}
-
-function fallbackShare(text) {
-    // Copy to clipboard
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-
-    alert('Results copied to clipboard!');
 }
 
 // Drawing Functions
@@ -630,13 +508,14 @@ function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
+// Draw the dots
 function drawDots() {
-    if (!state.drawingData || !state.drawingData.dots) return;
+    if (!gameState.drawingData || !gameState.drawingData.dots) return;
 
     const dotRadius = 5;
     ctx.fillStyle = '#333';
 
-    state.drawingData.dots.forEach((dot, index) => {
+    gameState.drawingData.dots.forEach((dot, index) => {
         // Scale dot positions to fit canvas size
         const x = (dot.x / 400) * canvas.width;
         const y = (dot.y / 400) * canvas.height;
@@ -655,19 +534,20 @@ function drawDots() {
     });
 }
 
+// Draw the lines
 function drawLines() {
-    if (!state.drawingData || !state.drawingData.sequence) return;
+    if (!gameState.drawingData || !gameState.drawingData.sequence) return;
 
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 3;
 
-    for (let i = 0; i < state.drawingProgress; i++) {
-        if (i < state.drawingData.sequence.length) {
-            const line = state.drawingData.sequence[i];
+    for (let i = 0; i < gameState.drawingProgress; i++) {
+        if (i < gameState.drawingData.sequence.length) {
+            const line = gameState.drawingData.sequence[i];
             if (!line) continue;
 
-            const from = state.drawingData.dots[line.from];
-            const to = state.drawingData.dots[line.to];
+            const from = gameState.drawingData.dots[line.from];
+            const to = gameState.drawingData.dots[line.to];
 
             if (!from || !to) continue;
 
@@ -685,11 +565,12 @@ function drawLines() {
     }
 }
 
+// Draw the word spaces
 function drawWordSpaces() {
     // Only draw word spaces in easy mode
-    if (state.difficulty !== 'easy' || !state.drawingData) return;
+    if (gameState.difficulty !== 'easy' || !gameState.drawingData) return;
 
-    const answer = state.drawingData.name;
+    const answer = gameState.drawingData.name;
     const canvasWidth = canvas.width;
     const charWidth = canvasWidth / (answer.length + 2);
     const startX = (canvasWidth - (charWidth * answer.length)) / 2;
@@ -713,8 +594,8 @@ function drawWordSpaces() {
             ctx.stroke();
 
             // Draw correct letter if it exists
-            if (state.correctLetters[i]) {
-                ctx.fillText(state.correctLetters[i], x, y - 5);
+            if (gameState.correctLetters[i]) {
+                ctx.fillText(gameState.correctLetters[i], x, y - 5);
             }
         } else {
             // For spaces, just add a visible gap
@@ -725,7 +606,7 @@ function drawWordSpaces() {
     }
 }
 
-// Initialize the game when the DOM is loaded
+// Initialize the game functionality when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initGame);
 
 // Monitor window load to ensure everything is ready
