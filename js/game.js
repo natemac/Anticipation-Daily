@@ -222,60 +222,87 @@ function startDrawing() {
     // Clear the canvas and prepare for drawing
     clearCanvas();
 
-    // Set white background and force a redraw to ensure visibility
+    // Set white background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Force a redraw to ensure the canvas is white
-    requestAnimationFrame(() => {
-        // Start the timer counting up
-        startElapsedTimer();
+    // Start the timer counting up
+    startElapsedTimer();
 
-        // Immediately draw all dots if in easy mode
-        if (gameState.difficulty === 'easy') {
-            drawDots();
-            drawWordSpaces();
+    // Reset drawing progress
+    gameState.drawingProgress = 0;
+
+    // Immediately draw all dots if in easy mode
+    if (gameState.difficulty === 'easy') {
+        drawDots();
+        drawWordSpaces();
+    }
+
+    // Force a layout recalculation to ensure the canvas is rendered
+    canvas.style.display = 'none';
+    // This forces a reflow
+    void canvas.offsetHeight;
+    canvas.style.display = 'block';
+
+    // Set up animation
+    const totalSequenceLength = gameState.drawingData.sequence.length;
+    const timePerLine = 300; // 300ms per line for clearer animation
+
+    log(`Animation setup: ${totalSequenceLength} lines, ${timePerLine}ms per line`);
+
+    // Use RAF for smoother animation with more reliable timing
+    let currentLine = 0;
+    let lastFrameTime = 0;
+    let accumulatedTime = 0;
+
+    function animateDrawing(timestamp) {
+        if (!gameState.gameStarted || gameState.guessMode) {
+            log("Animation interrupted");
+            return;
         }
 
-        // Set up animation
-        const totalSequenceLength = gameState.drawingData.sequence.length;
-        const timePerLine = 300; // 300ms per line for clearer animation
+        if (!lastFrameTime) lastFrameTime = timestamp;
+        const deltaTime = timestamp - lastFrameTime;
+        lastFrameTime = timestamp;
 
-        log(`Animation setup: ${totalSequenceLength} lines, ${timePerLine}ms per line`);
+        accumulatedTime += deltaTime;
 
-        // Start with no lines drawn
-        gameState.drawingProgress = 0;
-        redrawCanvas();
+        // Draw the next line when enough time has passed
+        if (accumulatedTime >= timePerLine) {
+            if (currentLine < totalSequenceLength) {
+                // Increment progress
+                gameState.drawingProgress = currentLine + 1;
 
-        // Use direct animation approach
-        let currentLine = 0;
+                // Redraw canvas with updated progress
+                redrawCanvas();
 
-        function drawNextLine() {
-            if (gameState.guessMode || !gameState.gameStarted || currentLine >= totalSequenceLength) {
-                log("Animation complete or interrupted");
-                return;
-            }
+                log(`Drawing line ${currentLine + 1} of ${totalSequenceLength}`);
 
-            // Increment progress
-            gameState.drawingProgress = currentLine + 1;
+                // Move to next line
+                currentLine++;
 
-            // Redraw canvas with updated progress
-            redrawCanvas();
-
-            log(`Drawing line ${currentLine + 1} of ${totalSequenceLength}`);
-
-            // Move to next line
-            currentLine++;
-
-            // Continue animation if not paused
-            if (!gameState.guessMode && gameState.gameStarted) {
-                setTimeout(drawNextLine, timePerLine);
+                // Reset accumulated time (keeping remainder for smoother timing)
+                accumulatedTime = accumulatedTime % timePerLine;
             }
         }
 
-        // Start the animation immediately
-        drawNextLine();
-    });
+        // Continue animation loop
+        if (currentLine < totalSequenceLength && gameState.gameStarted && !gameState.guessMode) {
+            requestAnimationFrame(animateDrawing);
+        } else {
+            log("Animation complete");
+        }
+    }
+
+    // Force an immediate first frame to make the first line visible
+    gameState.drawingProgress = 1;
+    redrawCanvas();
+    currentLine = 1;
+
+    // Start animation loop
+    setTimeout(() => {
+        requestAnimationFrame(animateDrawing);
+    }, 100);
 }
 
 // Start the elapsed timer
@@ -496,6 +523,12 @@ function redrawCanvas() {
     if (gameState.difficulty === 'easy') {
         drawWordSpaces();
     }
+
+    // Force the browser to render the canvas
+    canvas.style.opacity = 0.99;
+    setTimeout(() => {
+        canvas.style.opacity = 1;
+    }, 0);
 
     log("Canvas redrawn");
 }
