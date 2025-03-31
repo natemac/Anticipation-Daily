@@ -48,11 +48,6 @@
     background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%);
 }
 
-.color-square:hover {
-    transform: scale(1.02);
-    background-image: none;
-}
-
 .color-square h3 {
     color: white;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
@@ -101,12 +96,6 @@
 
 .result-overlay.visible {
     opacity: 1;
-}
-
-.result-overlay p {
-    color: white;
-    font-size: 16px;
-    margin: 5px 0;
 }
 
 .difficulty-container {
@@ -180,14 +169,6 @@ input:checked + .slider {
     background-color: #2196F3;
 }
 
-input:focus + .slider {
-    box-shadow: 0 0 1px #2196F3;
-}
-
-input:checked + .slider:before {
-    transform: translateX(30px);
-}
-
 .builder-button {
     display: block;
     width: 100%;
@@ -203,13 +184,6 @@ input:checked + .slider:before {
     cursor: pointer;
     text-decoration: none;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}
-
-.builder-button:hover {
-    background-image: linear-gradient(to bottom, rgba(33, 150, 243, 1), rgba(33, 150, 243, 1));
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    transform: translateY(-2px);
 }
 
 .game-screen {
@@ -231,7 +205,6 @@ input:checked + .slider:before {
     margin-bottom: 10px;
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: 8px;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .canvas-container {
@@ -241,7 +214,7 @@ input:checked + .slider:before {
     position: relative;
     border-radius: 8px;
     overflow: hidden;
-    transform: translateZ(0); /* Force hardware acceleration */
+    /* Removed transform: translateZ(0) */
 }
 
 #gameCanvas {
@@ -250,31 +223,11 @@ input:checked + .slider:before {
     border: 2px solid #333;
     border-radius: 8px;
     background-color: white;
-    transition: background-color 0.3s;
     display: block; /* Ensure it's always visible */
 }
 
 #gameCanvas.incorrect {
-    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
     background-color: rgba(255, 0, 0, 0.2);
-}
-
-@keyframes shake {
-    10%, 90% {
-        transform: translate3d(-1px, 0, 0);
-    }
-
-    20%, 80% {
-        transform: translate3d(2px, 0, 0);
-    }
-
-    30%, 50%, 70% {
-        transform: translate3d(-4px, 0, 0);
-    }
-
-    40%, 60% {
-        transform: translate3d(4px, 0, 0);
-    }
 }
 
 .wrong-message {
@@ -297,7 +250,6 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    z-index: 20; /* Ensure controls are above canvas */
 }
 
 #beginButton {
@@ -311,19 +263,8 @@ input:checked + .slider:before {
     cursor: pointer;
     font-size: 20px;
     font-weight: bold;
-    transition: transform 0.2s;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     overflow: hidden; /* Important for the timer overlay */
-}
-
-#beginButton:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-}
-
-#beginButton:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Timer overlay for the button */
@@ -361,12 +302,6 @@ input:checked + .slider:before {
     display: none;
     width: 100%;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-#guessInput:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .back-button {
@@ -378,11 +313,6 @@ input:checked + .slider:before {
     border-radius: 4px;
     cursor: pointer;
     margin-bottom: 10px;
-    transition: background-image 0.3s;
-}
-
-.back-button:hover {
-    background-image: linear-gradient(to bottom, rgba(51, 51, 51, 1), rgba(51, 51, 51, 1));
 }
 
 .share-button {
@@ -396,11 +326,6 @@ input:checked + .slider:before {
     font-weight: bold;
     margin-top: 20px;
     display: none;
-    transition: background-image 0.3s;
-}
-
-.share-button:hover {
-    background-image: linear-gradient(to bottom, rgba(66, 103, 178, 1), rgba(66, 103, 178, 1));
 }
 
 /* Add touch-friendly improvements for mobile devices */
@@ -420,25 +345,6 @@ input:checked + .slider:before {
     .difficulty-label {
         font-size: 18px;
         padding: 5px;
-    }
-
-    .toggle-switch {
-        width: 70px;
-        height: 34px;
-    }
-
-    .slider:before {
-        width: 26px;
-        height: 26px;
-    }
-
-    input:checked + .slider:before {
-        transform: translateX(36px);
-    }
-
-    /* Ensure larger touch targets on mobile */
-    .slider-container {
-        padding: 10px 0;
     }
 
     .timer-display {
