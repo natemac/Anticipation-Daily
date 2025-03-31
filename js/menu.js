@@ -198,21 +198,39 @@ function showGameScreen() {
     setTimeout(() => {
         if (typeof canvas !== 'undefined' && canvas) {
             log("Forcing canvas redraw after screen transition");
-            if (typeof clearCanvas === 'function') {
-                clearCanvas();
-            } else if (typeof ctx !== 'undefined' && ctx) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
 
-            if (typeof ctx !== 'undefined' && ctx) {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.strokeStyle = '#ccc';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            // Force a simulated resize to trigger proper rendering
+            if (typeof resizeCanvas === 'function') {
+                // Store original dimensions
+                const originalWidth = canvas.width;
+                const originalHeight = canvas.height;
+
+                // Change dimensions slightly to force redraw
+                canvas.width = originalWidth - 1;
+                canvas.height = originalHeight - 1;
+
+                // Restore dimensions
+                setTimeout(() => {
+                    canvas.width = originalWidth;
+                    canvas.height = originalHeight;
+
+                    if (typeof clearCanvas === 'function') {
+                        clearCanvas();
+                    } else if (typeof ctx !== 'undefined' && ctx) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+
+                    if (typeof ctx !== 'undefined' && ctx) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.strokeStyle = '#ccc';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+                    }
+                }, 50);
             }
         }
-    }, 10);
+    }, 100);
 }
 
 // Initialize the menu when the DOM is loaded
