@@ -286,17 +286,64 @@ function setupGameEventListeners() {
                 gameState.currentInput = gameState.currentInput.slice(0, -1);
                 updateWordSpacesDiv();
             }
-        } else if (e.key === 'Enter') {
-            // Submit the current guess
-            checkAnswer();
-        } else if (e.key.length === 1) {
-            // Only add regular characters, ignore special keys
+        } else if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
+            // Only add letter characters (a-z, A-Z)
             const currentWord = gameState.drawingData.name;
+            const letterIndex = gameState.currentInput.length;
 
-            // Only accept input up to the word length
-            if (gameState.currentInput.length < currentWord.length) {
-                gameState.currentInput += e.key.toUpperCase();
-                updateWordSpacesDiv();
+            // Only process if we still have space for more letters
+            if (letterIndex < currentWord.length) {
+                const newLetter = e.key.toUpperCase();
+                const correctLetter = currentWord[letterIndex].toUpperCase();
+
+                // Check if this letter is correct at this position
+                if (newLetter === correctLetter) {
+                    // Add the correct letter
+                    gameState.currentInput += newLetter;
+                    updateWordSpacesDiv();
+
+                    // If we've completed the word successfully
+                    if (gameState.currentInput.length === currentWord.length) {
+                        log("Word completed correctly!");
+
+                        // Stop the guess timer
+                        if (gameState.guessTimer) clearInterval(gameState.guessTimer);
+                        gameState.guessTimerActive = false;
+
+                        // Hide the timer overlay and reset it
+                        buttonTimer.classList.remove('active');
+                        buttonTimer.style.width = '0%';
+
+                        // Success feedback
+                        if (wordSpacesDiv) {
+                            wordSpacesDiv.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.8)';
+                        }
+
+                        setTimeout(() => {
+                            endGame(true);
+                        }, 500);
+                    }
+                } else {
+                    // Wrong letter - show feedback and exit guess mode
+                    log("Incorrect letter");
+
+                    // Show incorrect feedback animation
+                    canvas.classList.add('incorrect');
+                    if (wordSpacesDiv) {
+                        wordSpacesDiv.style.boxShadow = '0 0 12px rgba(244, 67, 54, 0.8)';
+                    }
+
+                    setTimeout(() => {
+                        canvas.classList.remove('incorrect');
+                        if (wordSpacesDiv) {
+                            wordSpacesDiv.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                        }
+
+                        // Reset input and exit guess mode
+                        gameState.currentInput = '';
+                        exitGuessMode();
+                    }, 500);
+                }
             }
         }
     });
@@ -545,7 +592,7 @@ function startGuessTimer() {
             clearInterval(gameState.guessTimer);
             gameState.guessTimerActive = false;
 
-            // Hide the timer overlay
+            // Hide the timer overlay and reset it
             buttonTimer.classList.remove('active');
             buttonTimer.style.width = '0%';
 
@@ -580,7 +627,7 @@ function enterGuessMode() {
         gameState.animationId = null;
     }
 
-    // Clear current input and highlight the word spaces box
+    // Clear current input
     gameState.currentInput = '';
     if (wordSpacesDiv) {
         wordSpacesDiv.style.boxShadow = '0 0 8px rgba(76, 175, 80, 0.6)';
@@ -591,6 +638,9 @@ function enterGuessMode() {
 
     // Start the guess timer
     startGuessTimer();
+
+    // Show virtual keyboard on mobile
+    updateVirtualKeyboard();
 }
 
 // Exit guess mode
@@ -617,129 +667,9 @@ function exitGuessMode() {
     if (gameState.pendingAnimationStart) {
         improvedDrawingAnimation();
     }
-}
 
-// Check if the current answer is correct
-function checkAnswer() {
-    const currentWord = gameState.drawingData.name;
-    const upperInput = gameState.currentInput.toUpperCase();
-
-    // Compare input with answer
-    if (upperInput === currentWord) {
-        log("Correct answer!");
-
-        // Stop the guess timer
-        if (gameState.guessTimer) clearInterval(gameState.guessTimer);
-        gameState.guessTimerActive = false;
-
-        // Hide the timer overlay and reset it
-        buttonTimer.classList.remove('active');
-        buttonTimer.style.width = '0%';
-
-        // Success animation
-        if (wordSpacesDiv) {
-            wordSpacesDiv.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.8)';
-        }
-
-        setTimeout(() => {
-            endGame(true);
-        }, 500);
-    } else {
-        log("Incorrect answer");
-
-        // Show incorrect feedback animation
-        canvas.classList.add('incorrect');
-        if (wordSpacesDiv) {
-            wordSpacesDiv.style.boxShadow = '0 0 12px rgba(244, 67, 54, 0.8)';
-        }
-
-        setTimeout(() => {
-            canvas.classList.remove('incorrect');
-            if (wordSpacesDiv) {
-                wordSpacesDiv.style.boxShadow = '0 0 8px rgba(76, 175, 80, 0.6)';
-            }
-        }, 500);
-
-        // Reset input
-        gameState.currentInput = '';
-        updateWordSpacesDiv();
-    }
-}
-
-// Handle user input for letter guessing
-function handleLetterInput(input) {
-    const currentWord = gameState.drawingData.name;
-    const upperInput = input.toUpperCase();
-    gameState.currentInput = upperInput;
-
-    // Compare input with answer, tracking correct letters
-    let allCorrect = true;
-    let anyIncorrect = false;
-
-    // Process each character of the input
-    for (let i = 0; i < upperInput.length; i++) {
-        if (i < currentWord.length) {
-            if (upperInput[i] === currentWord[i]) {
-                // Mark this letter as correct
-                gameState.correctLetters[i] = upperInput[i];
-            } else {
-                // Not a correct letter
-                allCorrect = false;
-                anyIncorrect = true;
-            }
-        } else {
-            // Input is longer than answer
-            allCorrect = false;
-            anyIncorrect = true;
-        }
-    }
-
-    // If input is shorter than full word, it's not complete
-    if (upperInput.length < currentWord.length) {
-        allCorrect = false;
-    }
-
-    if (anyIncorrect) {
-        log("Incorrect input");
-
-        // Show incorrect feedback animation
-        canvas.classList.add('incorrect');
-        setTimeout(() => {
-            canvas.classList.remove('incorrect');
-        }, 500);
-
-        // Reset input to show only correct letters collected so far
-        let correctInput = '';
-        for (let i = 0; i < gameState.correctLetters.length; i++) {
-            correctInput += gameState.correctLetters[i] ? gameState.correctLetters[i] : '';
-        }
-        gameState.currentInput = correctInput;
-    }
-
-    // Update word spaces to show current state
-    updateWordSpacesDiv();
-
-    // Check if complete correct answer
-    if (allCorrect && upperInput === currentWord) {
-        log("Correct answer!");
-
-        // Stop the guess timer
-        if (gameState.guessTimer) clearInterval(gameState.guessTimer);
-        gameState.guessTimerActive = false;
-
-        // Hide the timer overlay and reset it
-        buttonTimer.classList.remove('active');
-        buttonTimer.style.width = '0%';
-
-        setTimeout(() => {
-            endGame(true);
-        }, 500);
-    } else {
-        // Exit guess mode after feedback (if there was an incorrect letter)
-        if (anyIncorrect) {
-            exitGuessMode();
-        }
-    }
+    // Hide virtual keyboard on mobile
+    updateVirtualKeyboard();
 }
 
 // End the current game
@@ -785,6 +715,9 @@ function endGame(success) {
     if (typeof showMainMenu === 'function') {
         showMainMenu();
     }
+
+    // Hide virtual keyboard on mobile
+    updateVirtualKeyboard();
 }
 
 // Calculate scaling to exactly match builder view
@@ -941,22 +874,12 @@ function updateWordSpacesDiv() {
             underline.style.backgroundColor = '#333';
             letterDiv.appendChild(underline);
 
-            // If in guess mode, show the current input or correct letters
-            if (gameState.guessMode) {
-                // Check if we have a character at this position in currentInput
-                if (i < gameState.currentInput.length) {
-                    const letterSpan = document.createElement('span');
-                    letterSpan.style.fontSize = '24px';
-                    letterSpan.style.fontWeight = 'bold';
-                    letterSpan.textContent = gameState.currentInput[i];
-                    letterDiv.appendChild(letterSpan);
-                }
-            } else if (gameState.correctLetters[i]) {
-                // Otherwise show correct letters we've collected
+            // Show letter if it's been entered correctly
+            if (i < gameState.currentInput.length) {
                 const letterSpan = document.createElement('span');
                 letterSpan.style.fontSize = '24px';
                 letterSpan.style.fontWeight = 'bold';
-                letterSpan.textContent = gameState.correctLetters[i];
+                letterSpan.textContent = gameState.currentInput[i];
                 letterDiv.appendChild(letterSpan);
             }
         } else {
@@ -1096,11 +1019,12 @@ function createVirtualKeyboard() {
                 key.style.borderRadius = '5px';
                 key.style.backgroundColor = 'white';
 
-                // Add click event to the key
+                // Add letter-by-letter validation
                 key.addEventListener('click', () => {
-                    if (gameState.guessMode && gameState.currentInput.length < gameState.drawingData.name.length) {
-                        gameState.currentInput += key.textContent;
-                        updateWordSpacesDiv();
+                    if (gameState.guessMode) {
+                        // Process this letter
+                        const letter = key.textContent;
+                        processLetter(letter);
                     }
                 });
 
@@ -1109,49 +1033,6 @@ function createVirtualKeyboard() {
 
             keyboard.appendChild(rowDiv);
         });
-
-        // Add special keys row
-        const specialRow = document.createElement('div');
-        specialRow.style.display = 'flex';
-        specialRow.style.justifyContent = 'center';
-        specialRow.style.margin = '5px 0';
-
-        // Backspace key
-        const backspaceKey = document.createElement('button');
-        backspaceKey.textContent = '⌫';
-        backspaceKey.style.margin = '2px';
-        backspaceKey.style.padding = '10px 15px';
-        backspaceKey.style.fontSize = '18px';
-        backspaceKey.style.border = '1px solid #ddd';
-        backspaceKey.style.borderRadius = '5px';
-        backspaceKey.style.backgroundColor = '#f0f0f0';
-        backspaceKey.style.width = '80px';
-        backspaceKey.addEventListener('click', () => {
-            if (gameState.guessMode && gameState.currentInput.length > 0) {
-                gameState.currentInput = gameState.currentInput.slice(0, -1);
-                updateWordSpacesDiv();
-            }
-        });
-
-        // Enter key
-        const enterKey = document.createElement('button');
-        enterKey.textContent = 'Enter';
-        enterKey.style.margin = '2px';
-        enterKey.style.padding = '10px 15px';
-        enterKey.style.fontSize = '18px';
-        enterKey.style.border = '1px solid #ddd';
-        enterKey.style.borderRadius = '5px';
-        enterKey.style.backgroundColor = '#f0f0f0';
-        enterKey.style.width = '80px';
-        enterKey.addEventListener('click', () => {
-            if (gameState.guessMode) {
-                checkAnswer();
-            }
-        });
-
-        specialRow.appendChild(backspaceKey);
-        specialRow.appendChild(enterKey);
-        keyboard.appendChild(specialRow);
 
         // Add to document
         document.body.appendChild(keyboard);
@@ -1164,6 +1045,69 @@ function createVirtualKeyboard() {
                 keyboard.style.display = 'none';
             }
         });
+    }
+}
+
+// Process letter input with validation
+function processLetter(letter) {
+    if (!gameState.guessMode) return;
+
+    const currentWord = gameState.drawingData.name;
+    const letterIndex = gameState.currentInput.length;
+
+    // Only process if we still have space for more letters
+    if (letterIndex < currentWord.length) {
+        const newLetter = letter.toUpperCase();
+        const correctLetter = currentWord[letterIndex].toUpperCase();
+
+        // Check if this letter is correct at this position
+        if (newLetter === correctLetter) {
+            // Add the correct letter
+            gameState.currentInput += newLetter;
+            updateWordSpacesDiv();
+
+            // If we've completed the word successfully
+            if (gameState.currentInput.length === currentWord.length) {
+                log("Word completed correctly!");
+
+                // Stop the guess timer
+                if (gameState.guessTimer) clearInterval(gameState.guessTimer);
+                gameState.guessTimerActive = false;
+
+                // Hide the timer overlay and reset it
+                buttonTimer.classList.remove('active');
+                buttonTimer.style.width = '0%';
+
+                // Success feedback
+                if (wordSpacesDiv) {
+                    wordSpacesDiv.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.8)';
+                }
+
+                setTimeout(() => {
+                    endGame(true);
+                }, 500);
+            }
+        } else {
+            // Wrong letter - show feedback and exit guess mode
+            log("Incorrect letter");
+
+            // Show incorrect feedback animation
+            canvas.classList.add('incorrect');
+            if (wordSpacesDiv) {
+                wordSpacesDiv.style.boxShadow = '0 0 12px rgba(244, 67, 54, 0.8)';
+            }
+
+            setTimeout(() => {
+                canvas.classList.remove('incorrect');
+                if (wordSpacesDiv) {
+                    wordSpacesDiv.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                }
+
+                // Reset input and exit guess mode
+                gameState.currentInput = '';
+                exitGuessMode();
+            }, 500);
+        }
     }
 }
 
