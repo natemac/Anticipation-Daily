@@ -1,10 +1,3 @@
-:root {
-    --yellow-color: #FFD700;
-    --green-color: #4CAF50;
-    --blue-color: #2196F3;
-    --red-color: #F44336;
-}
-
 .game-title {
     text-align: center;
     margin-bottom: 20px;
@@ -118,6 +111,232 @@
     left: 0;
     right: 0;
     bottom: 0;
+    background-color: #ccc;
+    transition: .4s;: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.create-button-container {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+.create-button {
+    width: 100%;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #2196F3;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.create-button:hover {
+    background-color: #0b7dda;
+}
+
+/* Game Screen Styles */
+.game-header {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 20px;
+}
+
+.back-button {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.timer-container {
+    background-color: #e6c745;
+    padding: 15px;
+    text-align: center;
+    font-size: 32px;
+    font-weight: bold;
+    font-family: monospace;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.drawing-container {
+    width: 100%;
+    aspect-ratio: 1/1;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+#drawingCanvas, #startCanvas, #resultCanvas {
+    width: 100%;
+    height: 100%;
+    background-color: white;
+}
+
+.word-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.word-spaces {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.letter-space {
+    width: 30px;
+    height: 40px;
+    border-bottom: 3px solid #333;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#guessInput {
+    flex-grow: 1;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.guess-btn {
+    min-width: 100px;
+}
+
+.game-message {
+    padding: 15px;
+    text-align: center;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+.message-correct {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.message-incorrect {
+    background-color: #F44336;
+    color: white;
+}
+
+/* Result Screen Styles */
+.result-title {
+    font-size: 32px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.result-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.result-word {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.result-time {
+    font-size: 24px;
+}
+
+.result-drawing {
+    width: 100%;
+    aspect-ratio: 1/1;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 30px;
+}
+
+.result-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.result-actions button {
+    flex: 1;
+    padding: 15px;
+    font-size: 16px;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.action-container {
+    margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+    .category-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .category-card {
+        aspect-ratio: 16/9;
+    }
+
+    .letter-space {
+        width: 25px;
+        height: 35px;
+        font-size: 20px;
+    }
+}: 0;
     background-color: #ccc;
     transition: .4s;
 }

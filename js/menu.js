@@ -72,9 +72,18 @@ function setupEventListeners() {
     });
 
     // Begin button starts the game
-    beginButton.addEventListener('click', () => {
+    beginButton.addEventListener('click', async () => {
+        console.log(`Begin button clicked. Starting game with category: ${gameState.category}, difficulty: ${gameState.difficulty}`);
         showScreen('game');
-        startGame(gameState.category, gameState.difficulty);
+
+        try {
+            // Call startGame and wait for it to complete
+            await startGame(gameState.category, gameState.difficulty);
+        } catch (error) {
+            console.error("Error starting game:", error);
+            alert("Failed to start game. Please try again.");
+            showScreen('menu');
+        }
     });
 
     // Result screen buttons

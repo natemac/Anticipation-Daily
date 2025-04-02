@@ -40,51 +40,124 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Start a new game with selected category and difficulty
-function startGame(category, difficulty) {
-    // Reset game state
-    gameActive = true;
-    currentCategory = category;
-    currentDifficulty = difficulty;
-    remainingTime = 300; // 5 minutes
-    isAnimating = false;
+async function startGame(category, difficulty) {
+    console.log(`Starting game: category=${category}, difficulty=${difficulty}`);
 
-    // Clear UI
-    clearCanvas();
-    resetUI();
+    try {
+        // Reset game state
+        gameActive = true;
+        currentCategory = category;
+        currentDifficulty = difficulty;
+        remainingTime = 300; // 5 minutes
+        isAnimating = false;
 
-    // Load data for the selected category
-    loadGameData(category)
-        .then(data => {
-            gameData = data;
+        // Clear UI
+        clearCanvas();
+        resetUI();
 
-            // Set the word to guess
-            wordToGuess = gameData.name.toUpperCase();
-            console.log('Word to guess:', wordToGuess); // For development only
+        // Show a loading message in the canvas
+        showLoadingMessage("Loading game data...");
 
-            // Set up the drawing sequence
-            drawingSequence = prepareDrawingSequence(gameData);
+        // Load data for the selected category - await the async function
+        gameData = await loadGameData(category);
 
-            // Set up word spaces
-            setupWordSpaces(wordToGuess);
+        if (!gameData) {
+            throw new Error("Game data is null or undefined");
+        }
 
-            // Start the timer
-            startTimer();
+        console.log("Game data loaded successfully:", gameData);
 
-            // Start the drawing animation
-            startDrawingAnimation();
-        })
-        .catch(error => {
-            console.error('Error loading game data:', error);
-            alert('Failed to load game data. Please try again.');
+        // Clear the loading message
+        clearCanvas();
+
+        // Set the word to guess
+        wordToGuess = gameData.name.toUpperCase();
+        console.log('Word to guess:', wordToGuess);
+
+        // Set up the drawing sequence
+        drawingSequence = prepareDrawingSequence(gameData);
+        console.log(`Drawing sequence created with ${drawingSequence.length} lines`);
+
+        // Set up word spaces
+        setupWordSpaces(wordToGuess);
+
+        // Start the timer
+        startTimer();
+
+        // Start the drawing animation
+        startDrawingAnimation();
+    } catch (error) {
+        console.error('Error loading game data:', error);
+
+        // Display error on canvas
+        showErrorMessage(`Failed to load game data: ${error.message}`);
+
+        // Show alert with more details
+        alert(`Failed to load game data: ${error.message}\nPlease check that the items/${gameCategories[category]?.id || category}.json file exists and is valid.`);
+
+        // Disable game state
+        gameActive = false;
+
+        // Go back to menu after a short delay
+        setTimeout(() => {
             window.gameMenu.showScreen('menu');
-        });
+        }, 2000);
+    }
+}
+
+// Show a loading message on the canvas
+function showLoadingMessage(message) {
+    ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '16px Arial';
+    ctx.fillText(message, drawingCanvas.width/2, drawingCanvas.height/2);
+}
+
+// Show an error message on the canvas
+function showErrorMessage(message) {
+    ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+    ctx.fillStyle = '#F44336';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 16px Arial';
+
+    // Split message into multiple lines if too long
+    const words = message.split(' ');
+    const lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+        if (currentLine.length + words[i].length + 1 < 30) {
+            currentLine += " " + words[i];
+        } else {
+            lines.push(currentLine);
+            currentLine = words[i];
+        }
+    }
+    lines.push(currentLine);
+
+    // Draw each line
+    const lineHeight = 24;
+    const startY = drawingCanvas.height/2 - (lines.length - 1) * lineHeight / 2;
+
+    lines.forEach((line, index) => {
+        ctx.fillText(line, drawingCanvas.width/2, startY + index * lineHeight);
+    });
 }
 
 // Load game data for a category
 async function loadGameData(category) {
+    console.log(`Loading game data for category: ${category}`);
     try {
         // Get today's item for the selected category
         const item = await getTodayItem(category);
+
+        if (!item) {
+            throw new Error(`No item found for category: ${category}`);
+        }
+
         return item;
     } catch (error) {
         console.error('Error loading game data:', error);
