@@ -10,105 +10,79 @@
 <body>
     <div class="game-title">Daily Anticipation</div>
 
-    <!-- Main Menu Screen -->
-    <div id="menuScreen" class="screen">
-        <div class="category-grid">
-            <div class="category-card yellow" data-category="travel">
-                <h2>Travel</h2>
-                <p>Places & Transport</p>
+    <div class="game-container">
+        <div class="main-screen">
+            <div class="color-grid">
+                <div class="color-square yellow" data-color="yellow" data-category="Travel">
+                    <h3>Travel</h3>
+                    <p>Places & Transport</p>
+                    <div class="result-overlay" id="yellow-result">
+                        <p class="guess-count">Guesses: 0</p>
+                        <p class="time-count">Time: 0s</p>
+                    </div>
+                </div>
+                <div class="color-square green" data-color="green" data-category="Food">
+                    <h3>Food</h3>
+                    <p>Edible Items</p>
+                    <div class="result-overlay" id="green-result">
+                        <p class="guess-count">Guesses: 0</p>
+                        <p class="time-count">Time: 0s</p>
+                    </div>
+                </div>
+                <div class="color-square blue" data-color="blue" data-category="Man-made">
+                    <h3>Man-made</h3>
+                    <p>Created Objects</p>
+                    <div class="result-overlay" id="blue-result">
+                        <p class="guess-count">Guesses: 0</p>
+                        <p class="time-count">Time: 0s</p>
+                    </div>
+                </div>
+                <div class="color-square red" data-color="red" data-category="Leisure">
+                    <h3>Leisure</h3>
+                    <p>Fun & Games</p>
+                    <div class="result-overlay" id="red-result">
+                        <p class="guess-count">Guesses: 0</p>
+                        <p class="time-count">Time: 0s</p>
+                    </div>
+                </div>
             </div>
-            <div class="category-card green" data-category="food">
-                <h2>Food</h2>
-                <p>Edible Items</p>
+
+            <div class="difficulty-container">
+                <h3 class="difficulty-title">Difficulty Mode</h3>
+                <div class="slider-container">
+                  <span class="difficulty-label" id="easyLabel">Easy</span>
+                  <label class="toggle-switch">
+                      <input type="checkbox" id="difficultyToggle">
+                      <span class="slider"></span>
+                  </label>
+                  <span class="difficulty-label" id="hardLabel">Hard</span>
+                </div>
             </div>
-            <div class="category-card blue" data-category="manmade">
-                <h2>Man-made</h2>
-                <p>Created Objects</p>
+
+            <a href="anticipation-builder.html" class="builder-button">Create and Share your own Drawings</a>
+
+            <button class="share-button" id="shareButton">Share Results</button>
+        </div>
+
+        <div class="game-screen">
+            <button class="back-button" id="backButton">← Back</button>
+
+            <!-- New timer display that counts up -->
+            <div class="timer-display" id="timerDisplay">00:00</div>
+
+            <div class="canvas-container">
+                <canvas id="gameCanvas"></canvas>
             </div>
-            <div class="category-card red" data-category="leisure">
-                <h2>Leisure</h2>
-                <p>Fun & Games</p>
+
+            <div class="wrong-message" id="wrongMessage">WRONG!</div>
+
+            <div class="game-controls">
+                <button id="beginButton">
+                    <div id="buttonTimer"></div>
+                    <span>Begin</span>
+                </button>
+                <input type="text" id="guessInput" placeholder="Type your guess here...">
             </div>
-        </div>
-
-        <div class="difficulty-selector">
-            <div class="difficulty-label">Difficulty Mode</div>
-            <div class="toggle-container">
-                <span>Easy</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="difficultyToggle">
-                    <span class="slider round"></span>
-                </label>
-                <span>Hard</span>
-            </div>
-        </div>
-
-        <div class="create-button-container">
-            <button id="createButton" class="create-button">Create and Share your own Drawings</button>
-        </div>
-    </div>
-
-    <!-- Game Screen -->
-    <div id="gameScreen" class="screen hidden">
-        <div class="game-header">
-            <button id="backButton" class="back-button">← Back</button>
-        </div>
-
-        <div class="timer-container">
-            <div id="timer">05:00</div>
-        </div>
-
-        <div class="drawing-container">
-            <canvas id="drawingCanvas" width="400" height="400"></canvas>
-        </div>
-
-        <div class="word-container">
-            <div id="wordSpaces" class="word-spaces"></div>
-        </div>
-
-        <div class="input-container">
-            <input type="text" id="guessInput" placeholder="Enter your guess">
-            <button id="guessButton" class="primary-btn guess-btn">Guess</button>
-        </div>
-
-        <div id="gameMessage" class="game-message hidden"></div>
-    </div>
-
-    <!-- Start Screen -->
-    <div id="startScreen" class="screen hidden">
-        <div class="game-header">
-            <button id="startBackButton" class="back-button">← Back</button>
-        </div>
-
-        <div class="timer-container">
-            <div id="startTimer">00:00</div>
-        </div>
-
-        <div class="drawing-container">
-            <canvas id="startCanvas" width="400" height="400"></canvas>
-        </div>
-
-        <div class="action-container">
-            <button id="beginButton" class="primary-btn full-width">Begin</button>
-        </div>
-    </div>
-
-    <!-- Result Screen -->
-    <div id="resultScreen" class="screen hidden">
-        <div class="result-title">You got it!</div>
-
-        <div class="result-info">
-            <div class="result-word"></div>
-            <div class="result-time"></div>
-        </div>
-
-        <div class="result-drawing">
-            <canvas id="resultCanvas" width="400" height="400"></canvas>
-        </div>
-
-        <div class="result-actions">
-            <button id="shareResultButton" class="primary-btn">Share</button>
-            <button id="newGameButton" class="secondary-btn">New Game</button>
         </div>
     </div>
 
