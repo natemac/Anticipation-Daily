@@ -737,7 +737,7 @@ function calculateScaling() {
     const size = Math.min(displayWidth, displayHeight) * canvasPercentage;
 
     // Ensure we're using a 1:1 aspect ratio as in the builder
-    const scale = size / 400; // Builder uses a 400x400 area
+    const scale = size / 560; // Builder uses a 400x400 area
 
     // Center the drawing in the canvas
     const offsetX = (displayWidth - size) / 2;

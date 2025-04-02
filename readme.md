@@ -20,6 +20,8 @@ The project consists of the following files:
   - `game-data.js` - Default game data and drawings
   - `game.js` - Game-specific logic and interactions
   - `builder.js` - Builder-specific logic and interactions
+  - `touch-interface.js` - Touch input handling for the builder
+  - `mouse-interface.js` - Mouse input handling for the builder
 - `items/` - Directory containing JSON files with custom drawing data
 - `README.md` - This documentation file
 
@@ -74,6 +76,19 @@ Follow these steps to deploy the game on GitHub Pages:
 - Sharing capability for completed puzzles
 - Responsive design for mobile and desktop
 - JSON-based drawing data loading
+- Letter-by-letter validation with immediate feedback
+- Direct typing into character spaces (no dialog popup)
+- Virtual keyboard support for mobile devices
+- Consistent drawing scaling between builder and game
+
+### Game Mechanics
+
+- **Drawing Animation**: Watch as the drawing appears line by line
+- **Guessing**: Type letters directly into the character spaces
+- **Validation**: Each letter is checked immediately as you type
+  - Correct letters appear in the spaces
+  - Incorrect letters trigger a red flash and reset the guess mode
+- **Timing**: Complete each puzzle as quickly as possible for a better score
 
 ## Builder Features
 
@@ -82,6 +97,23 @@ Follow these steps to deploy the game on GitHub Pages:
 - Preview mode to verify how drawings will look to players
 - Export functionality to create JSON files
 - Grid system with edge restrictions
+- Touch-friendly interface for mobile devices
+- Mouse controls for desktop users with keyboard shortcuts
+
+### Building Process
+
+1. Use Sketch mode to create the basic structure
+2. Use Record mode to define the animation sequence
+3. Preview your animation to see how it will look to players
+4. Export your drawing as a JSON file that can be loaded by the game
+
+## Recent Improvements
+
+- **Fixed Canvas Rendering**: Drawings now display correctly without requiring window resizing or device rotation
+- **Improved Scaling**: Drawings maintain exact proportions between builder and game views
+- **Enhanced User Interface**: Character spaces now appear in a clean white box between the drawing and guess button
+- **Better Feedback**: Visual cues for correct/incorrect guesses
+- **Mobile Optimizations**: Virtual keyboard and improved touch handling
 
 ## Directory Structure for GitHub Pages
 
@@ -99,10 +131,12 @@ your-repo-name/
 │   ├── common.js
 │   ├── game-data.js
 │   ├── game.js
-│   └── builder.js
+│   ├── builder.js
+│   ├── touch-interface.js
+│   └── mouse-interface.js
 ├── items/
-│   └── item1.json
+│   └── *.json
 └── README.md
 ```
 
-You can later update your game by pushing new versions to the same repository.
+You can update your game by pushing new versions to the same repository.
