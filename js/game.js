@@ -173,6 +173,9 @@ function renderFrame() {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, displayWidth, displayHeight);
 
+    // Draw grid lines for reference (uncomment for debugging)
+    // drawGridLines();
+
     // In easy mode, draw dots first
     if (gameState.difficulty === 'easy') {
         drawDots();
@@ -669,7 +672,7 @@ function endGame(success) {
     }
 }
 
-// Calculate scaling for fixed 17x17 grid
+// Calculate scaling to match builder view exactly
 function calculateScaling() {
     if (!gameState.drawingData) {
         return;
@@ -679,26 +682,34 @@ function calculateScaling() {
     const displayHeight = canvas.clientHeight;
 
     // Fixed grid size (16x16 cells, 17x17 points)
+    const GRID_SIZE = 16; // Number of cells
+
     // In the builder, drawings are positioned within a 400x400 pixel area
     const BUILDER_SIZE = 400;
 
-    // Calculate scale to fit the entire grid in the canvas with some padding
-    const padding = Math.min(displayWidth, displayHeight) * 0.05; // 5% padding
-    const scaleX = (displayWidth - padding*2) / BUILDER_SIZE;
-    const scaleY = (displayHeight - padding*2) / BUILDER_SIZE;
-    const scale = Math.min(scaleX, scaleY);
+    // Calculate the size that would maintain the same proportions as the builder
+    // But ensure the drawing doesn't take up more than 60% of the canvas width or height
+    // This prevents the drawing from being too large relative to the canvas
+    const maxSize = Math.min(displayWidth, displayHeight) * 0.6;
+    const size = Math.min(maxSize, Math.min(displayWidth, displayHeight));
+
+    // Calculate scale based on the desired size
+    const scale = size / BUILDER_SIZE;
 
     // Calculate centering offset to position the grid in the center
     const offsetX = (displayWidth - (BUILDER_SIZE * scale)) / 2;
     const offsetY = (displayHeight - (BUILDER_SIZE * scale)) / 2;
 
-    // Store scaling information using 0,0 as the starting point
+    // Store scaling information
     gameState.scaling = {
         scale: scale,
         offsetX: offsetX,
         offsetY: offsetY,
-        builderSize: BUILDER_SIZE
+        builderSize: BUILDER_SIZE,
+        gridSize: GRID_SIZE
     };
+
+    log(`Scaling calculated: scale=${scale}, offset=(${offsetX},${offsetY})`);
 }
 
 // Draw the dots with fixed grid scaling
@@ -824,22 +835,7 @@ function drawWordSpaces() {
     }
 }
 
-// Compatibility functions for existing code
-function clearCanvas() {
-    if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-}
-
-function redrawCanvas() {
-    renderFrame();
-}
-
-function startDrawing() {
-    startDrawingImproved();
-}
-
-// Optional: Draw grid lines to see the 17x17 grid (for debugging)
+// Draw grid lines for debugging
 function drawGridLines() {
     if (!gameState.scaling) {
         calculateScaling();
@@ -848,7 +844,7 @@ function drawGridLines() {
     const scaling = gameState.scaling;
 
     // Fixed grid size (16x16 cells, 17x17 points)
-    const GRID_SIZE = 16;
+    const GRID_SIZE = scaling.gridSize;
     const cellSize = (scaling.builderSize / GRID_SIZE) * scaling.scale;
 
     ctx.strokeStyle = '#eee';
@@ -871,6 +867,21 @@ function drawGridLines() {
         ctx.lineTo(scaling.offsetX + (GRID_SIZE * cellSize), y);
         ctx.stroke();
     }
+}
+
+// Compatibility functions for existing code
+function clearCanvas() {
+    if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+function redrawCanvas() {
+    renderFrame();
+}
+
+function startDrawing() {
+    startDrawingImproved();
 }
 
 // Initialize the game functionality when the DOM is loaded
