@@ -28,7 +28,7 @@ const gameState = {
 
 // DOM elements
 let canvas, ctx, timerDisplay, guessInput, beginButton, wrongMessage, backButton, buttonTimer;
-let wordSpacesDiv; // New element for word spaces
+let wordSpacesDiv; // Element for word spaces
 
 // Simple logging function for debugging
 function log(message) {
@@ -78,14 +78,22 @@ function createWordSpacesDiv() {
     wordSpacesDiv.id = 'wordSpacesDiv';
     wordSpacesDiv.style.width = '100%';
     wordSpacesDiv.style.height = '50px';
-    wordSpacesDiv.style.marginTop = '10px';
+    wordSpacesDiv.style.margin = '10px 0';
     wordSpacesDiv.style.textAlign = 'center';
     wordSpacesDiv.style.position = 'relative';
 
-    // Insert it after the canvas container
-    const canvasContainer = canvas.parentElement;
-    if (canvasContainer && canvasContainer.parentElement) {
-        canvasContainer.parentElement.insertBefore(wordSpacesDiv, canvasContainer.nextSibling);
+    // Find the game controls div to insert before it
+    const gameControlsDiv = beginButton.parentElement;
+
+    if (gameControlsDiv && gameControlsDiv.parentElement) {
+        // Insert it before the game controls (guess button)
+        gameControlsDiv.parentElement.insertBefore(wordSpacesDiv, gameControlsDiv);
+    } else {
+        // Fallback: insert after canvas container
+        const canvasContainer = canvas.parentElement;
+        if (canvasContainer && canvasContainer.parentElement) {
+            canvasContainer.parentElement.insertBefore(wordSpacesDiv, canvasContainer.nextSibling);
+        }
     }
 }
 
@@ -210,7 +218,7 @@ function renderFrame() {
     // Always draw lines based on current progress
     drawLines();
 
-    // Draw word spaces in their separate div
+    // Update word spaces in their div
     if (gameState.difficulty === 'easy') {
         updateWordSpacesDiv();
     }
@@ -852,6 +860,7 @@ function updateWordSpacesDiv() {
         letterDiv.style.margin = '0 5px';
         letterDiv.style.display = 'inline-block';
         letterDiv.style.textAlign = 'center';
+        letterDiv.style.fontFamily = 'Arial, sans-serif';
 
         if (answer[i] !== ' ') {
             // Add underline
