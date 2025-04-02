@@ -8,14 +8,14 @@
     <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
-    <div class="game-title">Daily Anticipation</div>
+    <!-- Removed the 'Daily Anticipation' title -->
 
     <div class="game-container">
         <div class="main-screen">
             <div class="color-grid">
                 <div class="color-square yellow" data-color="yellow" data-category="Travel">
                     <h3>Travel</h3>
-                    <p>Places & Transport</p>
+                    <p>Places &amp; Transport</p>
                     <div class="result-overlay" id="yellow-result">
                         <p class="guess-count">Guesses: 0</p>
                         <p class="time-count">Time: 0s</p>
@@ -39,7 +39,7 @@
                 </div>
                 <div class="color-square red" data-color="red" data-category="Leisure">
                     <h3>Leisure</h3>
-                    <p>Fun & Games</p>
+                    <p>Fun &amp; Games</p>
                     <div class="result-overlay" id="red-result">
                         <p class="guess-count">Guesses: 0</p>
                         <p class="time-count">Time: 0s</p>
@@ -65,16 +65,13 @@
         </div>
 
         <div class="game-screen">
-            <button class="back-button" id="backButton">← Back</button>
-
-            <!-- New timer display that counts up -->
-            <div class="timer-display" id="timerDisplay">00:00</div>
-
+            <!-- Moved the animation window (canvas) up to the top -->
             <div class="canvas-container">
                 <canvas id="gameCanvas"></canvas>
             </div>
 
-          <!--  <div class="wrong-message" id="wrongMessage">WRONG!</div> -->
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="wrong-message" id="wrongMessage">WRONG!</div>
 
             <div class="game-controls">
                 <button id="beginButton">
@@ -83,6 +80,9 @@
                 </button>
                 <input type="text" id="guessInput" placeholder="Type your guess here...">
             </div>
+
+            <!-- Moved the Back button all the way to the bottom -->
+            <button class="back-button" id="backButton">← Back</button>
         </div>
     </div>
 
