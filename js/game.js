@@ -672,7 +672,7 @@ function endGame(success) {
     }
 }
 
-// Calculate scaling to match builder view exactly
+// Calculate scaling to exactly match builder view
 function calculateScaling() {
     if (!gameState.drawingData) {
         return;
@@ -681,38 +681,35 @@ function calculateScaling() {
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
 
-    // Fixed grid size (16x16 cells, 17x17 points)
-    const GRID_SIZE = 16; // Number of cells
+    // Constants that match the builder's grid
+    const GRID_SIZE = 16; // Number of cells (16x16 grid with 17x17 points)
+    const BUILDER_WIDTH = 400; // Width in pixels of the builder's grid
+    const BUILDER_HEIGHT = 400; // Height in pixels of the builder's grid
 
-    // In the builder, drawings are positioned within a 400x400 pixel area
-    const BUILDER_SIZE = 400;
+    // Calculate the percentage of canvas to use (45% is a good size that matches builder view)
+    const canvasPercentage = 0.45;
 
-    // Calculate the size that would maintain the same proportions as the builder
-    // But ensure the drawing doesn't take up more than 60% of the canvas width or height
-    // This prevents the drawing from being too large relative to the canvas
-    const maxSize = Math.min(displayWidth, displayHeight) * 0.6;
-    const size = Math.min(maxSize, Math.min(displayWidth, displayHeight));
+    // Calculate the size that would fit within the canvas while maintaining aspect ratio
+    const maxDimension = Math.min(displayWidth, displayHeight) * canvasPercentage;
 
-    // Calculate scale based on the desired size
-    const scale = size / BUILDER_SIZE;
+    // Ensure we maintain the same aspect ratio as the builder
+    const scale = maxDimension / BUILDER_WIDTH;
 
-    // Calculate centering offset to position the grid in the center
-    const offsetX = (displayWidth - (BUILDER_SIZE * scale)) / 2;
-    const offsetY = (displayHeight - (BUILDER_SIZE * scale)) / 2;
+    // Calculate centering offset
+    const offsetX = (displayWidth - (BUILDER_WIDTH * scale)) / 2;
+    const offsetY = (displayHeight - (BUILDER_HEIGHT * scale)) / 2;
 
-    // Store scaling information
     gameState.scaling = {
         scale: scale,
         offsetX: offsetX,
         offsetY: offsetY,
-        builderSize: BUILDER_SIZE,
         gridSize: GRID_SIZE
     };
 
     log(`Scaling calculated: scale=${scale}, offset=(${offsetX},${offsetY})`);
 }
 
-// Draw the dots with fixed grid scaling
+// Draw dots using exact builder scaling
 function drawDots() {
     if (!gameState.drawingData || !gameState.drawingData.dots) {
         log("No dot data to draw");
@@ -730,7 +727,7 @@ function drawDots() {
     gameState.drawingData.dots.forEach((dot, index) => {
         if (!dot) return;
 
-        // Apply scaling directly from builder coordinates to canvas
+        // Apply scaling directly from builder coordinates
         const x = (dot.x * scaling.scale) + scaling.offsetX;
         const y = (dot.y * scaling.scale) + scaling.offsetY;
 
@@ -749,7 +746,7 @@ function drawDots() {
     });
 }
 
-// Draw the lines with fixed grid scaling
+// Draw lines using exact builder scaling
 function drawLines() {
     if (!gameState.drawingData || !gameState.drawingData.sequence) {
         log("No line data to draw");
@@ -792,7 +789,7 @@ function drawLines() {
     }
 }
 
-// Draw the word spaces with better positioning
+// Draw word spaces with proper positioning
 function drawWordSpaces() {
     // Only draw word spaces in easy mode
     if (gameState.difficulty !== 'easy' || !gameState.drawingData) return;
@@ -842,10 +839,10 @@ function drawGridLines() {
     }
 
     const scaling = gameState.scaling;
-
-    // Fixed grid size (16x16 cells, 17x17 points)
     const GRID_SIZE = scaling.gridSize;
-    const cellSize = (scaling.builderSize / GRID_SIZE) * scaling.scale;
+
+    // Calculate cell size based on the grid cells
+    const cellSize = (400 / GRID_SIZE) * scaling.scale;
 
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
