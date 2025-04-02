@@ -28,6 +28,7 @@ const gameState = {
 
 // DOM elements
 let canvas, ctx, timerDisplay, guessInput, beginButton, wrongMessage, backButton, buttonTimer;
+let wordSpacesDiv; // New element for word spaces
 
 // Simple logging function for debugging
 function log(message) {
@@ -47,6 +48,13 @@ function initGame() {
     backButton = document.getElementById('backButton');
     buttonTimer = document.getElementById('buttonTimer');
 
+    // Create word spaces div if it doesn't exist
+    if (!document.getElementById('wordSpacesDiv')) {
+        createWordSpacesDiv();
+    } else {
+        wordSpacesDiv = document.getElementById('wordSpacesDiv');
+    }
+
     // Set up canvas with improved initialization
     initializeGameCanvas();
 
@@ -61,6 +69,24 @@ function initGame() {
     }
 
     log("Game initialized");
+}
+
+// Create the word spaces div
+function createWordSpacesDiv() {
+    // Create the div for word spaces
+    wordSpacesDiv = document.createElement('div');
+    wordSpacesDiv.id = 'wordSpacesDiv';
+    wordSpacesDiv.style.width = '100%';
+    wordSpacesDiv.style.height = '50px';
+    wordSpacesDiv.style.marginTop = '10px';
+    wordSpacesDiv.style.textAlign = 'center';
+    wordSpacesDiv.style.position = 'relative';
+
+    // Insert it after the canvas container
+    const canvasContainer = canvas.parentElement;
+    if (canvasContainer && canvasContainer.parentElement) {
+        canvasContainer.parentElement.insertBefore(wordSpacesDiv, canvasContainer.nextSibling);
+    }
 }
 
 // Improved canvas initialization
@@ -184,9 +210,9 @@ function renderFrame() {
     // Always draw lines based on current progress
     drawLines();
 
-    // In easy mode, draw word spaces
+    // Draw word spaces in their separate div
     if (gameState.difficulty === 'easy') {
-        drawWordSpaces();
+        updateWordSpacesDiv();
     }
 }
 
@@ -308,6 +334,11 @@ function startGameWithData(color, category, data) {
     gameState.pendingAnimationStart = false;
     gameState.scaling = null;
 
+    // Clear word spaces div
+    if (wordSpacesDiv) {
+        wordSpacesDiv.innerHTML = '';
+    }
+
     // Switch to game screen using the menu function
     if (typeof showGameScreen === 'function') {
         showGameScreen();
@@ -356,7 +387,7 @@ function startDrawingImproved() {
     // Draw initial state
     if (gameState.difficulty === 'easy') {
         drawDots();
-        drawWordSpaces();
+        updateWordSpacesDiv();
     }
 
     // Start animation with a short delay to ensure rendering is ready
@@ -606,6 +637,9 @@ function handleLetterInput(input) {
         guessInput.value = correctInput;
     }
 
+    // Update word spaces to show current state
+    updateWordSpacesDiv();
+
     // Check if complete correct answer
     if (allCorrect && upperInput === currentWord) {
         log("Correct answer!");
@@ -658,6 +692,11 @@ function endGame(success) {
     gameState.pendingAnimationStart = false;
     gameState.scaling = null;
 
+    // Clear word spaces div
+    if (wordSpacesDiv) {
+        wordSpacesDiv.innerHTML = '';
+    }
+
     // Update puzzle state in menu if successful
     if (success) {
         const time = gameState.elapsedTime + (gameState.elapsedTimeHundredths / 100);
@@ -681,29 +720,25 @@ function calculateScaling() {
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
 
-    // Constants that match the builder's grid
-    const GRID_SIZE = 16; // Number of cells (16x16 grid with 17x17 points)
-    const BUILDER_WIDTH = 400; // Width in pixels of the builder's grid
-    const BUILDER_HEIGHT = 400; // Height in pixels of the builder's grid
+    // Make the drawing fill almost the entire canvas area
+    // This ensures we match exactly how it looks in the builder
+    const canvasPercentage = 0.9; // Use 90% of the canvas area
 
-    // Calculate the percentage of canvas to use (45% is a good size that matches builder view)
-    const canvasPercentage = 0.45;
+    // Calculate the maximum size while maintaining aspect ratio
+    const size = Math.min(displayWidth, displayHeight) * canvasPercentage;
 
-    // Calculate the size that would fit within the canvas while maintaining aspect ratio
-    const maxDimension = Math.min(displayWidth, displayHeight) * canvasPercentage;
+    // Ensure we're using a 1:1 aspect ratio as in the builder
+    const scale = size / 400; // Builder uses a 400x400 area
 
-    // Ensure we maintain the same aspect ratio as the builder
-    const scale = maxDimension / BUILDER_WIDTH;
-
-    // Calculate centering offset
-    const offsetX = (displayWidth - (BUILDER_WIDTH * scale)) / 2;
-    const offsetY = (displayHeight - (BUILDER_HEIGHT * scale)) / 2;
+    // Center the drawing in the canvas
+    const offsetX = (displayWidth - size) / 2;
+    const offsetY = (displayHeight - size) / 2;
 
     gameState.scaling = {
         scale: scale,
         offsetX: offsetX,
         offsetY: offsetY,
-        gridSize: GRID_SIZE
+        gridSize: 16 // Fixed 16x16 grid (17x17 points)
     };
 
     log(`Scaling calculated: scale=${scale}, offset=(${offsetX},${offsetY})`);
@@ -789,47 +824,66 @@ function drawLines() {
     }
 }
 
-// Draw word spaces with proper positioning
-function drawWordSpaces() {
-    // Only draw word spaces in easy mode
+// Update the word spaces in the separate div
+function updateWordSpacesDiv() {
+    // Only update word spaces in easy mode
     if (gameState.difficulty !== 'easy' || !gameState.drawingData) return;
 
+    if (!wordSpacesDiv) return;
+
     const answer = gameState.drawingData.name;
-    const displayWidth = canvas.clientWidth;
-    const charWidth = displayWidth / (answer.length + 2);
-    const startX = (displayWidth - (charWidth * answer.length)) / 2;
 
-    // Position word spaces at the bottom with padding for better visibility
-    const y = canvas.clientHeight - 50;
+    // Clear existing content
+    wordSpacesDiv.innerHTML = '';
 
-    ctx.fillStyle = '#333';
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
+    // Create a container for the letters
+    const letterContainer = document.createElement('div');
+    letterContainer.style.display = 'flex';
+    letterContainer.style.justifyContent = 'center';
+    letterContainer.style.alignItems = 'center';
+    letterContainer.style.height = '100%';
 
+    // Add word spaces
     for (let i = 0; i < answer.length; i++) {
-        const x = startX + (i * charWidth) + (charWidth / 2);
+        const letterDiv = document.createElement('div');
+        letterDiv.style.position = 'relative';
+        letterDiv.style.width = '30px';
+        letterDiv.style.height = '40px';
+        letterDiv.style.margin = '0 5px';
+        letterDiv.style.display = 'inline-block';
+        letterDiv.style.textAlign = 'center';
 
         if (answer[i] !== ' ') {
-            // Draw underline
-            ctx.beginPath();
-            ctx.moveTo(x - (charWidth / 2) + 5, y);
-            ctx.lineTo(x + (charWidth / 2) - 5, y);
-            ctx.stroke();
+            // Add underline
+            const underline = document.createElement('div');
+            underline.style.position = 'absolute';
+            underline.style.bottom = '0';
+            underline.style.left = '0';
+            underline.style.width = '100%';
+            underline.style.height = '2px';
+            underline.style.backgroundColor = '#333';
+            letterDiv.appendChild(underline);
 
-            // Draw correct letter if it exists
+            // Add letter if it exists in correctLetters
             if (gameState.correctLetters[i]) {
-                ctx.fillText(gameState.correctLetters[i], x, y - 5);
+                const letterSpan = document.createElement('span');
+                letterSpan.style.fontSize = '24px';
+                letterSpan.style.fontWeight = 'bold';
+                letterSpan.textContent = gameState.correctLetters[i];
+                letterDiv.appendChild(letterSpan);
             }
         } else {
-            // For spaces, just add a visible gap
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.fillRect(x - 5, y - 2, 10, 2);
-            ctx.fillStyle = '#333';
+            // For spaces, add a visible gap
+            const spacer = document.createElement('div');
+            spacer.style.width = '100%';
+            spacer.style.height = '100%';
+            letterDiv.appendChild(spacer);
         }
+
+        letterContainer.appendChild(letterDiv);
     }
+
+    wordSpacesDiv.appendChild(letterContainer);
 }
 
 // Draw grid lines for debugging
