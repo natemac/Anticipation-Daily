@@ -77,10 +77,14 @@ function createWordSpacesDiv() {
     wordSpacesDiv = document.createElement('div');
     wordSpacesDiv.id = 'wordSpacesDiv';
     wordSpacesDiv.style.width = '100%';
-    wordSpacesDiv.style.height = '50px';
+    wordSpacesDiv.style.height = '60px';
     wordSpacesDiv.style.margin = '10px 0';
     wordSpacesDiv.style.textAlign = 'center';
     wordSpacesDiv.style.position = 'relative';
+    wordSpacesDiv.style.backgroundColor = 'white';
+    wordSpacesDiv.style.borderRadius = '8px';
+    wordSpacesDiv.style.padding = '10px';
+    wordSpacesDiv.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
 
     // Find the game controls div to insert before it
     const gameControlsDiv = beginButton.parentElement;
@@ -270,12 +274,37 @@ function setupGameEventListeners() {
         }
     });
 
-    // Guess input
-    guessInput.addEventListener('input', (e) => {
-        if (gameState.guessMode) {
-            handleLetterInput(e.target.value);
+    // Key press events for direct typing
+    document.addEventListener('keydown', (e) => {
+        // Only process keypresses when in guess mode
+        if (!gameState.guessMode) return;
+
+        // Handle different key types
+        if (e.key === 'Backspace') {
+            // Remove the last character
+            if (gameState.currentInput.length > 0) {
+                gameState.currentInput = gameState.currentInput.slice(0, -1);
+                updateWordSpacesDiv();
+            }
+        } else if (e.key === 'Enter') {
+            // Submit the current guess
+            checkAnswer();
+        } else if (e.key.length === 1) {
+            // Only add regular characters, ignore special keys
+            const currentWord = gameState.drawingData.name;
+
+            // Only accept input up to the word length
+            if (gameState.currentInput.length < currentWord.length) {
+                gameState.currentInput += e.key.toUpperCase();
+                updateWordSpacesDiv();
+            }
         }
     });
+
+    // Hide the original input field completely
+    if (guessInput) {
+        guessInput.style.display = 'none';
+    }
 
     // Add touch event to canvas (with passive: false to prevent scrolling)
     canvas.addEventListener('touchstart', function(e) {
@@ -356,7 +385,6 @@ function startGameWithData(color, category, data) {
     document.body.style.backgroundColor = `var(--${color}-color)`;
 
     // Reset UI elements
-    guessInput.value = '';
     guessInput.style.display = 'none';
     wrongMessage.classList.remove('visible');
     timerDisplay.textContent = '00:00';
@@ -540,7 +568,6 @@ function enterGuessMode() {
     // If already in guess mode, reset the timer instead of toggling
     if (gameState.guessMode) {
         startGuessTimer(); // Restart the timer
-        guessInput.focus(); // Re-focus the input
         return;
     }
 
@@ -553,20 +580,17 @@ function enterGuessMode() {
         gameState.animationId = null;
     }
 
+    // Clear current input and highlight the word spaces box
+    gameState.currentInput = '';
+    if (wordSpacesDiv) {
+        wordSpacesDiv.style.boxShadow = '0 0 8px rgba(76, 175, 80, 0.6)';
+    }
+
+    // Update the word spaces to show empty slots
+    updateWordSpacesDiv();
+
     // Start the guess timer
     startGuessTimer();
-
-    // Show input field
-    guessInput.style.display = 'block';
-    guessInput.focus();
-    guessInput.value = gameState.currentInput;
-
-    // Focus and show keyboard on mobile
-    if (window.innerWidth <= 768) {
-        setTimeout(() => {
-            guessInput.click();
-        }, 100);
-    }
 }
 
 // Exit guess mode
@@ -584,9 +608,10 @@ function exitGuessMode() {
     buttonTimer.classList.remove('active');
     buttonTimer.style.width = '0%';
 
-    // Hide input field
-    guessInput.style.display = 'none';
-    guessInput.blur();
+    // Reset word spaces appearance
+    if (wordSpacesDiv) {
+        wordSpacesDiv.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+    }
 
     // Restart animation if needed
     if (gameState.pendingAnimationStart) {
@@ -594,7 +619,54 @@ function exitGuessMode() {
     }
 }
 
-// Handle user input when guessing
+// Check if the current answer is correct
+function checkAnswer() {
+    const currentWord = gameState.drawingData.name;
+    const upperInput = gameState.currentInput.toUpperCase();
+
+    // Compare input with answer
+    if (upperInput === currentWord) {
+        log("Correct answer!");
+
+        // Stop the guess timer
+        if (gameState.guessTimer) clearInterval(gameState.guessTimer);
+        gameState.guessTimerActive = false;
+
+        // Hide the timer overlay and reset it
+        buttonTimer.classList.remove('active');
+        buttonTimer.style.width = '0%';
+
+        // Success animation
+        if (wordSpacesDiv) {
+            wordSpacesDiv.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.8)';
+        }
+
+        setTimeout(() => {
+            endGame(true);
+        }, 500);
+    } else {
+        log("Incorrect answer");
+
+        // Show incorrect feedback animation
+        canvas.classList.add('incorrect');
+        if (wordSpacesDiv) {
+            wordSpacesDiv.style.boxShadow = '0 0 12px rgba(244, 67, 54, 0.8)';
+        }
+
+        setTimeout(() => {
+            canvas.classList.remove('incorrect');
+            if (wordSpacesDiv) {
+                wordSpacesDiv.style.boxShadow = '0 0 8px rgba(76, 175, 80, 0.6)';
+            }
+        }, 500);
+
+        // Reset input
+        gameState.currentInput = '';
+        updateWordSpacesDiv();
+    }
+}
+
+// Handle user input for letter guessing
 function handleLetterInput(input) {
     const currentWord = gameState.drawingData.name;
     const upperInput = input.toUpperCase();
@@ -642,7 +714,6 @@ function handleLetterInput(input) {
             correctInput += gameState.correctLetters[i] ? gameState.correctLetters[i] : '';
         }
         gameState.currentInput = correctInput;
-        guessInput.value = correctInput;
     }
 
     // Update word spaces to show current state
@@ -669,9 +740,6 @@ function handleLetterInput(input) {
             exitGuessMode();
         }
     }
-
-    // Redraw to show correct letters
-    renderFrame();
 }
 
 // End the current game
@@ -700,9 +768,9 @@ function endGame(success) {
     gameState.pendingAnimationStart = false;
     gameState.scaling = null;
 
-    // Clear word spaces div
+    // Reset word spaces appearance
     if (wordSpacesDiv) {
-        wordSpacesDiv.innerHTML = '';
+        wordSpacesDiv.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
     }
 
     // Update puzzle state in menu if successful
@@ -873,8 +941,18 @@ function updateWordSpacesDiv() {
             underline.style.backgroundColor = '#333';
             letterDiv.appendChild(underline);
 
-            // Add letter if it exists in correctLetters
-            if (gameState.correctLetters[i]) {
+            // If in guess mode, show the current input or correct letters
+            if (gameState.guessMode) {
+                // Check if we have a character at this position in currentInput
+                if (i < gameState.currentInput.length) {
+                    const letterSpan = document.createElement('span');
+                    letterSpan.style.fontSize = '24px';
+                    letterSpan.style.fontWeight = 'bold';
+                    letterSpan.textContent = gameState.currentInput[i];
+                    letterDiv.appendChild(letterSpan);
+                }
+            } else if (gameState.correctLetters[i]) {
+                // Otherwise show correct letters we've collected
                 const letterSpan = document.createElement('span');
                 letterSpan.style.fontSize = '24px';
                 letterSpan.style.fontWeight = 'bold';
@@ -893,6 +971,40 @@ function updateWordSpacesDiv() {
     }
 
     wordSpacesDiv.appendChild(letterContainer);
+
+    // Add a cursor effect to indicate where the next letter will go
+    if (gameState.guessMode && gameState.currentInput.length < answer.length) {
+        const cursorIndex = gameState.currentInput.length;
+        const letterDivs = letterContainer.children;
+
+        if (cursorIndex < letterDivs.length) {
+            const currentLetterDiv = letterDivs[cursorIndex];
+
+            // Add cursor element
+            const cursor = document.createElement('div');
+            cursor.style.position = 'absolute';
+            cursor.style.bottom = '2px';
+            cursor.style.left = '0';
+            cursor.style.width = '100%';
+            cursor.style.height = '2px';
+            cursor.style.backgroundColor = '#4CAF50';
+            cursor.style.animation = 'blink 1s infinite';
+            currentLetterDiv.appendChild(cursor);
+
+            // Add blink animation if it doesn't exist
+            if (!document.getElementById('cursor-blink-style')) {
+                const style = document.createElement('style');
+                style.id = 'cursor-blink-style';
+                style.textContent = `
+                    @keyframes blink {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+    }
 }
 
 // Draw grid lines for debugging
@@ -944,6 +1056,135 @@ function startDrawing() {
     startDrawingImproved();
 }
 
+// Add virtual keyboard for mobile devices
+function createVirtualKeyboard() {
+    // Only create if we're on a mobile device and it doesn't already exist
+    if (!document.getElementById('virtual-keyboard') && isMobileDevice()) {
+        const keyboard = document.createElement('div');
+        keyboard.id = 'virtual-keyboard';
+        keyboard.style.display = 'none';
+        keyboard.style.position = 'fixed';
+        keyboard.style.bottom = '0';
+        keyboard.style.left = '0';
+        keyboard.style.width = '100%';
+        keyboard.style.backgroundColor = '#f5f5f5';
+        keyboard.style.padding = '10px';
+        keyboard.style.boxShadow = '0 -2px 5px rgba(0,0,0,0.1)';
+        keyboard.style.zIndex = '1000';
+
+        // Add keyboard rows
+        const rows = [
+            'QWERTYUIOP',
+            'ASDFGHJKL',
+            'ZXCVBNM'
+        ];
+
+        rows.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.style.display = 'flex';
+            rowDiv.style.justifyContent = 'center';
+            rowDiv.style.margin = '5px 0';
+
+            // Add keys for this row
+            for (let i = 0; i < row.length; i++) {
+                const key = document.createElement('button');
+                key.textContent = row[i];
+                key.style.margin = '2px';
+                key.style.padding = '10px 15px';
+                key.style.fontSize = '18px';
+                key.style.border = '1px solid #ddd';
+                key.style.borderRadius = '5px';
+                key.style.backgroundColor = 'white';
+
+                // Add click event to the key
+                key.addEventListener('click', () => {
+                    if (gameState.guessMode && gameState.currentInput.length < gameState.drawingData.name.length) {
+                        gameState.currentInput += key.textContent;
+                        updateWordSpacesDiv();
+                    }
+                });
+
+                rowDiv.appendChild(key);
+            }
+
+            keyboard.appendChild(rowDiv);
+        });
+
+        // Add special keys row
+        const specialRow = document.createElement('div');
+        specialRow.style.display = 'flex';
+        specialRow.style.justifyContent = 'center';
+        specialRow.style.margin = '5px 0';
+
+        // Backspace key
+        const backspaceKey = document.createElement('button');
+        backspaceKey.textContent = '⌫';
+        backspaceKey.style.margin = '2px';
+        backspaceKey.style.padding = '10px 15px';
+        backspaceKey.style.fontSize = '18px';
+        backspaceKey.style.border = '1px solid #ddd';
+        backspaceKey.style.borderRadius = '5px';
+        backspaceKey.style.backgroundColor = '#f0f0f0';
+        backspaceKey.style.width = '80px';
+        backspaceKey.addEventListener('click', () => {
+            if (gameState.guessMode && gameState.currentInput.length > 0) {
+                gameState.currentInput = gameState.currentInput.slice(0, -1);
+                updateWordSpacesDiv();
+            }
+        });
+
+        // Enter key
+        const enterKey = document.createElement('button');
+        enterKey.textContent = 'Enter';
+        enterKey.style.margin = '2px';
+        enterKey.style.padding = '10px 15px';
+        enterKey.style.fontSize = '18px';
+        enterKey.style.border = '1px solid #ddd';
+        enterKey.style.borderRadius = '5px';
+        enterKey.style.backgroundColor = '#f0f0f0';
+        enterKey.style.width = '80px';
+        enterKey.addEventListener('click', () => {
+            if (gameState.guessMode) {
+                checkAnswer();
+            }
+        });
+
+        specialRow.appendChild(backspaceKey);
+        specialRow.appendChild(enterKey);
+        keyboard.appendChild(specialRow);
+
+        // Add to document
+        document.body.appendChild(keyboard);
+
+        // Show keyboard when in guess mode
+        document.addEventListener('guessmode-changed', (e) => {
+            if (e.detail.active) {
+                keyboard.style.display = 'block';
+            } else {
+                keyboard.style.display = 'none';
+            }
+        });
+    }
+}
+
+// Check if we're on a mobile device
+function isMobileDevice() {
+    return (typeof window.orientation !== 'undefined') ||
+           (navigator.userAgent.indexOf('IEMobile') !== -1) ||
+           (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+}
+
+// Show/hide virtual keyboard when guess mode changes
+function updateVirtualKeyboard() {
+    // Create a custom event
+    const event = new CustomEvent('guessmode-changed', {
+        detail: {
+            active: gameState.guessMode
+        }
+    });
+    document.dispatchEvent(event);
+}
+
 // Initialize the game functionality when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initGame);
 
@@ -957,5 +1198,8 @@ window.addEventListener('load', function() {
             log("Reinitializing canvas after full page load");
             initializeGameCanvas();
         }
+
+        // Create virtual keyboard
+        createVirtualKeyboard();
     }, 300);
 });
