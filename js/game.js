@@ -21,7 +21,9 @@ const gameState = {
     animationId: null,
     pendingAnimationStart: false,
     // Canvas properties
-    canvasReady: false
+    canvasReady: false,
+    // Scaling properties
+    scaling: null
 };
 
 // DOM elements
@@ -298,6 +300,7 @@ function startGameWithData(color, category, data) {
     gameState.guessTimeRemaining = 10;
     gameState.guessTimerActive = false;
     gameState.pendingAnimationStart = false;
+    gameState.scaling = null;
 
     // Switch to game screen using the menu function
     if (typeof showGameScreen === 'function') {
@@ -647,6 +650,7 @@ function endGame(success) {
     gameState.guessMode = false;
     gameState.guessTimerActive = false;
     gameState.pendingAnimationStart = false;
+    gameState.scaling = null;
 
     // Update puzzle state in menu if successful
     if (success) {
@@ -663,7 +667,7 @@ function endGame(success) {
 }
 
 // Drawing Functions
-// Draw the dots
+// Draw the dots with proper scaling
 function drawDots() {
     if (!gameState.drawingData || !gameState.drawingData.dots) {
         log("No dot data to draw");
@@ -674,12 +678,33 @@ function drawDots() {
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
 
+    // Calculate scaling and centering factors
+    const maxX = Math.max(...gameState.drawingData.dots.map(dot => dot.x));
+    const maxY = Math.max(...gameState.drawingData.dots.map(dot => dot.y));
+    const minX = Math.min(...gameState.drawingData.dots.map(dot => dot.x));
+    const minY = Math.min(...gameState.drawingData.dots.map(dot => dot.y));
+
+    const drawingWidth = maxX - minX;
+    const drawingHeight = maxY - minY;
+
+    // Add padding (15% of canvas size)
+    const padding = Math.min(displayWidth, displayHeight) * 0.15;
+
+    // Calculate scale to fit with padding
+    const scaleX = (displayWidth - padding*2) / drawingWidth;
+    const scaleY = (displayHeight - padding*2) / drawingHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    // Calculate centering offset
+    const offsetX = (displayWidth - (drawingWidth * scale)) / 2;
+    const offsetY = (displayHeight - (drawingHeight * scale)) / 2;
+
     gameState.drawingData.dots.forEach((dot, index) => {
         if (!dot) return;
 
-        // Scale dot positions to fit canvas size
-        const x = Math.round((dot.x / 400) * displayWidth);
-        const y = Math.round((dot.y / 400) * displayHeight);
+        // Apply scaling and centering
+        const x = ((dot.x - minX) * scale) + offsetX;
+        const y = ((dot.y - minY) * scale) + offsetY;
 
         // Draw dot
         ctx.fillStyle = '#333';
@@ -694,17 +719,40 @@ function drawDots() {
         ctx.font = '8px Arial';
         ctx.fillText(index.toString(), x, y);
     });
+
+    // Store scaling information for use in other drawing functions
+    gameState.scaling = {
+        scale: scale,
+        offsetX: offsetX,
+        offsetY: offsetY,
+        minX: minX,
+        minY: minY
+    };
 }
 
-// Draw the lines
+// Draw the lines with the same scaling
 function drawLines() {
     if (!gameState.drawingData || !gameState.drawingData.sequence) {
         log("No line data to draw");
         return;
     }
 
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
+    // Use the scaling calculated in drawDots
+    if (gameState.difficulty === 'easy' && !gameState.scaling) {
+        // If we're in easy mode but scaling hasn't been calculated yet, calculate it now
+        drawDots();
+    } else if (gameState.difficulty === 'hard' && !gameState.scaling) {
+        // If we're in hard mode, calculate scaling without drawing dots
+        calculateScaling();
+    }
+
+    // Check again if scaling is available
+    if (!gameState.scaling) {
+        log("Scaling information not available");
+        return;
+    }
+
+    const scaling = gameState.scaling;
 
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 3;
@@ -721,11 +769,11 @@ function drawLines() {
 
             if (!from || !to) continue;
 
-            // Scale line positions to fit canvas size
-            const fromX = Math.round((from.x / 400) * displayWidth);
-            const fromY = Math.round((from.y / 400) * displayHeight);
-            const toX = Math.round((to.x / 400) * displayWidth);
-            const toY = Math.round((to.y / 400) * displayHeight);
+            // Apply the same scaling and centering as the dots
+            const fromX = ((from.x - scaling.minX) * scaling.scale) + scaling.offsetX;
+            const fromY = ((from.y - scaling.minY) * scaling.scale) + scaling.offsetY;
+            const toX = ((to.x - scaling.minX) * scaling.scale) + scaling.offsetX;
+            const toY = ((to.y - scaling.minY) * scaling.scale) + scaling.offsetY;
 
             ctx.beginPath();
             ctx.moveTo(fromX, fromY);
@@ -735,7 +783,47 @@ function drawLines() {
     }
 }
 
-// Draw the word spaces
+// Calculate scaling without drawing dots (for hard mode)
+function calculateScaling() {
+    if (!gameState.drawingData || !gameState.drawingData.dots) {
+        return;
+    }
+
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    // Calculate scaling and centering factors
+    const maxX = Math.max(...gameState.drawingData.dots.map(dot => dot.x));
+    const maxY = Math.max(...gameState.drawingData.dots.map(dot => dot.y));
+    const minX = Math.min(...gameState.drawingData.dots.map(dot => dot.x));
+    const minY = Math.min(...gameState.drawingData.dots.map(dot => dot.y));
+
+    const drawingWidth = maxX - minX;
+    const drawingHeight = maxY - minY;
+
+    // Add padding (15% of canvas size)
+    const padding = Math.min(displayWidth, displayHeight) * 0.15;
+
+    // Calculate scale to fit with padding
+    const scaleX = (displayWidth - padding*2) / drawingWidth;
+    const scaleY = (displayHeight - padding*2) / drawingHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    // Calculate centering offset
+    const offsetX = (displayWidth - (drawingWidth * scale)) / 2;
+    const offsetY = (displayHeight - (drawingHeight * scale)) / 2;
+
+    // Store scaling information
+    gameState.scaling = {
+        scale: scale,
+        offsetX: offsetX,
+        offsetY: offsetY,
+        minX: minX,
+        minY: minY
+    };
+}
+
+// Draw the word spaces with better positioning
 function drawWordSpaces() {
     // Only draw word spaces in easy mode
     if (gameState.difficulty !== 'easy' || !gameState.drawingData) return;
@@ -744,7 +832,9 @@ function drawWordSpaces() {
     const displayWidth = canvas.clientWidth;
     const charWidth = displayWidth / (answer.length + 2);
     const startX = (displayWidth - (charWidth * answer.length)) / 2;
-    const y = canvas.clientHeight - 30;
+
+    // Position word spaces at the bottom with padding for better visibility
+    const y = canvas.clientHeight - 50;
 
     ctx.fillStyle = '#333';
     ctx.strokeStyle = '#333';
@@ -776,7 +866,7 @@ function drawWordSpaces() {
     }
 }
 
-// Compatibility updates for existing code
+// Compatibility functions for existing code
 function clearCanvas() {
     if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
