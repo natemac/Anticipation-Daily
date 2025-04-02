@@ -121,6 +121,9 @@ function resizeCanvasProperly() {
 
     log(`Canvas resized: ${displayWidth}x${displayHeight}, ratio: ${devicePixelRatio}`);
 
+    // Reset scaling to force recalculation with new dimensions
+    gameState.scaling = null;
+
     // If game is active, redraw content
     if (gameState.gameStarted) {
         renderFrame();
@@ -666,45 +669,59 @@ function endGame(success) {
     }
 }
 
-// Drawing Functions
-// Draw the dots with proper scaling
+// Calculate scaling for fixed 17x17 grid
+function calculateScaling() {
+    if (!gameState.drawingData) {
+        return;
+    }
+
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    // Fixed grid size (16x16 cells, 17x17 points)
+    // In the builder, drawings are positioned within a 400x400 pixel area
+    const BUILDER_SIZE = 400;
+
+    // Calculate scale to fit the entire grid in the canvas with some padding
+    const padding = Math.min(displayWidth, displayHeight) * 0.05; // 5% padding
+    const scaleX = (displayWidth - padding*2) / BUILDER_SIZE;
+    const scaleY = (displayHeight - padding*2) / BUILDER_SIZE;
+    const scale = Math.min(scaleX, scaleY);
+
+    // Calculate centering offset to position the grid in the center
+    const offsetX = (displayWidth - (BUILDER_SIZE * scale)) / 2;
+    const offsetY = (displayHeight - (BUILDER_SIZE * scale)) / 2;
+
+    // Store scaling information using 0,0 as the starting point
+    gameState.scaling = {
+        scale: scale,
+        offsetX: offsetX,
+        offsetY: offsetY,
+        builderSize: BUILDER_SIZE
+    };
+}
+
+// Draw the dots with fixed grid scaling
 function drawDots() {
     if (!gameState.drawingData || !gameState.drawingData.dots) {
         log("No dot data to draw");
         return;
     }
 
+    // Calculate scaling if not done yet
+    if (!gameState.scaling) {
+        calculateScaling();
+    }
+
+    const scaling = gameState.scaling;
     const dotRadius = 5;
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-
-    // Calculate scaling and centering factors
-    const maxX = Math.max(...gameState.drawingData.dots.map(dot => dot.x));
-    const maxY = Math.max(...gameState.drawingData.dots.map(dot => dot.y));
-    const minX = Math.min(...gameState.drawingData.dots.map(dot => dot.x));
-    const minY = Math.min(...gameState.drawingData.dots.map(dot => dot.y));
-
-    const drawingWidth = maxX - minX;
-    const drawingHeight = maxY - minY;
-
-    // Add padding (15% of canvas size)
-    const padding = Math.min(displayWidth, displayHeight) * 0.15;
-
-    // Calculate scale to fit with padding
-    const scaleX = (displayWidth - padding*2) / drawingWidth;
-    const scaleY = (displayHeight - padding*2) / drawingHeight;
-    const scale = Math.min(scaleX, scaleY);
-
-    // Calculate centering offset
-    const offsetX = (displayWidth - (drawingWidth * scale)) / 2;
-    const offsetY = (displayHeight - (drawingHeight * scale)) / 2;
 
     gameState.drawingData.dots.forEach((dot, index) => {
         if (!dot) return;
 
-        // Apply scaling and centering
-        const x = ((dot.x - minX) * scale) + offsetX;
-        const y = ((dot.y - minY) * scale) + offsetY;
+        // Apply scaling directly from builder coordinates to canvas
+        const x = (dot.x * scaling.scale) + scaling.offsetX;
+        const y = (dot.y * scaling.scale) + scaling.offsetY;
 
         // Draw dot
         ctx.fillStyle = '#333';
@@ -719,37 +736,18 @@ function drawDots() {
         ctx.font = '8px Arial';
         ctx.fillText(index.toString(), x, y);
     });
-
-    // Store scaling information for use in other drawing functions
-    gameState.scaling = {
-        scale: scale,
-        offsetX: offsetX,
-        offsetY: offsetY,
-        minX: minX,
-        minY: minY
-    };
 }
 
-// Draw the lines with the same scaling
+// Draw the lines with fixed grid scaling
 function drawLines() {
     if (!gameState.drawingData || !gameState.drawingData.sequence) {
         log("No line data to draw");
         return;
     }
 
-    // Use the scaling calculated in drawDots
-    if (gameState.difficulty === 'easy' && !gameState.scaling) {
-        // If we're in easy mode but scaling hasn't been calculated yet, calculate it now
-        drawDots();
-    } else if (gameState.difficulty === 'hard' && !gameState.scaling) {
-        // If we're in hard mode, calculate scaling without drawing dots
-        calculateScaling();
-    }
-
-    // Check again if scaling is available
+    // Calculate scaling if not done yet
     if (!gameState.scaling) {
-        log("Scaling information not available");
-        return;
+        calculateScaling();
     }
 
     const scaling = gameState.scaling;
@@ -769,11 +767,11 @@ function drawLines() {
 
             if (!from || !to) continue;
 
-            // Apply the same scaling and centering as the dots
-            const fromX = ((from.x - scaling.minX) * scaling.scale) + scaling.offsetX;
-            const fromY = ((from.y - scaling.minY) * scaling.scale) + scaling.offsetY;
-            const toX = ((to.x - scaling.minX) * scaling.scale) + scaling.offsetX;
-            const toY = ((to.y - scaling.minY) * scaling.scale) + scaling.offsetY;
+            // Apply scaling directly from builder coordinates
+            const fromX = (from.x * scaling.scale) + scaling.offsetX;
+            const fromY = (from.y * scaling.scale) + scaling.offsetY;
+            const toX = (to.x * scaling.scale) + scaling.offsetX;
+            const toY = (to.y * scaling.scale) + scaling.offsetY;
 
             ctx.beginPath();
             ctx.moveTo(fromX, fromY);
@@ -781,46 +779,6 @@ function drawLines() {
             ctx.stroke();
         }
     }
-}
-
-// Calculate scaling without drawing dots (for hard mode)
-function calculateScaling() {
-    if (!gameState.drawingData || !gameState.drawingData.dots) {
-        return;
-    }
-
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-
-    // Calculate scaling and centering factors
-    const maxX = Math.max(...gameState.drawingData.dots.map(dot => dot.x));
-    const maxY = Math.max(...gameState.drawingData.dots.map(dot => dot.y));
-    const minX = Math.min(...gameState.drawingData.dots.map(dot => dot.x));
-    const minY = Math.min(...gameState.drawingData.dots.map(dot => dot.y));
-
-    const drawingWidth = maxX - minX;
-    const drawingHeight = maxY - minY;
-
-    // Add padding (15% of canvas size)
-    const padding = Math.min(displayWidth, displayHeight) * 0.15;
-
-    // Calculate scale to fit with padding
-    const scaleX = (displayWidth - padding*2) / drawingWidth;
-    const scaleY = (displayHeight - padding*2) / drawingHeight;
-    const scale = Math.min(scaleX, scaleY);
-
-    // Calculate centering offset
-    const offsetX = (displayWidth - (drawingWidth * scale)) / 2;
-    const offsetY = (displayHeight - (drawingHeight * scale)) / 2;
-
-    // Store scaling information
-    gameState.scaling = {
-        scale: scale,
-        offsetX: offsetX,
-        offsetY: offsetY,
-        minX: minX,
-        minY: minY
-    };
 }
 
 // Draw the word spaces with better positioning
@@ -879,6 +837,40 @@ function redrawCanvas() {
 
 function startDrawing() {
     startDrawingImproved();
+}
+
+// Optional: Draw grid lines to see the 17x17 grid (for debugging)
+function drawGridLines() {
+    if (!gameState.scaling) {
+        calculateScaling();
+    }
+
+    const scaling = gameState.scaling;
+
+    // Fixed grid size (16x16 cells, 17x17 points)
+    const GRID_SIZE = 16;
+    const cellSize = (scaling.builderSize / GRID_SIZE) * scaling.scale;
+
+    ctx.strokeStyle = '#eee';
+    ctx.lineWidth = 1;
+
+    // Draw vertical grid lines
+    for (let i = 0; i <= GRID_SIZE; i++) {
+        const x = scaling.offsetX + (i * cellSize);
+        ctx.beginPath();
+        ctx.moveTo(x, scaling.offsetY);
+        ctx.lineTo(x, scaling.offsetY + (GRID_SIZE * cellSize));
+        ctx.stroke();
+    }
+
+    // Draw horizontal grid lines
+    for (let i = 0; i <= GRID_SIZE; i++) {
+        const y = scaling.offsetY + (i * cellSize);
+        ctx.beginPath();
+        ctx.moveTo(scaling.offsetX, y);
+        ctx.lineTo(scaling.offsetX + (GRID_SIZE * cellSize), y);
+        ctx.stroke();
+    }
 }
 
 // Initialize the game functionality when the DOM is loaded
