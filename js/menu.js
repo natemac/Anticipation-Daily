@@ -1,237 +1,220 @@
-// Main menu and game initialization functionality
-const menuState = {
-    completedCategories: 0,
-    puzzles: {
-        yellow: { completed: false, guesses: 0, time: 0 },
-        green: { completed: false, guesses: 0, time: 0 },
-        blue: { completed: false, guesses: 0, time: 0 },
-        red: { completed: false, guesses: 0, time: 0 }
-    }
+// Menu script for Daily Anticipation game
+document.addEventListener('DOMContentLoaded', initMenu);
+
+// Global game state variables
+const gameState = {
+    category: null,
+    difficulty: 'easy',
+    currentScreen: 'menu'
 };
 
-// DOM elements
-let mainScreen, gameScreen, colorSquares, difficultyToggle, shareButton;
-
-// Simple logging function for debugging
-function log(message) {
-    console.log(message);
-}
+// DOM Elements
+let menuScreen, gameScreen, startScreen, resultScreen;
+let categoryCards, difficultyToggle, createButton;
+let backButton, startBackButton, beginButton;
+let newGameButton, shareResultButton;
 
 // Initialize the menu
 function initMenu() {
-    log("Initializing menu...");
+    // Get screen elements
+    menuScreen = document.getElementById('menuScreen');
+    gameScreen = document.getElementById('gameScreen');
+    startScreen = document.getElementById('startScreen');
+    resultScreen = document.getElementById('resultScreen');
 
-    // Get DOM elements
-    mainScreen = document.querySelector('.main-screen');
-    gameScreen = document.querySelector('.game-screen');
-    colorSquares = document.querySelectorAll('.color-square');
+    // Get menu UI elements
+    categoryCards = document.querySelectorAll('.category-card');
     difficultyToggle = document.getElementById('difficultyToggle');
-    shareButton = document.getElementById('shareButton');
+    createButton = document.getElementById('createButton');
+
+    // Get navigation elements
+    backButton = document.getElementById('backButton');
+    startBackButton = document.getElementById('startBackButton');
+    beginButton = document.getElementById('beginButton');
+    newGameButton = document.getElementById('newGameButton');
+    shareResultButton = document.getElementById('shareResultButton');
 
     // Set up event listeners
-    setupMenuEventListeners();
+    setupEventListeners();
 
-    // Initialize difficulty toggle
-    initDifficultyToggle();
-
-    log("Menu initialized");
+    // Show the menu screen initially
+    showScreen('menu');
 }
 
-// Set up event listeners for menu elements
-function setupMenuEventListeners() {
+// Set up event listeners for menu interactions
+function setupEventListeners() {
+    // Category selection
+    categoryCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const category = card.getAttribute('data-category');
+            selectCategory(category);
+        });
+    });
+
     // Difficulty toggle
     difficultyToggle.addEventListener('change', () => {
-        const difficulty = difficultyToggle.checked ? 'hard' : 'easy';
-        updateDifficultyUI(difficultyToggle.checked);
-
-        // Store preference
-        localStorage.setItem('difficultyMode', difficulty);
-
-        // Update game state if game.js is loaded
-        if (typeof gameState !== 'undefined') {
-            gameState.difficulty = difficulty;
-        }
+        gameState.difficulty = difficultyToggle.checked ? 'hard' : 'easy';
+        console.log(`Difficulty set to: ${gameState.difficulty}`);
     });
 
-    // Color squares click events
-    colorSquares.forEach(square => {
-        square.addEventListener('click', () => {
-            const color = square.dataset.color;
-            const category = square.dataset.category;
-
-            // Don't allow replaying completed puzzles
-            if (menuState.puzzles[color].completed) return;
-
-            // Start game if game.js is loaded
-            if (typeof startGame === 'function') {
-                startGame(color, category);
-            } else {
-                console.error("Game module not loaded");
-            }
-        });
+    // Create button navigates to builder
+    createButton.addEventListener('click', () => {
+        window.location.href = 'anticipation-builder.html';
     });
 
-    // Share button
-    shareButton.addEventListener('click', () => {
-        shareResults();
+    // Back buttons
+    backButton.addEventListener('click', () => {
+        showScreen('menu');
     });
+
+    startBackButton.addEventListener('click', () => {
+        showScreen('menu');
+    });
+
+    // Begin button starts the game
+    beginButton.addEventListener('click', () => {
+        showScreen('game');
+        startGame(gameState.category, gameState.difficulty);
+    });
+
+    // Result screen buttons
+    newGameButton.addEventListener('click', () => {
+        showScreen('menu');
+    });
+
+    shareResultButton.addEventListener('click', shareResult);
 }
 
-// Difficulty toggle functionality
-function initDifficultyToggle() {
-    const easyLabel = document.getElementById('easyLabel');
-    const hardLabel = document.getElementById('hardLabel');
+// Handle category selection
+function selectCategory(category) {
+    gameState.category = category;
+    console.log(`Selected category: ${category}`);
 
-    // Set initial state based on stored preference (if any)
-    const storedDifficulty = localStorage.getItem('difficultyMode');
-    if (storedDifficulty === 'hard') {
-        difficultyToggle.checked = true;
-        updateDifficultyUI(true);
-    } else {
-        difficultyToggle.checked = false;
-        updateDifficultyUI(false);
-    }
+    // Display the start screen
+    showScreen('start');
 
-    // Also add direct click handlers to labels for better mobile experience
-    easyLabel.addEventListener('click', function() {
-        difficultyToggle.checked = false;
-        difficultyToggle.dispatchEvent(new Event('change'));
-    });
-
-    hardLabel.addEventListener('click', function() {
-        difficultyToggle.checked = true;
-        difficultyToggle.dispatchEvent(new Event('change'));
-    });
+    // Load and show a preview of the game
+    prepareStartScreen(category);
 }
 
-// Update difficulty UI
-function updateDifficultyUI(isHard) {
-    const easyLabel = document.getElementById('easyLabel');
-    const hardLabel = document.getElementById('hardLabel');
+// Show the specified screen and hide others
+function showScreen(screenName) {
+    gameState.currentScreen = screenName;
 
-    if (isHard) {
-        // Hard mode selected
-        easyLabel.style.opacity = '0.5';
-        easyLabel.style.fontWeight = 'normal';
-        hardLabel.style.opacity = '1';
-        hardLabel.style.fontWeight = 'bold';
-    } else {
-        // Easy mode selected
-        hardLabel.style.opacity = '0.5';
-        hardLabel.style.fontWeight = 'normal';
-        easyLabel.style.opacity = '1';
-        easyLabel.style.fontWeight = 'bold';
+    // Hide all screens
+    menuScreen.classList.add('hidden');
+    gameScreen.classList.add('hidden');
+    startScreen.classList.add('hidden');
+    resultScreen.classList.add('hidden');
+
+    // Show the requested screen
+    switch(screenName) {
+        case 'menu':
+            menuScreen.classList.remove('hidden');
+            break;
+        case 'game':
+            gameScreen.classList.remove('hidden');
+            break;
+        case 'start':
+            startScreen.classList.remove('hidden');
+            break;
+        case 'result':
+            resultScreen.classList.remove('hidden');
+            break;
     }
 }
 
-// Update the menu state when a game is completed
-function updatePuzzleCompletion(color, time) {
-    menuState.puzzles[color].completed = true;
-    menuState.puzzles[color].time = time;
-    menuState.completedCategories++;
+// Prepare the start screen with a preview
+function prepareStartScreen(category) {
+    // Reset timer display
+    document.getElementById('startTimer').textContent = '00:00';
 
-    // Update result overlay
-    const resultOverlay = document.getElementById(`${color}-result`);
-    resultOverlay.querySelector('.time-count').textContent = `Time: ${time.toFixed(2)}s`;
-    resultOverlay.classList.add('visible');
+    // Clear the start canvas
+    const startCanvas = document.getElementById('startCanvas');
+    const ctx = startCanvas.getContext('2d');
+    ctx.clearRect(0, 0, startCanvas.width, startCanvas.height);
 
-    // Show share button if all categories completed
-    if (menuState.completedCategories === 4) {
-        shareButton.style.display = 'block';
+    // Get the category name
+    const categoryName = gameCategories[category]?.name || getCategoryName(category);
+
+    // Add a message about the category
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    ctx.font = '20px Arial';
+    ctx.fillText(`Get ready to guess a ${categoryName} item!`,
+                 startCanvas.width/2, startCanvas.height/2 - 20);
+
+    // Add a "Press Begin" instruction
+    ctx.font = '16px Arial';
+    ctx.fillText('Press Begin when you\'re ready!',
+                 startCanvas.width/2, startCanvas.height/2 + 20);
+}
+
+// Get human-readable category name
+function getCategoryName(category) {
+    switch(category) {
+        case 'travel': return 'Travel';
+        case 'food': return 'Food';
+        case 'manmade': return 'Man-made';
+        case 'leisure': return 'Leisure';
+        default: return category;
     }
 }
 
-// Share results functionality
-function shareResults() {
-    let shareText = "Daily Anticipation Results:\n";
+// Share result on social media or copy link
+function shareResult() {
+    const shareText = `I guessed the Daily Anticipation puzzle in ${document.querySelector('.result-time').textContent}!`;
 
-    for (const color of ['yellow', 'green', 'blue', 'red']) {
-        const puzzle = menuState.puzzles[color];
-        const category = document.querySelector(`.color-square[data-color="${color}"]`).dataset.category;
-
-        if (puzzle.completed) {
-            shareText += `${category}: ✓ (${puzzle.time.toFixed(2)}s)\n`;
-        } else {
-            shareText += `${category}: ✗\n`;
-        }
-    }
-
-    // Try to use the Share API if available
+    // Check if Web Share API is available
     if (navigator.share) {
         navigator.share({
-            title: 'Daily Anticipation Results',
-            text: shareText
+            title: 'Daily Anticipation',
+            text: shareText,
+            url: window.location.href
         }).catch(err => {
-            console.error('Error sharing:', err);
-            fallbackShare(shareText);
+            console.error('Share failed:', err);
+            copyToClipboard(shareText + ' ' + window.location.href);
         });
     } else {
-        fallbackShare(shareText);
+        // Fallback to clipboard copy
+        copyToClipboard(shareText + ' ' + window.location.href);
     }
 }
 
-// Fallback for sharing when Share API isn't available
-function fallbackShare(text) {
-    // Copy to clipboard
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
+// Copy text to clipboard with user feedback
+function copyToClipboard(text) {
+    // Create a temporary input element
+    const input = document.createElement('input');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
     document.execCommand('copy');
-    document.body.removeChild(textarea);
+    document.body.removeChild(input);
 
-    alert('Results copied to clipboard!');
+    // Alert the user
+    alert('Result copied to clipboard!');
 }
 
-// Switch between main menu and game screens
-function showMainMenu() {
-    mainScreen.style.display = 'flex';
-    gameScreen.style.display = 'none';
-    document.body.style.backgroundColor = '#f5f5f5';
+// Expose functions for other scripts
+window.gameMenu = {
+    showScreen,
+    showResult,
+};
+
+// Function to display the result screen with game data
+function showResult(word, timeString) {
+    // Set the result text
+    document.querySelector('.result-word').textContent = word;
+    document.querySelector('.result-time').textContent = timeString;
+
+    // Display the result screen
+    showScreen('result');
+
+    // Copy the final drawing to the result canvas
+    const drawingCanvas = document.getElementById('drawingCanvas');
+    const resultCanvas = document.getElementById('resultCanvas');
+    const resultCtx = resultCanvas.getContext('2d');
+
+    resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+    resultCtx.drawImage(drawingCanvas, 0, 0);
 }
-
-function showGameScreen() {
-    mainScreen.style.display = 'none';
-    gameScreen.style.display = 'flex';
-
-    // Force a redraw after the game screen becomes visible
-    setTimeout(() => {
-        if (typeof canvas !== 'undefined' && canvas) {
-            log("Forcing canvas redraw after screen transition");
-
-            // Force a simulated resize to trigger proper rendering
-            if (typeof resizeCanvas === 'function') {
-                // Store original dimensions
-                const originalWidth = canvas.width;
-                const originalHeight = canvas.height;
-
-                // Change dimensions slightly to force redraw
-                canvas.width = originalWidth - 1;
-                canvas.height = originalHeight - 1;
-
-                // Restore dimensions
-                setTimeout(() => {
-                    canvas.width = originalWidth;
-                    canvas.height = originalHeight;
-
-                    if (typeof clearCanvas === 'function') {
-                        clearCanvas();
-                    } else if (typeof ctx !== 'undefined' && ctx) {
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    }
-
-                    if (typeof ctx !== 'undefined' && ctx) {
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.strokeStyle = '#ccc';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(0, 0, canvas.width, canvas.height);
-                    }
-                }, 50);
-            }
-        }
-    }, 100);
-}
-
-// Initialize the menu when the DOM is loaded
-document.addEventListener('DOMContentLoaded', initMenu);

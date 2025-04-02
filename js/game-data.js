@@ -1,87 +1,78 @@
-// Default drawing data for each category
-const gameData = {
-    yellow: {
-        name: "AIRPLANE",
-        dots: [
-            {x: 100, y: 200},
-            {x: 300, y: 200},
-            {x: 400, y: 150},
-            {x: 300, y: 100},
-            {x: 100, y: 100},
-            {x: 200, y: 150},
-            {x: 150, y: 250},
-            {x: 250, y: 250}
-        ],
-        sequence: [
-            {from: 0, to: 1},
-            {from: 1, to: 2},
-            {from: 2, to: 3},
-            {from: 3, to: 4},
-            {from: 4, to: 0},
-            {from: 4, to: 5},
-            {from: 5, to: 3},
-            {from: 0, to: 6},
-            {from: 6, to: 7},
-            {from: 7, to: 1}
-        ]
+// Game data for Daily Anticipation
+
+// Game categories configuration
+const gameCategories = {
+    travel: {
+        id: 'yellow',
+        name: 'Travel',
+        description: 'Places & Transport',
+        color: '#fcdb4f'
     },
-    green: {
-        name: "PIZZA",
-        dots: [
-            {x: 200, y: 100},
-            {x: 100, y: 250},
-            {x: 300, y: 250},
-            {x: 150, y: 200},
-            {x: 200, y: 175},
-            {x: 250, y: 200}
-        ],
-        sequence: [
-            {from: 0, to: 1},
-            {from: 0, to: 2},
-            {from: 1, to: 2},
-            {from: 0, to: 3},
-            {from: 0, to: 4},
-            {from: 0, to: 5}
-        ]
+    food: {
+        id: 'green',
+        name: 'Food',
+        description: 'Edible Items',
+        color: '#4CAF50'
     },
-    blue: {
-        name: "CHAIR",
-        dots: [
-            {x: 150, y: 100},
-            {x: 250, y: 100},
-            {x: 250, y: 200},
-            {x: 150, y: 200},
-            {x: 150, y: 300},
-            {x: 250, y: 300}
-        ],
-        sequence: [
-            {from: 0, to: 1},
-            {from: 1, to: 2},
-            {from: 2, to: 3},
-            {from: 3, to: 0},
-            {from: 3, to: 4},
-            {from: 2, to: 5}
-        ]
+    manmade: {
+        id: 'blue',
+        name: 'Man-made',
+        description: 'Created Objects',
+        color: '#2196F3'
     },
-    red: {
-        name: "TENNIS RACKET",
-        dots: [
-            {x: 200, y: 100},
-            {x: 150, y: 150},
-            {x: 150, y: 200},
-            {x: 200, y: 250},
-            {x: 250, y: 200},
-            {x: 250, y: 150},
-            {x: 200, y: 300}
-        ],
-        sequence: [
-            {from: 0, to: 1},
-            {from: 1, to: 2},
-            {from: 2, to: 3},
-            {from: 3, to: 4},
-            {from: 4, to: 5},
-            {from: 5, to: 0},
-            {from: 3, to: 6}
-        ]
+    leisure: {
+        id: 'red',
+        name: 'Leisure',
+        description: 'Fun & Games',
+        color: '#F44336'
     }
 };
+
+// Load item data from JSON files
+async function loadCategoryItems(categoryId) {
+    try {
+        // Get the color ID for the category (yellow, red, blue, green)
+        const colorId = gameCategories[categoryId]?.id || categoryId;
+
+        // Load the JSON file
+        const response = await fetch(`items/${colorId}.json`);
+
+        if (!response.ok) {
+            throw new Error(`Failed to load ${colorId}.json`);
+        }
+
+        const itemData = await response.json();
+        return itemData;
+    } catch (error) {
+        console.error('Error loading category items:', error);
+        throw error;
+    }
+}
+
+// Get a random item for today based on date seed
+function getTodayItem(categoryId) {
+    // Use a date-based seed to ensure everyone gets the same puzzle on the same day
+    const today = new Date();
+    const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+
+    // We'll load the item asynchronously
+    return loadCategoryItems(categoryId)
+        .then(itemData => {
+            // Use a simple hash of the date string to pick an item
+            const dateHash = simpleHash(dateString);
+            const itemIndex = dateHash % itemData.length;
+
+            return itemData[itemIndex];
+        });
+}
+
+// Simple string hash function
+function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+}
