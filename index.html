@@ -66,19 +66,17 @@
 
         <div class="game-screen">
             <!-- Moved the animation window (canvas) up to the top -->
+            <div class="timer-display" id="timerDisplay">00:00</div>
+
             <div class="canvas-container">
                 <canvas id="gameCanvas"></canvas>
             </div>
-
-            <div class="timer-display" id="timerDisplay">00:00</div>
-        <!--    <div class="wrong-message" id="wrongMessage">WRONG!</div> -->
 
             <div class="game-controls">
                 <button id="beginButton">
                     <div id="buttonTimer"></div>
                     <span>Begin</span>
                 </button>
-                <input type="text" id="guessInput" placeholder="Type your guess here...">
             </div>
 
             <!-- Moved the Back button all the way to the bottom -->
