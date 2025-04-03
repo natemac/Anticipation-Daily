@@ -1,4 +1,4 @@
-# Anticipation Game Project - GitHub Pages Deployment
+# Daily Anticipation Game Project
 
 This project recreates the classic Nintendo game "Anticipation" as a modern web application, consisting of two main components:
 
@@ -23,7 +23,7 @@ The project consists of the following files:
   - `touch-interface.js` - Touch input handling for the builder
   - `mouse-interface.js` - Mouse input handling for the builder
   - `modules/` - Core game functionality divided into modules
-    - `state.js` - Game state management
+    - `state.js` - Game state management and configuration
     - `renderer.js` - Canvas rendering and drawing
     - `animation.js` - Animation and visual effects
     - `audio.js` - Sound management
@@ -38,118 +38,53 @@ The project consists of the following files:
   - `incorrect.mp3` - Sound for incorrect guesses
   - `completion.mp3` - Sound for successful puzzle completion
   - `tick.mp3` - Subtle sound for UI interactions
-- `README.md` - This documentation file
 
 ## Modular Code Architecture
 
-The game now uses a modular architecture with ES modules to provide better organization and maintainability. Each module has a specific responsibility and communicates with other modules through clean interfaces.
+The game uses a modular architecture with ES modules to provide better organization and maintainability. Each module has a specific responsibility and communicates with other modules through clean interfaces.
 
 ### Core Modules
 
-1. **Game.js (Main Entry Point)**
-   - Coordinates all modules and initialization
-   - Handles global events (resize, visibility changes)
-   - Provides logging and utility functions
+1. **State.js (Centralized State and Configuration)**
+   - Manages global game state and persistent settings
+   - Centralized CONFIG object for all tunable parameters
+   - Game difficulty settings and audio preferences
+   - Hint system state and cooldown timers
 
-2. **State.js**
-   - Centralizes game state management
-   - Handles persistent settings (difficulty, audio preferences)
-   - Provides methods for state manipulation
-
-3. **Renderer.js**
+2. **Renderer.js**
    - Manages all canvas drawing operations
    - Handles scaling and coordinates
    - Supports high-DPI (Retina) displays
+   - Draws dots and animated lines
 
-4. **Animation.js**
-   - Controls drawing animation with smooth timing
-   - Manages visual effects (confetti, pulses)
-   - Provides consistent animation frame handling
+3. **Animation.js**
+   - Controls drawing animation with two approaches:
+     - Line-by-line animation
+     - Point-to-point with consistent pixel speed
+   - Manages visual effects like confetti and pulses
+   - Provides smooth animation timing
 
-5. **UI.js**
+4. **UI.js**
    - Creates and updates UI elements
    - Manages timers and visual feedback
    - Handles game mode transitions
+   - Controls hint button behavior and cooldowns
 
-6. **WordHandler.js**
+5. **WordHandler.js**
    - Renders and updates word spaces
    - Processes letter and word validation
    - Handles word completion logic
+   - Manages correct letter tracking
 
-7. **Audio.js**
-   - Manages sound effects and settings
-   - Provides error-resistant playback
-   - Controls audio toggle functionality
-
-8. **Input.js**
+6. **Input.js**
    - Processes keyboard and touch input
    - Creates virtual keyboard for mobile
    - Handles input validation and feedback
 
-9. **GameLogic.js**
+7. **GameLogic.js**
    - Controls game flow and mechanics
    - Manages game initialization and loading
    - Handles timing and scoring
-
-### Benefits of Modular Architecture
-
-- **Maintainability**: Each module has a clear responsibility, making the code easier to understand and modify
-- **Testability**: Modules can be tested independently
-- **Extensibility**: New features can be added to individual modules without affecting others
-- **Collaboration**: Multiple developers can work on different modules simultaneously
-- **Organization**: Clear separation of concerns makes the codebase more navigable
-
-### Modifying the Code
-
-When making changes to the game:
-
-1. Identify which module is responsible for the feature you want to modify
-2. Make changes to just that module rather than the entire codebase
-3. Test your changes in isolation before integrating
-4. Update exports/imports if you've added new functionality that needs to be accessible from other modules
-
-## Deploying to GitHub Pages
-
-Follow these steps to deploy the game on GitHub Pages:
-
-1. **Create a GitHub repository**:
-   - Sign in to your GitHub account
-   - Click the "+" icon in the top right and select "New repository"
-   - Name your repository (e.g., "anticipation-game")
-   - Make it public
-   - Click "Create repository"
-
-2. **Upload your project files**:
-   - Clone the repository to your local machine:
-     ```
-     git clone https://github.com/your-username/your-repo-name.git
-     ```
-   - Copy all project files into the cloned repository folder
-   - Commit and push the files:
-     ```
-     git add .
-     git commit -m "Initial commit"
-     git push
-     ```
-
-3. **Enable GitHub Pages**:
-   - Go to your repository on GitHub
-   - Click on "Settings"
-   - Scroll down to the "GitHub Pages" section
-   - Under "Source", select "main" branch and root folder (/)
-   - Click "Save"
-
-4. **Access your game**:
-   - After a few minutes, your game will be available at:
-     `https://your-username.github.io/your-repo-name/`
-   - The builder will be at:
-     `https://your-username.github.io/your-repo-name/anticipation-builder.html`
-
-## Testing on GitHub Pages
-
-- GitHub Pages uses a live web server, so JSON loading will work properly
-- Make sure your links are relative paths (not absolute)
-- If you make changes, push them to GitHub and wait a few minutes for the site to update
 
 ## Game Features
 
@@ -158,128 +93,85 @@ Follow these steps to deploy the game on GitHub Pages:
 - Timer system with countdown animation
 - Sharing capability for completed puzzles
 - Responsive design for mobile and desktop
-- JSON-based drawing data loading
 - Letter-by-letter validation with immediate feedback
-- Direct typing into character spaces (no dialog popup)
 - Virtual keyboard support for mobile devices
 - Consistent drawing scaling between builder and game
 
-### Enhanced Game Features
+### Recent Improvements
 
-- **Improved Visual Feedback**:
-  - Satisfying animations for correct letter entry
-  - Confetti celebration animation on successful completion
-  - Enhanced visual effects for drawing lines (shadows and depth)
-  - Pulsing animations for interactive elements
-  - More informative wrong answer feedback
+#### 1. Centralized Configuration System
+- All tunable parameters are now defined in one place in `state.js`
+- Easy to adjust animation speeds, timers, and game behavior
+- Configuration organized by functionality (animation, UI, gameplay)
+- Includes a DEBUG_MODE flag for easier development
 
-- **Sound Effects**:
-  - Audio feedback for correct/incorrect letter entries
-  - Completion sound for successful puzzles
-  - Subtle UI interaction sounds
-  - Audio toggle in settings
+#### 2. Enhanced Hint System
+- Improved hint button with configurable cooldown timer
+- Hints reveal the next missing letter in sequence
+- Supports both limited and unlimited hint modes:
+  - Set `HINTS_AVAILABLE: 0` for unlimited hints
+  - Set any positive number for limited hints
+- Hint button is only available in Easy mode
+- 5-second delay before hint becomes available
+- 5-second cooldown between hints
+- Cooldown timer only counts when main timer is running
+- Visual feedback for cooldown state
+- Doesn't automatically enter guess mode
 
-- **Hint System**:
-  - Optional hint button that reveals the next letter
-  - Limited hints to encourage skillful play
-  - Visual highlighting for hint letters
+#### 3. Improved Completion UI
+- Added stamp-style "COMPLETED" indicator
+- Enhanced stats display with better formatting
+- Shows guesses count and time in the results
+- Animated celebration effects
+- Trophy icon for completed categories
+- Share button appears after completing all categories
 
-- **Enhanced Mobile Experience**:
-  - Improved virtual keyboard with better styling and layout
-  - Smooth animations for keyboard appearance/disappearance
-  - Better touch handling for mobile devices
-  - Support for swipe gestures and multi-touch
-  - Compact layout optimized for mobile screens
+#### 4. Bug Fixes
+- Fixed issue with guess counter always showing zero
+- Improved hint button behavior to preserve progress
+- Fixed timer issues during guess mode
+- Enhanced hard mode to properly disable hints
+- Fixed spacing and formatting in UI elements
 
-- **Improved Game Logic**:
-  - Pixels-per-second animation for consistent drawing speed
-  - Enhanced word validation with better space handling
-  - Fixed canvas rendering for high-DPI displays
-  - More reliable timer and scoring system
+#### 5. Visual Improvements
+- Added pulse animations for correct/incorrect guesses
+- Enhanced letter highlighting for hints
+- Improved contrast and readability
+- Responsive design for all screen sizes
+- Better mobile support with virtual keyboard
 
-### Game Mechanics
+## Configuration Options
 
-- **Drawing Animation**: Watch as the drawing appears line by line with consistent speed
-- **Guessing**: Type letters directly into the character spaces
-- **Validation**: Each letter is checked immediately as you type
-  - Correct letters appear in the spaces with a satisfying animation
-  - Incorrect letters trigger visual feedback and reset the guess
-- **Timing**: Complete each puzzle as quickly as possible for a better score
-- **Hints**: Use limited hints to get unstuck on difficult puzzles
-- **Celebration**: Enjoy a confetti animation upon successful completion
+The game includes various configuration options in the `CONFIG` object in `state.js`:
 
-## Builder Features
+```javascript
+const CONFIG = {
+    // Animation settings
+    PIXELS_PER_SECOND: 300,       // Animation speed in pixels per second
+    MINIMUM_LINE_TIME: 100,       // Minimum time for short lines (milliseconds)
+    ANIMATION_LINE_BY_LINE: true, // Animate lines individually from point to point
 
-- Sketch mode for planning drawings
-- Record mode for creating the final animation sequence
-- Preview mode to verify how drawings will look to players
-- Export functionality to create JSON files
-- Grid system with edge restrictions
-- Touch-friendly interface for mobile devices
-- Mouse controls for desktop users with keyboard shortcuts
+    // Visual settings
+    DOT_RADIUS: 5,                // Size of dots on the grid
 
-### Building Process
+    // Gameplay settings
+    GUESS_TIME_LIMIT: 10,         // Seconds for guessing
+    HIDE_INITIAL_MESSAGES: true,  // Hide any messages at game start
 
-1. Use Sketch mode to create the basic structure
-2. Use Record mode to define the animation sequence
-3. Preview your animation to see how it will look to players
-4. Export your drawing as a JSON file that can be loaded by the game
+    // Hint system
+    HINT_COOLDOWN_TIME: 5,        // Cooldown time in seconds between hints
+    HINTS_AVAILABLE: 1,           // Number of hints available per game (0 = unlimited)
 
-## Recent Improvements
+    // UI settings
+    WRONG_MESSAGE_DURATION: 800,  // Duration to show wrong messages (milliseconds)
+    CELEBRATION_DURATION: 1500,   // Duration of celebration before returning to menu
 
-- **Modular Code Architecture**: Refactored into separate modules for better maintainability
-- **Enhanced UI Elements**: Redesigned word spaces with 3D effects and better visual feedback
-- **Audio Feedback System**: Added sound effects with toggle control in settings
-- **Celebration Animations**: Added confetti animation for successful puzzle completion
-- **Performance Improvements**: Optimized canvas rendering for smoother animations on all devices
-- **Enhanced Mobile Support**: Redesigned virtual keyboard with better UX and touch handling
-- **Hint System**: Added optional hints with visual highlighting for challenging puzzles
-- **Fixed Canvas Rendering**: Drawings now display correctly without requiring window resizing
-- **Improved Scaling**: Drawings maintain exact proportions between builder and game views
-- **Pixels-Per-Second Animation**: Drawing speed now based on pixel distance for natural animation
-- **Mobile-Optimized Layout**: Compact UI that fits well on smaller screens
-- **Improved Toggle Controls**: Enhanced toggle switches with better visual feedback
-
-## Directory Structure for GitHub Pages
-
-Ensure your GitHub repository maintains this structure:
-
-```
-your-repo-name/
-├── index.html
-├── anticipation-builder.html
-├── css/
-│   ├── common.css
-│   ├── game.css
-│   └── builder.css
-├── js/
-│   ├── common.js
-│   ├── game-data.js
-│   ├── menu.js
-│   ├── builder.js
-│   ├── touch-interface.js
-│   ├── mouse-interface.js
-│   ├── modules/
-│   │   ├── state.js
-│   │   ├── renderer.js
-│   │   ├── animation.js
-│   │   ├── audio.js
-│   │   ├── ui.js
-│   │   ├── wordHandler.js
-│   │   ├── input.js
-│   │   └── gameLogic.js
-│   └── game.js
-├── items/
-│   └── *.json
-├── sounds/
-│   ├── correct.mp3
-│   ├── incorrect.mp3
-│   ├── completion.mp3
-│   └── tick.mp3
-└── README.md
+    // Debug settings
+    DEBUG_MODE: false             // Enable debug logging and features
+};
 ```
 
-You can update your game by pushing new versions to the same repository.
+You can adjust these parameters to fine-tune the game's behavior.
 
 ## Adding Sound Files
 
@@ -290,35 +182,37 @@ To enable the sound effects, add the following audio files to a `sounds` directo
 3. `completion.mp3` - A celebratory sound for completing a puzzle
 4. `tick.mp3` - A subtle click sound for UI interactions
 
-You can find suitable royalty-free sounds on websites like [Freesound](https://freesound.org/) or [Mixkit](https://mixkit.co/free-sound-effects/).
+## Game Mechanics
 
-## Animation Speed Configuration
+- **Drawing Animation**: Watch as the drawing appears line by line with consistent speed
+- **Guessing**: Type letters directly into the character spaces
+- **Validation**: Each letter is checked immediately as you type
+  - Correct letters appear in the spaces with a satisfying animation
+  - Incorrect letters trigger visual feedback and reset the guess
+- **Timing**: Complete each puzzle as quickly as possible for a better score
+- **Hints**: Use limited or unlimited hints to get unstuck on difficult puzzles
+- **Celebration**: Enjoy a confetti animation upon successful completion
 
-The game now uses a pixels-per-second approach for animation speed, which creates a much more natural drawing effect:
+## Anticipation Builder
 
-- Long lines are drawn quickly but not too fast
-- Short lines are drawn more slowly but still visible
-- All lines appear to draw at the same speed visually
+The builder tool allows you to create custom drawings that can be loaded into the game:
 
-This is controlled by two key parameters in gameLogic.js:
+- Sketch mode for planning drawings
+- Record mode for creating the final animation sequence
+- Preview mode to verify how drawings will look to players
+- Export functionality to create JSON files
+- Grid system with edge restrictions
 
-```javascript
-// Configuration variables in gameLogic.js
-const CONFIG = {
-    PIXELS_PER_SECOND: 300,   // Animation speed in pixels per second
-    MINIMUM_LINE_TIME: 100,   // Minimum time for short lines (milliseconds)
-    // ... other config settings
-};
-```
+### Building Process
 
-You can adjust these values to change the animation speed:
-- Higher PIXELS_PER_SECOND values make the drawing faster
-- Lower PIXELS_PER_SECOND values make the drawing slower
-- MINIMUM_LINE_TIME ensures very short lines are still visible
+1. Use Sketch mode to create the basic structure
+2. Use Record mode to define the animation sequence
+3. Preview your animation to see how it will look to players
+4. Export your drawing as a JSON file that can be loaded by the game
 
-## Browser Compatibility Notes
+## Browser Compatibility
 
-This game uses ES modules, which are supported in all modern browsers. However, older browsers might not support this feature. The game has been tested in:
+This game uses ES modules, which are supported in all modern browsers. The game has been tested in:
 
 - Chrome (latest)
 - Firefox (latest)
@@ -326,3 +220,19 @@ This game uses ES modules, which are supported in all modern browsers. However, 
 - Edge (latest)
 - Mobile Safari (iOS 13+)
 - Chrome for Android (latest)
+
+## Future Improvements
+
+Potential future enhancements could include:
+
+- Server backend for storing custom drawings
+- Daily puzzle rotation system
+- User accounts and progress tracking
+- Additional categories and themes
+- Multiplayer mode for collaborative drawing/guessing
+- Achievement system
+- More customization options
+
+## Credits
+
+This project is inspired by the classic Nintendo game "Anticipation" released in 1988.
