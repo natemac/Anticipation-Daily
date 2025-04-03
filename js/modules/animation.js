@@ -6,7 +6,7 @@ import * as Audio from './audio.js';
 import * as GameLogic from './gameLogic.js';
 import { log } from '../game.js';
 
-const PIXELS_PER_SECOND = 300; // Consistent drawing speed (adjust as needed)
+const PIXELS_PER_SECOND = 200; // Consistent drawing speed (adjust as needed)
 
 // Initialize the animation module
 function init() {

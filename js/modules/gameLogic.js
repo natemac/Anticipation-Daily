@@ -10,7 +10,7 @@ import { log } from '../game.js';
 
 // Configuration variables for easy adjustment
 const CONFIG = {
-    PIXELS_PER_SECOND: 300,   // Animation speed in pixels per second
+    PIXELS_PER_SECOND: 200,   // Animation speed in pixels per second
     MINIMUM_LINE_TIME: 100,   // Minimum time for short lines (milliseconds)
     GUESS_TIME_LIMIT: 10,     // seconds for guessing
     HIDE_INITIAL_MESSAGES: true, // hide any messages at start
