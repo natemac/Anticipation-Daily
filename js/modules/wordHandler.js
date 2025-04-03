@@ -144,6 +144,46 @@ function updateWordSpaces() {
     }
 }
 
+// Store correct letters when an incorrect guess is made
+function storeCorrectLetters() {
+    if (!GameState.guessMode) return;
+
+    const answer = GameState.drawingData.name;
+
+    // Check each letter entered so far
+    GameState.correctLetters = [];
+
+    for (let i = 0; i < GameState.currentInput.length; i++) {
+        // For spaces, always mark as correct
+        if (answer[i] === ' ') {
+            GameState.correctLetters.push(' ');
+            continue;
+        }
+
+        // For letters, check if correct
+        if (GameState.currentInput[i].toUpperCase() === answer[i].toUpperCase()) {
+            GameState.correctLetters.push(GameState.currentInput[i]);
+        } else {
+            // Stop at the first incorrect letter
+            break;
+        }
+    }
+
+    log("Stored correct letters: " + GameState.correctLetters.join(''));
+}
+
+// Restore correct letters from previous attempts
+function restoreCorrectLetters() {
+    if (!GameState.correctLetters || GameState.correctLetters.length === 0) {
+        GameState.currentInput = '';
+        return;
+    }
+
+    // Restore the previously correct letters
+    GameState.currentInput = GameState.correctLetters.join('');
+    log("Restored correct letters: " + GameState.currentInput);
+}
+
 // Process letter input with validation
 function processLetter(letter) {
     if (!GameState.guessMode) return;
@@ -191,6 +231,9 @@ function processLetter(letter) {
             // Wrong letter - show feedback and exit guess mode
             log("Incorrect letter");
 
+            // Store correct letters before showing error
+            storeCorrectLetters();
+
             // Play incorrect sound
             Audio.playIncorrect();
 
@@ -201,6 +244,12 @@ function processLetter(letter) {
             setTimeout(() => {
                 GameState.currentInput = '';
                 UI.exitGuessMode();
+
+                // Restore correct letters after exiting guess mode
+                setTimeout(() => {
+                    restoreCorrectLetters();
+                    updateWordSpaces();
+                }, 50);
             }, 800);
         }
     }
@@ -219,6 +268,9 @@ function processFullWord() {
         // Handle successful completion
         handleWordCompletion();
     } else {
+        // Store correct letters before showing error
+        storeCorrectLetters();
+
         // Incorrect or incomplete word
         // Play incorrect sound
         Audio.playIncorrect();
@@ -229,6 +281,7 @@ function processFullWord() {
         // Reset input but stay in guess mode
         setTimeout(() => {
             GameState.currentInput = '';
+            restoreCorrectLetters();
             updateWordSpaces();
         }, 800);
     }
@@ -284,6 +337,7 @@ function endGame(success) {
     // Reset game state
     GameState.gameStarted = false;
     GameState.timerActive = false;
+    GameState.correctLetters = []; // Clear stored correct letters
 
     // Stop timers and animations
     UI.stopGuessTimer();
@@ -309,5 +363,7 @@ export {
     processFullWord,
     handleWordCompletion,
     getLetterElement,
-    endGame
+    endGame,
+    storeCorrectLetters,
+    restoreCorrectLetters
 };

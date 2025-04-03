@@ -5,7 +5,8 @@
 const GameState = {
     // Game configuration
     difficulty: 'easy',
-    animationSpeed: 300, // ms per line
+    pixelsPerSecond: 300,   // Animation speed in pixels per second
+    minimumLineTime: 100,   // Minimum time for short lines (milliseconds)
 
     // Current game data
     currentColor: null,
@@ -28,7 +29,7 @@ const GameState = {
     guessMode: false,
     gameStarted: false,
     currentInput: '',
-    correctLetters: [],
+    correctLetters: [],    // Store correct letters between attempts
 
     // Guess timer properties
     guessTimeRemaining: 10,
@@ -82,6 +83,7 @@ const GameState = {
         this.elapsedTimeHundredths = 0;
         this.guessMode = false;
         this.currentInput = '';
+        this.correctLetters = [];
         this.guessTimeRemaining = 10;
         this.guessTimerActive = false;
         this.pendingAnimationStart = false;

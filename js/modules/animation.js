@@ -30,10 +30,9 @@ function startDrawingAnimation() {
 
     // Reset animation state but preserve drawing progress
     cancelAnimationFrame(GameState.animationId);
-    const currentProgress = GameState.drawingProgress;
 
     // If no progress yet, start from beginning, otherwise continue
-    if (currentProgress === 0) {
+    if (GameState.drawingProgress === 0) {
         GameState.drawingProgress = 1;
     }
 
@@ -82,7 +81,7 @@ function startDrawingAnimation() {
             GameState.gameStarted && !GameState.guessMode) {
             GameState.animationId = requestAnimationFrame(animate);
         } else {
-            GameState.pendingAnimationStart = false;
+            GameState.pendingAnimationStart = GameState.drawingProgress < totalSequenceLength;
             log("Animation complete or interrupted");
         }
     }
@@ -114,14 +113,14 @@ function startPointToPointAnimation() {
     const speedFactor = GameState.difficulty === 'hard' ? 1.3 : 1.0; // 30% faster in hard mode
     const adjustedPixelsPerSecond = pixelsPerSecond * speedFactor;
 
-    log(`Starting point-to-point animation: ${totalSequenceLength} lines, ${adjustedPixelsPerSecond}px/s speed`);
+    log(`Starting point-to-point animation: ${totalSequenceLength} lines, ${adjustedPixelsPerSecond}px/s speed, current progress: ${GameState.drawingProgress}`);
 
     // Cancel any existing animation but preserve drawing progress
     cancelAnimationFrame(GameState.animationId);
 
     // If drawingProgress is 0, start from beginning, otherwise continue
     const startLineIndex = GameState.drawingProgress > 0 ?
-        GameState.drawingProgress - 1 : 0;
+        GameState.drawingProgress : 0;
 
     // We'll track both the line index and the progress within each line
     let currentLineIndex = startLineIndex;
@@ -220,7 +219,7 @@ function startPointToPointAnimation() {
             // If interrupted, update progress for resumption
             GameState.drawingProgress = currentLineIndex;
             GameState.pendingAnimationStart = GameState.drawingProgress < totalSequenceLength;
-            log("Point-to-point animation interrupted");
+            log("Point-to-point animation interrupted at line: " + GameState.drawingProgress);
         }
     }
 
