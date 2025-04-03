@@ -65,16 +65,12 @@
         </div>
 
         <div class="game-screen">
-
-
             <!-- New timer display that counts up -->
             <div class="timer-display" id="timerDisplay">00:00</div>
 
             <div class="canvas-container">
                 <canvas id="gameCanvas"></canvas>
             </div>
-
-
 
             <div class="game-controls">
                 <button id="beginButton">
@@ -88,9 +84,20 @@
         </div>
     </div>
 
+    <!-- Load core JavaScript files -->
     <script src="js/common.js"></script>
     <script src="js/game-data.js"></script>
     <script src="js/menu.js"></script>
-    <script src="js/game.js"></script>
+
+    <!-- Load modular game system with ES modules -->
+    <script type="module" src="js/modules/state.js"></script>
+    <script type="module" src="js/modules/renderer.js"></script>
+    <script type="module" src="js/modules/input.js"></script>
+    <script type="module" src="js/modules/animation.js"></script>
+    <script type="module" src="js/modules/ui.js"></script>
+    <script type="module" src="js/modules/wordHandler.js"></script>
+    <script type="module" src="js/modules/audio.js"></script>
+    <script type="module" src="js/modules/gameLogic.js"></script>
+    <script type="module" src="js/game.js"></script>
 </body>
 </html>
