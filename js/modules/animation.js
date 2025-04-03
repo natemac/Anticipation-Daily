@@ -6,7 +6,9 @@ import * as Audio from './audio.js';
 import * as GameLogic from './gameLogic.js';
 import { log } from '../game.js';
 
-const PIXELS_PER_SECOND = 200; // Consistent drawing speed (adjust as needed)
+// Animation constants
+const PIXELS_PER_SECOND = 300; // Consistent drawing speed in pixels per second
+const MINIMUM_LINE_TIME = 100; // Minimum time for short lines (milliseconds)
 
 // Initialize the animation module
 function init() {
@@ -89,7 +91,7 @@ function startDrawingAnimation() {
     GameState.animationId = requestAnimationFrame(animate);
 }
 
-// Point-to-point drawing animation (smoother effect)
+// Point-to-point drawing animation (smoother effect with consistent speed)
 function startPointToPointAnimation() {
     // The sequence of lines to draw
     const sequence = GameState.drawingData.sequence;
@@ -104,7 +106,15 @@ function startPointToPointAnimation() {
     // Total number of lines to draw
     const totalSequenceLength = sequence.length;
 
-    log(`Starting point-to-point animation: ${totalSequenceLength} lines with ${PIXELS_PER_SECOND}px/s speed`);
+    // Get pixels per second speed from config or use default
+    const pixelsPerSecond = GameState.pixelsPerSecond || PIXELS_PER_SECOND;
+    const minimumLineTime = GameState.minimumLineTime || MINIMUM_LINE_TIME;
+
+    // Adjust speed based on difficulty
+    const speedFactor = GameState.difficulty === 'hard' ? 1.3 : 1.0; // 30% faster in hard mode
+    const adjustedPixelsPerSecond = pixelsPerSecond * speedFactor;
+
+    log(`Starting point-to-point animation: ${totalSequenceLength} lines, ${adjustedPixelsPerSecond}px/s speed`);
 
     // Cancel any existing animation but preserve drawing progress
     cancelAnimationFrame(GameState.animationId);
@@ -173,7 +183,7 @@ function startPointToPointAnimation() {
 
         // Calculate time needed to draw this line at our pixel speed
         // Minimum time of 100ms to ensure very short lines are still visible
-        const timeNeededForLine = Math.max(lineLength / PIXELS_PER_SECOND * 1000, 100);
+        const timeNeededForLine = Math.max(lineLength / adjustedPixelsPerSecond * 1000, minimumLineTime);
 
         // Update line progress based on time and line length
         lineProgress += cappedDelta / timeNeededForLine;
