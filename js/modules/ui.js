@@ -12,6 +12,9 @@ let timerDisplay, beginButton, wrongMessage, backButton, buttonTimer;
 let wordSpacesDiv, hintButton;
 let hintButtonTimeout;
 
+// Configurable hint cooldown time in seconds
+const HINT_COOLDOWN_TIME = 5;
+
 // Initialize UI module
 function init() {
     // Get DOM elements
@@ -260,9 +263,16 @@ function updateTimerDisplay() {
     // Always keep timer color black
     timerDisplay.style.color = '#000';
 
-    // Enable hint button after 5 seconds if in easy mode
-    if (GameState.difficulty === 'easy' && GameState.elapsedTime >= 5 && !GameState.hintButtonActive && !GameState.hintButtonCooldown) {
+    // Enable hint button after initial delay if in easy mode
+    if (GameState.difficulty === 'easy' && GameState.elapsedTime >= HINT_COOLDOWN_TIME &&
+        !GameState.hintButtonActive && !GameState.hintButtonCooldown &&
+        !GameState.guessMode && GameState.gameStarted) {
         enableHintButton();
+    }
+
+    // Update cooldown timer if it's running (only when not in guess mode)
+    if (GameState.hintButtonCooldown && !GameState.guessMode && GameState.gameStarted) {
+        updateHintCooldown();
     }
 }
 
@@ -424,27 +434,46 @@ function useHint() {
     // Start cooldown period
     startHintCooldown();
 
-    // If we're in guess mode
+    // Get the next missing letter index
+    let nextMissingIndex = -1;
     if (GameState.guessMode) {
-        // Determine which position to hint (the first unsolved position)
-        const letterIndex = GameState.currentInput.length;
+        // If in guess mode, use current input length as the next index
+        nextMissingIndex = GameState.currentInput.length;
+    } else {
+        // If not in guess mode, find the next empty spot
+        const storedLetters = WordHandler.getCorrectLetters() || [];
+        nextMissingIndex = storedLetters.length;
+    }
 
-        // If we have room for more letters
-        if (letterIndex < currentWord.length) {
-            // If this position is a space, skip to next letter
-            if (currentWord[letterIndex] === ' ') {
+    // Make sure we're within the word bounds
+    if (nextMissingIndex >= 0 && nextMissingIndex < currentWord.length) {
+        // If this position is a space, skip to next letter
+        if (currentWord[nextMissingIndex] === ' ') {
+            // Add the space to current input or correct letters
+            if (GameState.guessMode) {
                 GameState.currentInput += ' ';
                 WordHandler.updateWordSpaces();
-                return;
+            } else {
+                // If not in guess mode, add to correct letters
+                WordHandler.addCorrectLetter(' ');
+                WordHandler.updateWordSpaces();
             }
 
-            // Add the next correct letter
-            const nextLetter = currentWord[letterIndex].toUpperCase();
+            // Try again to find next non-space letter
+            useHint();
+            return;
+        }
+
+        // Add the next correct letter
+        const nextLetter = currentWord[nextMissingIndex].toUpperCase();
+
+        if (GameState.guessMode) {
+            // Add to current input if in guess mode
             GameState.currentInput += nextLetter;
             WordHandler.updateWordSpaces();
 
             // Highlight this letter as a hint
-            const letterElement = WordHandler.getLetterElement(letterIndex);
+            const letterElement = WordHandler.getLetterElement(nextMissingIndex);
             if (letterElement) {
                 Animation.highlightHintLetter(letterElement);
             }
@@ -454,27 +483,16 @@ function useHint() {
                 log("Word completed with hint!");
                 WordHandler.handleWordCompletion();
             }
-        }
-    } else {
-        // If not in guess mode, enter guess mode
-        enterGuessMode();
+        } else {
+            // Add to correct letters if not in guess mode
+            WordHandler.addCorrectLetter(nextLetter);
+            WordHandler.updateWordSpaces();
 
-        // Store first letter as hint (keeping any existing progress)
-        if (GameState.currentInput.length === 0) {
-            if (currentWord[0] === ' ') {
-                GameState.currentInput = ' ';
-            } else {
-                const firstLetter = currentWord[0].toUpperCase();
-                GameState.currentInput = firstLetter;
+            // Highlight this letter
+            const letterElement = WordHandler.getLetterElement(nextMissingIndex);
+            if (letterElement) {
+                Animation.highlightHintLetter(letterElement);
             }
-        }
-
-        WordHandler.updateWordSpaces();
-
-        // Highlight this letter as a hint
-        const letterElement = WordHandler.getLetterElement(0);
-        if (letterElement) {
-            Animation.highlightHintLetter(letterElement);
         }
     }
 
@@ -496,35 +514,41 @@ function startHintCooldown() {
 
     // Add cooldown timer text
     const originalText = hintButton.textContent;
-    hintButton.textContent = "Wait 5s";
+    hintButton.textContent = `Wait ${HINT_COOLDOWN_TIME}s`;
 
     // Set cooldown state
     GameState.hintButtonActive = false;
     GameState.hintButtonCooldown = true;
+    GameState.hintCooldownRemaining = HINT_COOLDOWN_TIME;
 
-    // Start the cooldown timer (5 seconds)
-    let cooldownTime = 5;
+    // Note: We don't start a timer here - the cooldown is updated in updateTimerDisplay
+    // which only runs when the main timer is active (not during guessing)
+}
 
-    if (hintButtonTimeout) {
-        clearInterval(hintButtonTimeout);
-    }
+// Update hint cooldown - called from updateTimerDisplay
+function updateHintCooldown() {
+    if (!GameState.hintButtonCooldown || !hintButton) return;
 
-    hintButtonTimeout = setInterval(() => {
-        cooldownTime--;
-        if (cooldownTime > 0) {
-            hintButton.textContent = `Wait ${cooldownTime}s`;
-        } else {
-            // Re-enable the hint button after cooldown
-            clearInterval(hintButtonTimeout);
+    // Only decrement timer when game is active and not in guess mode
+    if (GameState.gameStarted && !GameState.guessMode) {
+        // Decrease remaining time (adjust based on how often updateTimerDisplay is called)
+        GameState.hintCooldownRemaining -= 0.01; // 10ms if updateTimerDisplay is called every 10ms
+
+        if (GameState.hintCooldownRemaining <= 0) {
+            // Cooldown finished
             hintButton.textContent = "Hint?";
             GameState.hintButtonCooldown = false;
 
-            // Only enable if in easy mode and game is active
+            // Re-enable hint button
             if (GameState.difficulty === 'easy' && GameState.gameStarted) {
                 enableHintButton();
             }
+        } else {
+            // Update cooldown text
+            const seconds = Math.ceil(GameState.hintCooldownRemaining);
+            hintButton.textContent = `Wait ${seconds}s`;
         }
-    }, 1000);
+    }
 }
 
 // Enter guess mode
@@ -668,19 +692,11 @@ function toggleHintButton(show) {
         // Start with inactive state but not in cooldown
         GameState.hintButtonActive = false;
         GameState.hintButtonCooldown = false;
+        GameState.hintCooldownRemaining = 0;
 
-        // Clear any existing timeouts
-        if (hintButtonTimeout) {
-            clearTimeout(hintButtonTimeout);
-        }
-
-        // Enable after 5 seconds if in easy mode
-        if (GameState.difficulty === 'easy') {
-            setTimeout(() => {
-                if (GameState.gameStarted && !GameState.hintButtonCooldown) {
-                    enableHintButton();
-                }
-            }, 5000);
+        // Enable after initial delay if in easy mode
+        if (GameState.difficulty === 'easy' && GameState.elapsedTime >= HINT_COOLDOWN_TIME) {
+            enableHintButton();
         }
     }
 }

@@ -42,6 +42,11 @@ function updateWordSpaces() {
     letterContainer.style.height = '100%';
     letterContainer.style.gap = '5px'; // Consistent spacing
 
+    // Determine which letters to show - depends on game mode
+    const lettersToShow = GameState.guessMode ?
+                          GameState.currentInput :
+                          GameState.correctLetters.join('');
+
     // Add word spaces with improved styling
     for (let i = 0; i < answer.length; i++) {
         const letterDiv = document.createElement('div');
@@ -73,12 +78,12 @@ function updateWordSpaces() {
             letterDiv.appendChild(underline);
 
             // Show letter if it's been entered correctly
-            if (i < GameState.currentInput.length) {
+            if (i < lettersToShow.length) {
                 const letterSpan = document.createElement('span');
                 letterSpan.style.fontSize = '24px';
                 letterSpan.style.fontWeight = 'bold';
                 letterSpan.style.color = '#333';
-                letterSpan.textContent = GameState.currentInput[i];
+                letterSpan.textContent = lettersToShow[i];
                 letterDiv.appendChild(letterSpan);
 
                 // Add 3D effect for entered letters
@@ -170,6 +175,21 @@ function storeCorrectLetters() {
     }
 
     log("Stored correct letters: " + GameState.correctLetters.join(''));
+}
+
+// Get the correct letters array
+function getCorrectLetters() {
+    return GameState.correctLetters;
+}
+
+// Add a correct letter to the stored array (for hint button when not in guess mode)
+function addCorrectLetter(letter) {
+    if (!GameState.correctLetters) {
+        GameState.correctLetters = [];
+    }
+
+    GameState.correctLetters.push(letter);
+    log("Added correct letter: " + letter + ", total: " + GameState.correctLetters.join(''));
 }
 
 // Restore correct letters from previous attempts
@@ -374,5 +394,7 @@ export {
     getLetterElement,
     endGame,
     storeCorrectLetters,
-    restoreCorrectLetters
+    restoreCorrectLetters,
+    getCorrectLetters,
+    addCorrectLetter
 };

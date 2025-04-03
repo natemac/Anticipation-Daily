@@ -50,6 +50,7 @@ const GameState = {
     hintsAvailable: 1,
     hintButtonActive: false,     // Tracks if hint button is enabled
     hintButtonCooldown: false,   // Tracks if hint button is in cooldown
+    hintCooldownRemaining: 0,    // Remaining cooldown time in seconds
 
     // Audio settings
     audioEnabled: true,
@@ -96,6 +97,7 @@ const GameState = {
         this.guessAttempts = 0; // Reset guess attempts counter
         this.hintButtonActive = false;
         this.hintButtonCooldown = false;
+        this.hintCooldownRemaining = 0;
 
         // Clear any existing timers
         if (this.elapsedTimer) clearInterval(this.elapsedTimer);
