@@ -1,4 +1,12 @@
-// Main menu and game initialization functionality
+// menu.js - Main menu and game initialization functionality
+// Updated to work with the modular architecture
+
+// Import modules
+import GameState from './modules/state.js';
+import * as GameLogic from './modules/gameLogic.js';
+import * as UI from './modules/ui.js';
+
+// Menu state object
 const menuState = {
     completedCategories: 0,
     puzzles: {
@@ -14,7 +22,7 @@ let mainScreen, gameScreen, colorSquares, difficultyToggle, shareButton;
 
 // Simple logging function for debugging
 function log(message) {
-    console.log(message);
+    console.log(`[AnticipationMenu] ${message}`);
 }
 
 // Initialize the menu
@@ -47,9 +55,9 @@ function setupMenuEventListeners() {
         // Store preference
         localStorage.setItem('difficultyMode', difficulty);
 
-        // Update game state if game.js is loaded
-        if (typeof gameState !== 'undefined') {
-            gameState.difficulty = difficulty;
+        // Update game state
+        if (GameState) {
+            GameState.setDifficulty(difficulty);
         }
     });
 
@@ -62,9 +70,9 @@ function setupMenuEventListeners() {
             // Don't allow replaying completed puzzles
             if (menuState.puzzles[color].completed) return;
 
-            // Start game if game.js is loaded
-            if (typeof startGame === 'function') {
-                startGame(color, category);
+            // Start game using GameLogic module
+            if (typeof GameLogic.startGame === 'function') {
+                GameLogic.startGame(color, category);
             } else {
                 console.error("Game module not loaded");
             }
@@ -198,36 +206,9 @@ function showGameScreen() {
     setTimeout(() => {
         if (typeof canvas !== 'undefined' && canvas) {
             log("Forcing canvas redraw after screen transition");
-
-            // Force a simulated resize to trigger proper rendering
-            if (typeof resizeCanvas === 'function') {
-                // Store original dimensions
-                const originalWidth = canvas.width;
-                const originalHeight = canvas.height;
-
-                // Change dimensions slightly to force redraw
-                canvas.width = originalWidth - 1;
-                canvas.height = originalHeight - 1;
-
-                // Restore dimensions
-                setTimeout(() => {
-                    canvas.width = originalWidth;
-                    canvas.height = originalHeight;
-
-                    if (typeof clearCanvas === 'function') {
-                        clearCanvas();
-                    } else if (typeof ctx !== 'undefined' && ctx) {
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    }
-
-                    if (typeof ctx !== 'undefined' && ctx) {
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.strokeStyle = '#ccc';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(0, 0, canvas.width, canvas.height);
-                    }
-                }, 50);
+            // Trigger proper rendering through the Renderer module
+            if (typeof renderFrame === 'function') {
+                renderFrame();
             }
         }
     }, 100);
@@ -235,3 +216,10 @@ function showGameScreen() {
 
 // Initialize the menu when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initMenu);
+
+// Export public functions for other modules to use
+export {
+    showMainMenu,
+    showGameScreen,
+    updatePuzzleCompletion
+};
