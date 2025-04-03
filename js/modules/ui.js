@@ -4,6 +4,7 @@ import GameState from './state.js';
 import * as Animation from './animation.js';
 import * as Audio from './audio.js';
 import * as WordHandler from './wordHandler.js';
+import * as GameLogic from './gameLogic.js';
 import { log } from '../game.js';
 
 // Module variables
@@ -18,6 +19,11 @@ function init() {
     wrongMessage = document.getElementById('wrongMessage');
     backButton = document.getElementById('backButton');
     buttonTimer = document.getElementById('buttonTimer');
+
+    // Set up back button event listener
+    if (backButton) {
+        backButton.addEventListener('click', handleBackButton);
+    }
 
     // Create UI elements
     createWordSpacesDiv();
@@ -37,6 +43,14 @@ function init() {
         wordSpacesDiv,
         hintButton
     };
+}
+
+// Handle back button clicks
+function handleBackButton() {
+    log("Back button clicked");
+    if (GameState.gameStarted) {
+        GameLogic.endGame(false);
+    }
 }
 
 // Create the word spaces div
@@ -229,7 +243,7 @@ function updateAudioToggleUI(isOn) {
     }
 }
 
-// Update timer display
+// Update timer display (always keep black color)
 function updateTimerDisplay() {
     if (!timerDisplay) return;
 
@@ -237,56 +251,41 @@ function updateTimerDisplay() {
     const hundredths = String(GameState.elapsedTimeHundredths).padStart(2, '0');
     timerDisplay.textContent = `${seconds}:${hundredths}`;
 
-    // Change color based on time elapsed
-    if (GameState.elapsedTime < 10) {
-        timerDisplay.style.color = '#4CAF50'; // Green for quick
-    } else if (GameState.elapsedTime < 30) {
-        timerDisplay.style.color = '#FFC107'; // Yellow for medium
-    } else {
-        timerDisplay.style.color = '#F44336'; // Red for slow
-    }
+    // Always keep timer color black
+    timerDisplay.style.color = '#000';
 }
 
-// Start the guess timer with visual feedback
+// Start the guess timer with single color
 function startGuessTimer() {
-    if (!buttonTimer) return;
+    if (!buttonTimer || !beginButton) return;
 
     // Reset the guess timer
-    GameState.guessTimeRemaining = 10;
+    GameState.guessTimeRemaining = GameLogic.CONFIG.GUESS_TIME_LIMIT;
     GameState.guessTimerActive = true;
 
     // Reset and show the timer overlay
     buttonTimer.style.width = '0%';
     buttonTimer.classList.add('active');
 
-    // Update timer color based on remaining time
-    function updateTimerColor() {
-        const percentage = (GameState.guessTimeRemaining / 10) * 100;
-        if (percentage > 60) {
-            buttonTimer.style.backgroundColor = '#4CAF50'; // Green
-        } else if (percentage > 30) {
-            buttonTimer.style.backgroundColor = '#FFC107'; // Yellow
-        } else {
-            buttonTimer.style.backgroundColor = '#F44336'; // Red
-        }
-    }
+    // Always use grey for timer overlay
+    buttonTimer.style.backgroundColor = '#cccccc';
 
-    // Initial color
-    updateTimerColor();
+    // Disable the button during guessing
+    beginButton.disabled = true;
+    beginButton.style.opacity = '0.7';
+    beginButton.style.cursor = 'not-allowed';
 
     // Clear any existing timer
     if (GameState.guessTimer) clearInterval(GameState.guessTimer);
 
     // Start the timer
     GameState.guessTimer = setInterval(() => {
+        const timeLimit = GameLogic.CONFIG.GUESS_TIME_LIMIT;
         GameState.guessTimeRemaining -= 0.1; // Decrease by 0.1s for smooth transition
 
-        // Update the button timer width (grows from right to left)
-        const percentage = 100 - ((GameState.guessTimeRemaining / 10) * 100);
+        // Update the button timer width (grows from left to right)
+        const percentage = ((timeLimit - GameState.guessTimeRemaining) / timeLimit) * 100;
         buttonTimer.style.width = `${percentage}%`;
-
-        // Update color
-        updateTimerColor();
 
         // If time runs out
         if (GameState.guessTimeRemaining <= 0) {
@@ -296,6 +295,11 @@ function startGuessTimer() {
             // Hide the timer overlay and reset it
             buttonTimer.classList.remove('active');
             buttonTimer.style.width = '0%';
+
+            // Re-enable the button
+            beginButton.disabled = false;
+            beginButton.style.opacity = '1';
+            beginButton.style.cursor = 'pointer';
 
             // Exit guess mode with timeout message
             exitGuessMode();
@@ -317,6 +321,13 @@ function stopGuessTimer() {
     if (buttonTimer) {
         buttonTimer.classList.remove('active');
         buttonTimer.style.width = '0%';
+    }
+
+    // Re-enable the button
+    if (beginButton) {
+        beginButton.disabled = false;
+        beginButton.style.opacity = '1';
+        beginButton.style.cursor = 'pointer';
     }
 }
 
@@ -348,6 +359,18 @@ function showWrongMessage(message) {
             wordSpacesDiv.style.transform = 'scale(1)';
         }
     }, 800);
+}
+
+// Hide all messages
+function hideMessages() {
+    if (wrongMessage) {
+        wrongMessage.classList.remove('visible');
+    }
+
+    const canvas = document.querySelector('.canvas-container canvas');
+    if (canvas) {
+        canvas.classList.remove('incorrect');
+    }
 }
 
 // Use hint feature
@@ -443,7 +466,7 @@ function enterGuessMode() {
     // Pause animation and timer
     GameState.guessMode = true;
 
-    // Cancel any ongoing animation
+    // Cancel any ongoing animation but keep drawing progress
     if (GameState.animationId) {
         cancelAnimationFrame(GameState.animationId);
         GameState.animationId = null;
@@ -483,9 +506,9 @@ function enterGuessMode() {
     // Start the guess timer
     startGuessTimer();
 
-    // Change button text to emphasize mode
-    if (beginButton) {
-        beginButton.querySelector('span').textContent = 'Reset Guess';
+    // Always keep button text as "Guess"
+    if (beginButton && beginButton.querySelector('span')) {
+        beginButton.querySelector('span').textContent = 'Guess';
     }
 
     // Show virtual keyboard on mobile
@@ -507,14 +530,18 @@ function exitGuessMode() {
         wordSpacesDiv.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
     }
 
-    // Change button text back
-    if (beginButton) {
+    // Always keep button text as "Guess"
+    if (beginButton && beginButton.querySelector('span')) {
         beginButton.querySelector('span').textContent = 'Guess';
     }
 
-    // Restart animation if needed
+    // Restart animation if needed, continuing from where it left off
     if (GameState.pendingAnimationStart) {
-        Animation.startDrawingAnimation();
+        if (GameLogic.CONFIG.ANIMATION_LINE_BY_LINE) {
+            Animation.startPointToPointAnimation();
+        } else {
+            Animation.startDrawingAnimation();
+        }
     }
 
     // Hide virtual keyboard on mobile
@@ -572,6 +599,7 @@ export {
     startGuessTimer,
     stopGuessTimer,
     showWrongMessage,
+    hideMessages,
     enterGuessMode,
     exitGuessMode,
     updateVirtualKeyboard,

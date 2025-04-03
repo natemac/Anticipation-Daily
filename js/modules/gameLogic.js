@@ -8,11 +8,23 @@ import * as UI from './ui.js';
 import * as WordHandler from './wordHandler.js';
 import { log } from '../game.js';
 
+// Configuration variables for easy adjustment
+const CONFIG = {
+    DRAWING_SPEED: 300,       // ms per line (lower = faster)
+    GUESS_TIME_LIMIT: 10,     // seconds for guessing
+    HIDE_INITIAL_MESSAGES: true, // hide any messages at start
+    ANIMATION_LINE_BY_LINE: true // animate lines individually from point to point
+};
+
 // Module variables
 let elapsedTimerInterval;
 
 // Initialize the game logic
 function init() {
+    // Apply configuration to game state
+    GameState.animationSpeed = CONFIG.DRAWING_SPEED;
+    GameState.guessTimeLimit = CONFIG.GUESS_TIME_LIMIT;
+
     log("Game logic module initialized");
     return true;
 }
@@ -80,11 +92,15 @@ function startGameWithData(color, category, data) {
         guessInput.style.display = 'none';
     }
 
-    UI.showWrongMessage('');
+    // Clear any messages that might be showing
+    if (CONFIG.HIDE_INITIAL_MESSAGES) {
+        UI.hideMessages();
+    }
 
     const timerDisplay = document.getElementById('timerDisplay');
     if (timerDisplay) {
         timerDisplay.textContent = '00:00';
+        timerDisplay.style.color = '#000'; // Keep timer color black
     }
 
     const beginButton = document.getElementById('beginButton')?.querySelector('span');
@@ -101,6 +117,7 @@ function startGameWithData(color, category, data) {
     if (buttonTimer) {
         buttonTimer.classList.remove('active');
         buttonTimer.style.width = '0%';
+        buttonTimer.style.backgroundColor = '#cccccc'; // Grey timer color
     }
 
     // Ensure canvas is properly sized and clean
@@ -145,7 +162,11 @@ function startDrawing() {
 
     // Start animation with a short delay to ensure rendering is ready
     setTimeout(() => {
-        Animation.startDrawingAnimation();
+        if (CONFIG.ANIMATION_LINE_BY_LINE) {
+            Animation.startPointToPointAnimation();
+        } else {
+            Animation.startDrawingAnimation();
+        }
     }, 50);
 }
 
@@ -172,11 +193,37 @@ function startElapsedTimer() {
     return GameState.elapsedTimer;
 }
 
+// End the game and go back to menu
+function endGame(success) {
+    // Use the WordHandler endGame function but ensure it exists
+    if (typeof WordHandler.endGame === 'function') {
+        WordHandler.endGame(success);
+    } else {
+        log("Warning: WordHandler.endGame not found");
+        // Fallback implementation
+        GameState.gameStarted = false;
+        GameState.timerActive = false;
+
+        // Update menu state if successful
+        if (success && typeof updatePuzzleCompletion === 'function') {
+            const time = GameState.elapsedTime + (GameState.elapsedTimeHundredths / 100);
+            updatePuzzleCompletion(GameState.currentColor, time);
+        }
+
+        // Return to menu
+        if (typeof showMainMenu === 'function') {
+            showMainMenu();
+        }
+    }
+}
+
 // Export public functions
 export {
     init,
     startGame,
     startGameWithData,
     startDrawing,
-    startElapsedTimer
+    startElapsedTimer,
+    endGame,
+    CONFIG
 };

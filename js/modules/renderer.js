@@ -177,6 +177,167 @@ function renderFrame() {
     drawLines();
 }
 
+// Render frame with a partially drawn line for smooth animation
+function renderPartialLine(lineIndex, progress) {
+    if (!canvas || !ctx || !GameState.drawingData) return;
+
+    // Get logical size in CSS pixels
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    // Clear the entire canvas
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+    // Set white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+    // In easy mode, draw dots first
+    if (GameState.difficulty === 'easy') {
+        drawDots();
+    }
+
+    // Draw completed lines (before the current one)
+    drawCompletedLines(lineIndex);
+
+    // Draw current line with partial progress
+    drawPartialLine(lineIndex, progress);
+}
+
+// Draw completed lines up to but not including the specified index
+function drawCompletedLines(upToIndex) {
+    if (!GameState.drawingData || !GameState.drawingData.sequence) {
+        return;
+    }
+
+    // Calculate scaling if not done yet
+    if (!GameState.scaling) {
+        calculateScaling();
+    }
+
+    const scaling = GameState.scaling;
+    const sequence = GameState.drawingData.sequence;
+    const dots = GameState.drawingData.dots;
+
+    // Draw line shadows for depth (only in easy mode)
+    if (GameState.difficulty === 'easy') {
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        for (let i = 0; i < upToIndex; i++) {
+            if (i >= sequence.length) break;
+
+            const line = sequence[i];
+            if (!line) continue;
+
+            const from = dots[line.from];
+            const to = dots[line.to];
+
+            if (!from || !to) continue;
+
+            // Apply scaling with slight offset for shadow
+            const fromX = (from.x * scaling.scale) + scaling.offsetX + 1;
+            const fromY = (from.y * scaling.scale) + scaling.offsetY + 1;
+            const toX = (to.x * scaling.scale) + scaling.offsetX + 1;
+            const toY = (to.y * scaling.scale) + scaling.offsetY + 1;
+
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+        }
+    }
+
+    // Draw the actual completed lines
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let i = 0; i < upToIndex; i++) {
+        if (i >= sequence.length) break;
+
+        const line = sequence[i];
+        if (!line) continue;
+
+        const from = dots[line.from];
+        const to = dots[line.to];
+
+        if (!from || !to) continue;
+
+        // Apply scaling
+        const fromX = (from.x * scaling.scale) + scaling.offsetX;
+        const fromY = (from.y * scaling.scale) + scaling.offsetY;
+        const toX = (to.x * scaling.scale) + scaling.offsetX;
+        const toY = (to.y * scaling.scale) + scaling.offsetY;
+
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+    }
+}
+
+// Draw a single line with partial progress for animation
+function drawPartialLine(lineIndex, progress) {
+    if (!GameState.drawingData || !GameState.drawingData.sequence ||
+        lineIndex >= GameState.drawingData.sequence.length) {
+        return;
+    }
+
+    // Calculate scaling if not done yet
+    if (!GameState.scaling) {
+        calculateScaling();
+    }
+
+    const scaling = GameState.scaling;
+    const line = GameState.drawingData.sequence[lineIndex];
+    const dots = GameState.drawingData.dots;
+
+    if (!line || !dots) return;
+
+    const from = dots[line.from];
+    const to = dots[line.to];
+
+    if (!from || !to) return;
+
+    // Apply scaling
+    const fromX = (from.x * scaling.scale) + scaling.offsetX;
+    const fromY = (from.y * scaling.scale) + scaling.offsetY;
+    const toX = (to.x * scaling.scale) + scaling.offsetX;
+    const toY = (to.y * scaling.scale) + scaling.offsetY;
+
+    // Calculate partial endpoint using progress value (0-1)
+    const currentX = fromX + (toX - fromX) * progress;
+    const currentY = fromY + (toY - fromY) * progress;
+
+    // Draw shadow for partial line (only in easy mode)
+    if (GameState.difficulty === 'easy') {
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(fromX + 1, fromY + 1);
+        ctx.lineTo(currentX + 1, currentY + 1);
+        ctx.stroke();
+    }
+
+    // Draw partial line
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(currentX, currentY);
+    ctx.stroke();
+}
+
 // Calculate scaling to match builder view
 function calculateScaling() {
     if (!GameState.drawingData) {
@@ -357,6 +518,7 @@ function resizeConfettiCanvas() {
 export {
     init,
     renderFrame,
+    renderPartialLine,
     resizeCanvas,
     clearCanvas,
     drawDots,

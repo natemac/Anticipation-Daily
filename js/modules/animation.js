@@ -3,6 +3,7 @@
 import GameState from './state.js';
 import * as Renderer from './renderer.js';
 import * as Audio from './audio.js';
+import * as GameLogic from './gameLogic.js';
 import { log } from '../game.js';
 
 // Initialize the animation module
@@ -11,25 +12,30 @@ function init() {
     return true;
 }
 
-// Start drawing animation with improved timing
+// Standard drawing animation (line by line)
 function startDrawingAnimation() {
     // Prepare animation state
     const totalSequenceLength = GameState.drawingData.sequence.length;
 
-    // Set animation speed based on difficulty
+    // Set animation speed based on difficulty and config
     const timePerLine = GameState.difficulty === 'hard' ?
-        GameState.animationSpeed * 0.7 : // Faster in hard mode
-        GameState.animationSpeed;        // Normal in easy mode
+        GameLogic.CONFIG.DRAWING_SPEED * 0.7 : // Faster in hard mode
+        GameLogic.CONFIG.DRAWING_SPEED;        // Normal in easy mode
 
     log(`Starting animation: ${totalSequenceLength} lines, ${timePerLine}ms per line`);
 
-    // Reset animation state
+    // Reset animation state but preserve drawing progress
     cancelAnimationFrame(GameState.animationId);
-    GameState.drawingProgress = 0;
+    const currentProgress = GameState.drawingProgress;
+
+    // If no progress yet, start from beginning, otherwise continue
+    if (currentProgress === 0) {
+        GameState.drawingProgress = 1;
+    }
+
     GameState.lastFrameTime = 0;
 
-    // Draw the first line immediately
-    GameState.drawingProgress = 1;
+    // Initial render
     Renderer.renderFrame();
 
     // Track timing
@@ -79,6 +85,102 @@ function startDrawingAnimation() {
 
     // Start animation loop
     GameState.animationId = requestAnimationFrame(animate);
+}
+
+// Point-to-point drawing animation (smoother effect)
+function startPointToPointAnimation() {
+    // The sequence of lines to draw
+    const sequence = GameState.drawingData.sequence;
+    const dots = GameState.drawingData.dots;
+
+    // If no sequence data, can't animate
+    if (!sequence || sequence.length === 0 || !dots) {
+        log("No sequence data for point-to-point animation");
+        return;
+    }
+
+    // Total number of lines to draw
+    const totalSequenceLength = sequence.length;
+
+    // Animation speed based on difficulty
+    const timePerLine = GameState.difficulty === 'hard' ?
+        GameLogic.CONFIG.DRAWING_SPEED * 0.7 : // Faster in hard mode
+        GameLogic.CONFIG.DRAWING_SPEED;        // Normal in easy mode
+
+    log(`Starting point-to-point animation: ${totalSequenceLength} lines, ${timePerLine}ms per line`);
+
+    // Cancel any existing animation but preserve drawing progress
+    cancelAnimationFrame(GameState.animationId);
+
+    // If drawingProgress is 0, start from beginning, otherwise continue
+    const startLineIndex = GameState.drawingProgress > 0 ?
+        GameState.drawingProgress - 1 : 0;
+
+    // We'll track both the line index and the progress within each line
+    let currentLineIndex = startLineIndex;
+    let lineProgress = 0;
+    let lastTime = 0;
+
+    // Reset lastFrameTime for new animation
+    GameState.lastFrameTime = 0;
+
+    // Animation function
+    function animateLine(timestamp) {
+        // Initialize timing on first frame
+        if (!GameState.lastFrameTime) {
+            GameState.lastFrameTime = timestamp;
+            GameState.animationId = requestAnimationFrame(animateLine);
+            return;
+        }
+
+        // Calculate time delta
+        const deltaTime = timestamp - GameState.lastFrameTime;
+        GameState.lastFrameTime = timestamp;
+
+        // Prevent large jumps
+        const cappedDelta = Math.min(deltaTime, 100);
+
+        // Update line progress based on time
+        lineProgress += cappedDelta / timePerLine;
+
+        // If line is complete
+        if (lineProgress >= 1) {
+            // Move to next line
+            currentLineIndex++;
+            lineProgress = 0;
+
+            // Update game state progress
+            GameState.drawingProgress = currentLineIndex;
+
+            // Play sound for each new line
+            Audio.playSound('tick');
+
+            // If all lines are drawn, finish animation
+            if (currentLineIndex >= totalSequenceLength) {
+                Renderer.renderFrame(); // Draw final state
+                GameState.pendingAnimationStart = false;
+                log("Point-to-point animation complete");
+                return;
+            }
+        }
+
+        // Render current animation state
+        Renderer.renderPartialLine(currentLineIndex, lineProgress);
+
+        // Continue animation if game is still active and not in guess mode
+        if (currentLineIndex < totalSequenceLength &&
+            GameState.gameStarted && !GameState.guessMode) {
+            GameState.animationId = requestAnimationFrame(animateLine);
+        } else {
+            // If interrupted, update progress for resumption
+            GameState.drawingProgress = currentLineIndex;
+            GameState.pendingAnimationStart = GameState.drawingProgress < totalSequenceLength;
+            log("Point-to-point animation interrupted");
+        }
+    }
+
+    // Start animation
+    GameState.animationId = requestAnimationFrame(animateLine);
 }
 
 // Start confetti animation for successful completion
@@ -262,6 +364,7 @@ function highlightHintLetter(letterElement) {
 export {
     init,
     startDrawingAnimation,
+    startPointToPointAnimation,
     startConfettiAnimation,
     animateConfetti,
     cancelAnimations,
