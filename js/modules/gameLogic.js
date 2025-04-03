@@ -8,25 +8,11 @@ import * as UI from './ui.js';
 import * as WordHandler from './wordHandler.js';
 import { log } from '../game.js';
 
-// Configuration variables for easy adjustment
-const CONFIG = {
-    PIXELS_PER_SECOND: 200,   // Animation speed in pixels per second
-    MINIMUM_LINE_TIME: 100,   // Minimum time for short lines (milliseconds)
-    GUESS_TIME_LIMIT: 10,     // seconds for guessing
-    HIDE_INITIAL_MESSAGES: true, // hide any messages at start
-    ANIMATION_LINE_BY_LINE: true // animate lines individually from point to point
-};
-
 // Module variables
 let elapsedTimerInterval;
 
 // Initialize the game logic
 function init() {
-    // Apply configuration to game state
-    GameState.pixelsPerSecond = CONFIG.PIXELS_PER_SECOND;
-    GameState.minimumLineTime = CONFIG.MINIMUM_LINE_TIME;
-    GameState.guessTimeLimit = CONFIG.GUESS_TIME_LIMIT;
-
     log("Game logic module initialized");
     return true;
 }
@@ -95,7 +81,7 @@ function startGameWithData(color, category, data) {
     }
 
     // Clear any messages that might be showing
-    if (CONFIG.HIDE_INITIAL_MESSAGES) {
+    if (GameState.CONFIG.HIDE_INITIAL_MESSAGES) {
         UI.hideMessages();
     }
 
@@ -164,7 +150,7 @@ function startDrawing() {
 
     // Start animation with a short delay to ensure rendering is ready
     setTimeout(() => {
-        if (CONFIG.ANIMATION_LINE_BY_LINE) {
+        if (GameState.CONFIG.ANIMATION_LINE_BY_LINE) {
             Animation.startPointToPointAnimation();
         } else {
             Animation.startDrawingAnimation();
@@ -227,6 +213,5 @@ export {
     startGameWithData,
     startDrawing,
     startElapsedTimer,
-    endGame,
-    CONFIG
+    endGame
 };

@@ -1,12 +1,41 @@
 // state.js - Game State Management Module
-// Manages the global state of the game
+// Manages the global state of the game and centralized configuration
+
+// Game configuration object - All tunable parameters in one place
+const CONFIG = {
+    // Animation settings
+    PIXELS_PER_SECOND: 300,       // Animation speed in pixels per second
+    MINIMUM_LINE_TIME: 100,       // Minimum time for short lines (milliseconds)
+    ANIMATION_LINE_BY_LINE: true, // Animate lines individually from point to point
+
+    // Visual settings
+    DOT_RADIUS: 5,                // Size of dots on the grid
+
+    // Gameplay settings
+    GUESS_TIME_LIMIT: 10,         // Seconds for guessing
+    HIDE_INITIAL_MESSAGES: true,  // Hide any messages at game start
+
+    // Hint system
+    HINT_COOLDOWN_TIME: 5,        // Cooldown time in seconds between hints
+    HINTS_AVAILABLE: 0,           // Number of hints available per game (0 = unlimited)
+
+    // UI settings
+    WRONG_MESSAGE_DURATION: 800,  // Duration to show wrong messages (milliseconds)
+    CELEBRATION_DURATION: 1500,   // Duration of celebration before returning to menu
+
+    // Debug settings
+    DEBUG_MODE: false             // Enable debug logging and features
+};
 
 // Game state object
 const GameState = {
-    // Game configuration
+    // Reference to configuration
+    CONFIG: CONFIG,
+
+    // Game configuration (applied from CONFIG)
     difficulty: 'easy',
-    pixelsPerSecond: 300,   // Animation speed in pixels per second
-    minimumLineTime: 100,   // Minimum time for short lines (milliseconds)
+    pixelsPerSecond: CONFIG.PIXELS_PER_SECOND,
+    minimumLineTime: CONFIG.MINIMUM_LINE_TIME,
 
     // Current game data
     currentColor: null,
@@ -33,7 +62,7 @@ const GameState = {
     guessAttempts: 0,      // Track number of guess attempts
 
     // Guess timer properties
-    guessTimeRemaining: 10,
+    guessTimeRemaining: CONFIG.GUESS_TIME_LIMIT,
     guessTimerActive: false,
     guessTimer: null,
 
@@ -47,7 +76,7 @@ const GameState = {
 
     // Hint system
     hintsUsed: 0,
-    hintsAvailable: 1,
+    hintsAvailable: CONFIG.HINTS_AVAILABLE,
     hintButtonActive: false,     // Tracks if hint button is enabled
     hintButtonCooldown: false,   // Tracks if hint button is in cooldown
     hintCooldownRemaining: 0,    // Remaining cooldown time in seconds
@@ -88,7 +117,7 @@ const GameState = {
         this.guessMode = false;
         this.currentInput = '';
         this.correctLetters = [];
-        this.guessTimeRemaining = 10;
+        this.guessTimeRemaining = CONFIG.GUESS_TIME_LIMIT;
         this.guessTimerActive = false;
         this.pendingAnimationStart = false;
         this.scaling = null;
@@ -119,6 +148,19 @@ const GameState = {
         this.audioEnabled = enabled;
         localStorage.setItem('audioEnabled', enabled);
         return this;
+    },
+
+    // Check if hints are available
+    hasHintsAvailable() {
+        // When HINTS_AVAILABLE is 0, unlimited hints are allowed
+        return CONFIG.HINTS_AVAILABLE === 0 || this.hintsUsed < CONFIG.HINTS_AVAILABLE;
+    },
+
+    // Debug log function (only logs when DEBUG_MODE is true)
+    debug(message) {
+        if (CONFIG.DEBUG_MODE) {
+            console.log(`[DEBUG] ${message}`);
+        }
     }
 };
 

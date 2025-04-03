@@ -6,10 +6,6 @@ import * as Audio from './audio.js';
 import * as GameLogic from './gameLogic.js';
 import { log } from '../game.js';
 
-// Animation constants
-const PIXELS_PER_SECOND = 300; // Consistent drawing speed in pixels per second
-const MINIMUM_LINE_TIME = 100; // Minimum time for short lines (milliseconds)
-
 // Initialize the animation module
 function init() {
     // Nothing to initialize yet
@@ -23,8 +19,8 @@ function startDrawingAnimation() {
 
     // Set animation speed based on difficulty and config
     const timePerLine = GameState.difficulty === 'hard' ?
-        GameLogic.CONFIG.DRAWING_SPEED * 0.7 : // Faster in hard mode
-        GameLogic.CONFIG.DRAWING_SPEED;        // Normal in easy mode
+        GameState.CONFIG.MINIMUM_LINE_TIME * 0.7 : // Faster in hard mode
+        GameState.CONFIG.MINIMUM_LINE_TIME;        // Normal in easy mode
 
     log(`Starting animation: ${totalSequenceLength} lines, ${timePerLine}ms per line`);
 
@@ -105,9 +101,9 @@ function startPointToPointAnimation() {
     // Total number of lines to draw
     const totalSequenceLength = sequence.length;
 
-    // Get pixels per second speed from config or use default
-    const pixelsPerSecond = GameState.pixelsPerSecond || PIXELS_PER_SECOND;
-    const minimumLineTime = GameState.minimumLineTime || MINIMUM_LINE_TIME;
+    // Use pixels per second speed from config
+    const pixelsPerSecond = GameState.CONFIG.PIXELS_PER_SECOND;
+    const minimumLineTime = GameState.CONFIG.MINIMUM_LINE_TIME;
 
     // Adjust speed based on difficulty
     const speedFactor = GameState.difficulty === 'hard' ? 1.3 : 1.0; // 30% faster in hard mode

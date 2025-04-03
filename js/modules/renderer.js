@@ -7,9 +7,6 @@ import { log } from '../game.js';
 let canvas, ctx;
 let confettiCanvas, confettiCtx;
 
-// Constants
-const DOT_RADIUS = 5;
-
 // Initialize the renderer
 function init() {
     // Get canvas element
@@ -383,6 +380,8 @@ function drawDots() {
     }
 
     const scaling = GameState.scaling;
+    // Use the dot radius from centralized config
+    const DOT_RADIUS = GameState.CONFIG.DOT_RADIUS;
 
     GameState.drawingData.dots.forEach((dot, index) => {
         if (!dot) return;

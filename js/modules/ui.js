@@ -12,9 +12,6 @@ let timerDisplay, beginButton, wrongMessage, backButton, buttonTimer;
 let wordSpacesDiv, hintButton;
 let hintButtonTimeout;
 
-// Configurable hint cooldown time in seconds
-const HINT_COOLDOWN_TIME = 5;
-
 // Initialize UI module
 function init() {
     // Get DOM elements
@@ -120,7 +117,7 @@ function createHintButton() {
     hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
     hintButton.style.transition = 'background-color 0.3s, transform 0.2s';
 
-    // Initially disable the hint button (will enable after 5 seconds)
+    // Initially disable the hint button (will enable after cooldown period)
     hintButton.disabled = true;
     hintButton.style.opacity = "0.5";
     hintButton.style.cursor = "not-allowed";
@@ -264,7 +261,7 @@ function updateTimerDisplay() {
     timerDisplay.style.color = '#000';
 
     // Enable hint button after initial delay if in easy mode
-    if (GameState.difficulty === 'easy' && GameState.elapsedTime >= HINT_COOLDOWN_TIME &&
+    if (GameState.difficulty === 'easy' && GameState.elapsedTime >= GameState.CONFIG.HINT_COOLDOWN_TIME &&
         !GameState.hintButtonActive && !GameState.hintButtonCooldown &&
         !GameState.guessMode && GameState.gameStarted) {
         enableHintButton();
@@ -281,7 +278,7 @@ function startGuessTimer() {
     if (!buttonTimer || !beginButton) return;
 
     // Reset the guess timer
-    GameState.guessTimeRemaining = GameLogic.CONFIG.GUESS_TIME_LIMIT;
+    GameState.guessTimeRemaining = GameState.CONFIG.GUESS_TIME_LIMIT;
     GameState.guessTimerActive = true;
 
     // Reset and show the timer overlay
@@ -301,7 +298,7 @@ function startGuessTimer() {
 
     // Start the timer
     GameState.guessTimer = setInterval(() => {
-        const timeLimit = GameLogic.CONFIG.GUESS_TIME_LIMIT;
+        const timeLimit = GameState.CONFIG.GUESS_TIME_LIMIT;
         GameState.guessTimeRemaining -= 0.1; // Decrease by 0.1s for smooth transition
 
         // Update the button timer width (grows from left to right)
@@ -392,7 +389,7 @@ function showWrongMessage(message) {
             wordSpacesDiv.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
             wordSpacesDiv.style.transform = 'scale(1)';
         }
-    }, 800);
+    }, GameState.CONFIG.WRONG_MESSAGE_DURATION);
 }
 
 // Hide all messages
@@ -411,6 +408,11 @@ function hideMessages() {
 function enableHintButton() {
     if (!hintButton || GameState.difficulty !== 'easy') return;
 
+    // Only enable if we have hints available or unlimited hints
+    if (!GameState.hasHintsAvailable()) {
+        return;
+    }
+
     hintButton.disabled = false;
     hintButton.style.opacity = "1";
     hintButton.style.cursor = "pointer";
@@ -427,6 +429,13 @@ function enableHintButton() {
 // Use hint feature
 function useHint() {
     if (!GameState.gameStarted || !GameState.hintButtonActive || GameState.difficulty !== 'easy') return;
+
+    // Check if hints are available
+    if (!GameState.hasHintsAvailable()) {
+        // No more hints available
+        showWrongMessage("No hints left!");
+        return;
+    }
 
     // Get current word
     const currentWord = GameState.drawingData.name;
@@ -496,11 +505,42 @@ function useHint() {
         }
     }
 
-    // Update hint count
+    // Update hint count (only matters for limited hints)
     GameState.hintsUsed++;
+
+    // Update hint button text if using limited hints
+    if (GameState.CONFIG.HINTS_AVAILABLE > 0) {
+        updateHintButtonCounter();
+    }
 
     // Play sound
     Audio.playSound('tick');
+}
+
+// Update hint button counter text
+function updateHintButtonCounter() {
+    if (!hintButton) return;
+
+    // Only show counter if hints are limited
+    if (GameState.CONFIG.HINTS_AVAILABLE > 0) {
+        const hintsLeft = Math.max(0, GameState.CONFIG.HINTS_AVAILABLE - GameState.hintsUsed);
+        // Don't change text if in cooldown
+        if (!GameState.hintButtonCooldown) {
+            hintButton.textContent = hintsLeft > 0 ? `Hint? (${hintsLeft})` : 'No hints left';
+        }
+
+        // Disable if no hints left
+        if (hintsLeft <= 0) {
+            hintButton.disabled = true;
+            hintButton.style.opacity = "0.5";
+            hintButton.style.cursor = "not-allowed";
+        }
+    } else {
+        // Don't show counter for unlimited hints
+        if (!GameState.hintButtonCooldown) {
+            hintButton.textContent = 'Hint?';
+        }
+    }
 }
 
 // Start hint button cooldown
@@ -513,13 +553,12 @@ function startHintCooldown() {
     hintButton.style.cursor = "not-allowed";
 
     // Add cooldown timer text
-    const originalText = hintButton.textContent;
-    hintButton.textContent = `Wait ${HINT_COOLDOWN_TIME}s`;
+    hintButton.textContent = `Wait ${GameState.CONFIG.HINT_COOLDOWN_TIME}s`;
 
     // Set cooldown state
     GameState.hintButtonActive = false;
     GameState.hintButtonCooldown = true;
-    GameState.hintCooldownRemaining = HINT_COOLDOWN_TIME;
+    GameState.hintCooldownRemaining = GameState.CONFIG.HINT_COOLDOWN_TIME;
 
     // Note: We don't start a timer here - the cooldown is updated in updateTimerDisplay
     // which only runs when the main timer is active (not during guessing)
@@ -536,12 +575,26 @@ function updateHintCooldown() {
 
         if (GameState.hintCooldownRemaining <= 0) {
             // Cooldown finished
-            hintButton.textContent = "Hint?";
             GameState.hintButtonCooldown = false;
 
-            // Re-enable hint button
-            if (GameState.difficulty === 'easy' && GameState.gameStarted) {
-                enableHintButton();
+            // Update button text based on hint availability
+            if (GameState.CONFIG.HINTS_AVAILABLE > 0) {
+                // Limited hints - show counter
+                const hintsLeft = Math.max(0, GameState.CONFIG.HINTS_AVAILABLE - GameState.hintsUsed);
+                hintButton.textContent = hintsLeft > 0 ? `Hint? (${hintsLeft})` : 'No hints left';
+
+                // Only re-enable if we have hints left
+                if (hintsLeft > 0 && GameState.difficulty === 'easy' && GameState.gameStarted) {
+                    enableHintButton();
+                }
+            } else {
+                // Unlimited hints
+                hintButton.textContent = "Hint?";
+
+                // Always re-enable in easy mode
+                if (GameState.difficulty === 'easy' && GameState.gameStarted) {
+                    enableHintButton();
+                }
             }
         } else {
             // Update cooldown text
@@ -643,7 +696,7 @@ function exitGuessMode() {
 
     // Restart animation if needed, continuing from where it left off
     if (GameState.pendingAnimationStart) {
-        if (GameLogic.CONFIG.ANIMATION_LINE_BY_LINE) {
+        if (GameState.CONFIG.ANIMATION_LINE_BY_LINE) {
             Animation.startPointToPointAnimation();
         } else {
             Animation.startDrawingAnimation();
@@ -684,7 +737,13 @@ function toggleHintButton(show) {
 
     // Reset hint button state
     if (show) {
-        hintButton.textContent = 'Hint?';
+        // Update text based on limited vs unlimited hints
+        if (GameState.CONFIG.HINTS_AVAILABLE > 0) {
+            hintButton.textContent = `Hint? (${GameState.CONFIG.HINTS_AVAILABLE})`;
+        } else {
+            hintButton.textContent = 'Hint?';
+        }
+
         hintButton.disabled = true;
         hintButton.style.opacity = "0.5";
         hintButton.style.cursor = "not-allowed";
@@ -695,7 +754,8 @@ function toggleHintButton(show) {
         GameState.hintCooldownRemaining = 0;
 
         // Enable after initial delay if in easy mode
-        if (GameState.difficulty === 'easy' && GameState.elapsedTime >= HINT_COOLDOWN_TIME) {
+        if (GameState.difficulty === 'easy' &&
+            GameState.elapsedTime >= GameState.CONFIG.HINT_COOLDOWN_TIME) {
             enableHintButton();
         }
     }
@@ -737,5 +797,6 @@ export {
     toggleHintButton,
     enableHintButton,
     startHintCooldown,
-    showError
+    showError,
+    updateHintButtonCounter
 };
