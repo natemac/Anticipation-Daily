@@ -10,6 +10,7 @@ import * as Audio from './modules/audio.js';
 // Menu state object
 const menuState = {
     completedCategories: 0,
+    lastCompletedColor: null, // Track the last completed color to prevent animation bugs
     puzzles: {
         yellow: { completed: false, guesses: 0, time: 0, hardMode: false, earlyCompletion: false },
         green: { completed: false, guesses: 0, time: 0, hardMode: false, earlyCompletion: false },
@@ -181,6 +182,9 @@ function updateAudioToggleUI(isOn) {
 
 // Update the menu state when a game is completed
 function updatePuzzleCompletion(color, time, guesses = 0, isHardMode = false, isEarlyCompletion = false) {
+    // Store the last completed color to prevent animation bugs
+    menuState.lastCompletedColor = color;
+
     // Update puzzle state
     menuState.puzzles[color].completed = true;
     menuState.puzzles[color].time = time;
@@ -206,6 +210,9 @@ function updatePuzzleCompletion(color, time, guesses = 0, isHardMode = false, is
         stampClass = 'completion-stamp-early';
     }
 
+    // Check if it's a first-guess completion
+    const isFirstGuess = guesses === 1;
+
     // Update the result overlay with better styling
     resultOverlay.innerHTML = `
         <div class="completion-stamp ${stampClass}">
@@ -216,10 +223,11 @@ function updatePuzzleCompletion(color, time, guesses = 0, isHardMode = false, is
         </div>
         <div class="completion-stats">
             <p class="stat-line">Time: ${time.toFixed(2)}s</p>
-            <p class="stat-line">Guesses: ${guesses}</p>
+            ${isFirstGuess ?
+              '<p class="stat-line stat-achievement">Got it in one ☝️</p>' :
+              `<p class="stat-line">Guesses: ${guesses}</p>`}
             ${isEarlyCompletion ? '<p class="stat-line stat-achievement">Early completion! ⚡</p>' : ''}
-            ${isHardMode && !isEarlyCompletion ? '<p class="stat-line stat-achievement">Hard mode! 🏆</p>' : ''}
-            ${isHardMode && isEarlyCompletion ? '<p class="stat-line stat-achievement">Hard mode + Early! 🌟</p>' : ''}
+            ${isHardMode ? '<p class="stat-line stat-achievement">Hard mode! 🏆</p>' : ''}
         </div>
     `;
 
@@ -352,17 +360,21 @@ function shareResults() {
         const category = document.querySelector(`.color-square[data-color="${color}"]`).dataset.category;
 
         if (puzzle.completed) {
-            // Add badge for hard mode or early completion
-            let achievementBadge = '';
-            if (puzzle.hardMode && puzzle.earlyCompletion) {
-                achievementBadge = ' 🌟';
-            } else if (puzzle.hardMode) {
-                achievementBadge = ' 🏆';
-            } else if (puzzle.earlyCompletion) {
-                achievementBadge = ' ⚡';
+            // Add achievement badges
+            let achievementBadges = [];
+
+            if (puzzle.guesses === 1) {
+                achievementBadges.push('☝️');
+            }
+            if (puzzle.earlyCompletion) {
+                achievementBadges.push('⚡');
+            }
+            if (puzzle.hardMode) {
+                achievementBadges.push('🏆');
             }
 
-            shareText += `${category}: ✓${achievementBadge} (${puzzle.time.toFixed(2)}s, ${puzzle.guesses} guesses)\n`;
+            const badges = achievementBadges.length > 0 ? ` ${achievementBadges.join(' ')}` : '';
+            shareText += `${category}: ✓${badges} (${puzzle.time.toFixed(2)}s, ${puzzle.guesses} guess${puzzle.guesses !== 1 ? 'es' : ''})\n`;
         } else {
             shareText += `${category}: ✗\n`;
         }
