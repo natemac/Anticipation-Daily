@@ -22,14 +22,20 @@ async function startGame(color, category) {
     log(`Starting game: ${category} (${color})`);
 
     try {
-        // Try to load the exported JSON file
+        // Try to load the JSON file
         const response = await fetch(`items/${color}.json`);
+
+        if (!response.ok) {
+            throw new Error(`Could not load ${color}.json (${response.status}: ${response.statusText})`);
+        }
+
         const itemData = await response.json();
         log('Successfully loaded drawing data');
         startGameWithData(color, category, itemData);
     } catch (error) {
-        log('Using default drawing data for: ' + category);
-        startGameWithData(color, category, gameData[color]);
+        log('ERROR: Failed to load game data: ' + error.message);
+        // Show error to user
+        UI.showError(`Failed to load game data: ${error.message}`);
     }
 }
 
@@ -103,70 +109,8 @@ function startGameWithData(color, category, data) {
     }, 100);
 }
 
-// Start the drawing animation
-function startDrawing() {
-    log("Starting drawing animation");
-
-    // Update game state
-    GameState.gameStarted = true;
-    GameState.timerActive = true;
-    GameState.pendingAnimationStart = true;
-
-    const beginButton = document.getElementById('beginButton')?.querySelector('span');
-    if (beginButton) {
-        beginButton.textContent = 'Guess';
-    }
-
-    // Show hint button
-    UI.toggleHintButton(true);
-
-    // Clear any existing timers
-    if (GameState.elapsedTimer) clearInterval(GameState.elapsedTimer);
-    if (GameState.guessTimer) clearInterval(GameState.guessTimer);
-    if (GameState.animationId) cancelAnimationFrame(GameState.animationId);
-
-    // Ensure canvas is properly sized
-    Renderer.resizeCanvas();
-
-    // Start the timer counting up
-    startElapsedTimer();
-
-    // Draw initial state
-    if (GameState.difficulty === 'easy') {
-        Renderer.drawDots();
-        WordHandler.updateWordSpaces();
-    }
-
-    // Start animation with a short delay to ensure rendering is ready
-    setTimeout(() => {
-        Animation.startDrawingAnimation();
-    }, 50);
-}
-
-// Start the elapsed timer
-function startElapsedTimer() {
-    // Clear any existing timer
-    if (GameState.elapsedTimer) clearInterval(GameState.elapsedTimer);
-
-    // Update timer every 10ms for hundredths of seconds precision
-    GameState.elapsedTimer = setInterval(() => {
-        if (!GameState.guessMode && GameState.timerActive) {
-            GameState.elapsedTimeHundredths += 1;
-
-            if (GameState.elapsedTimeHundredths >= 100) {
-                GameState.elapsedTime += 1;
-                GameState.elapsedTimeHundredths = 0;
-            }
-
-            // Format and display timer
-            UI.updateTimerDisplay();
-        }
-    }, 10);
-
-    return GameState.elapsedTimer;
-}
-
-// Export public functions
+// Rest of the file stays the same...
+// Export functions
 export {
     init,
     startGame,

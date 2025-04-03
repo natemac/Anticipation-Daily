@@ -544,6 +544,27 @@ function toggleHintButton(show) {
     updateHintButton();
 }
 
+// Show error message to user
+function showError(message) {
+    // Use the wrong message element for errors too
+    const wrongMessage = document.getElementById('wrongMessage');
+    if (wrongMessage) {
+        wrongMessage.textContent = message;
+        wrongMessage.classList.add('visible');
+        wrongMessage.style.backgroundColor = 'rgba(244, 67, 54, 0.9)';
+        wrongMessage.style.padding = '10px';
+        wrongMessage.style.borderRadius = '4px';
+
+        // Keep error visible longer
+        setTimeout(() => {
+            wrongMessage.classList.remove('visible');
+        }, 5000);
+    } else {
+        // Fallback to alert if element not found
+        alert(message);
+    }
+}
+
 // Export public functions
 export {
     init,
@@ -556,5 +577,6 @@ export {
     updateVirtualKeyboard,
     repositionElements,
     toggleHintButton,
-    updateHintButton
+    updateHintButton,
+    showError
 };

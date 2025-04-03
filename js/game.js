@@ -10,6 +10,17 @@ import * as UI from './modules/ui.js';
 import * as WordHandler from './modules/wordHandler.js';
 import * as Audio from './modules/audio.js';
 import * as GameLogic from './modules/gameLogic.js';
+import * as Menu from './menu.js';
+
+// Make functions globally available for older code
+window.startGame = GameLogic.startGame;
+window.startDrawing = GameLogic.startDrawing;
+window.updatePuzzleCompletion = Menu.updatePuzzleCompletion;
+window.showGameScreen = Menu.showGameScreen;
+window.showMainMenu = Menu.showMainMenu;
+window.renderFrame = Renderer.renderFrame;
+window.resizeCanvas = Renderer.resizeCanvas;
+window.clearCanvas = Renderer.clearCanvas;
 
 // Simple logging function for debugging
 function log(message) {
