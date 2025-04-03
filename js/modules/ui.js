@@ -10,6 +10,7 @@ import { log } from '../game.js';
 // Module variables
 let timerDisplay, beginButton, wrongMessage, backButton, buttonTimer;
 let wordSpacesDiv, hintButton;
+let hintButtonTimeout;
 
 // Initialize UI module
 function init() {
@@ -103,7 +104,7 @@ function createHintButton() {
     hintButton = document.createElement('button');
     hintButton.id = 'hintButton';
     hintButton.className = 'hint-button';
-    hintButton.textContent = 'Hint (1)';
+    hintButton.textContent = 'Hint?';
     hintButton.style.display = 'none';
     hintButton.style.backgroundColor = '#FFC107';
     hintButton.style.color = '#333';
@@ -115,6 +116,11 @@ function createHintButton() {
     hintButton.style.cursor = 'pointer';
     hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
     hintButton.style.transition = 'background-color 0.3s, transform 0.2s';
+
+    // Initially disable the hint button (will enable after 5 seconds)
+    hintButton.disabled = true;
+    hintButton.style.opacity = "0.5";
+    hintButton.style.cursor = "not-allowed";
 
     // Add event listener
     hintButton.addEventListener('click', useHint);
@@ -253,6 +259,11 @@ function updateTimerDisplay() {
 
     // Always keep timer color black
     timerDisplay.style.color = '#000';
+
+    // Enable hint button after 5 seconds if in easy mode
+    if (GameState.difficulty === 'easy' && GameState.elapsedTime >= 5 && !GameState.hintButtonActive && !GameState.hintButtonCooldown) {
+        enableHintButton();
+    }
 }
 
 // Start the guess timer with single color
@@ -386,15 +397,36 @@ function hideMessages() {
     }
 }
 
+// Enable hint button
+function enableHintButton() {
+    if (!hintButton || GameState.difficulty !== 'easy') return;
+
+    hintButton.disabled = false;
+    hintButton.style.opacity = "1";
+    hintButton.style.cursor = "pointer";
+    GameState.hintButtonActive = true;
+    GameState.hintButtonCooldown = false;
+
+    // Add pulse animation to draw attention
+    hintButton.style.animation = 'pulse 0.5s';
+    setTimeout(() => {
+        hintButton.style.animation = '';
+    }, 500);
+}
+
 // Use hint feature
 function useHint() {
-    if (!GameState.gameStarted || GameState.hintsUsed >= GameState.hintsAvailable) return;
+    if (!GameState.gameStarted || !GameState.hintButtonActive || GameState.difficulty !== 'easy') return;
 
     // Get current word
     const currentWord = GameState.drawingData.name;
 
-    // If we're in guess mode, provide the next letter
+    // Start cooldown period
+    startHintCooldown();
+
+    // If we're in guess mode
     if (GameState.guessMode) {
+        // Determine which position to hint (the first unsolved position)
         const letterIndex = GameState.currentInput.length;
 
         // If we have room for more letters
@@ -424,15 +456,17 @@ function useHint() {
             }
         }
     } else {
-        // If not in guess mode, enter guess mode and reveal first letter
+        // If not in guess mode, enter guess mode
         enterGuessMode();
 
-        // Add the first letter as a hint
-        if (currentWord[0] === ' ') {
-            GameState.currentInput = ' ';
-        } else {
-            const firstLetter = currentWord[0].toUpperCase();
-            GameState.currentInput = firstLetter;
+        // Store first letter as hint (keeping any existing progress)
+        if (GameState.currentInput.length === 0) {
+            if (currentWord[0] === ' ') {
+                GameState.currentInput = ' ';
+            } else {
+                const firstLetter = currentWord[0].toUpperCase();
+                GameState.currentInput = firstLetter;
+            }
         }
 
         WordHandler.updateWordSpaces();
@@ -444,26 +478,53 @@ function useHint() {
         }
     }
 
-    // Update hint count and button state
+    // Update hint count
     GameState.hintsUsed++;
-    updateHintButton();
 
     // Play sound
     Audio.playSound('tick');
 }
 
-// Update hint button based on available hints
-function updateHintButton() {
+// Start hint button cooldown
+function startHintCooldown() {
+    // Disable the hint button
     if (!hintButton) return;
 
-    hintButton.textContent = `Hint (${Math.max(0, GameState.hintsAvailable - GameState.hintsUsed)})`;
+    hintButton.disabled = true;
+    hintButton.style.opacity = "0.5";
+    hintButton.style.cursor = "not-allowed";
 
-    // Disable if no hints remain
-    if (GameState.hintsUsed >= GameState.hintsAvailable) {
-        hintButton.disabled = true;
-        hintButton.style.opacity = "0.5";
-        hintButton.style.cursor = "not-allowed";
+    // Add cooldown timer text
+    const originalText = hintButton.textContent;
+    hintButton.textContent = "Wait 5s";
+
+    // Set cooldown state
+    GameState.hintButtonActive = false;
+    GameState.hintButtonCooldown = true;
+
+    // Start the cooldown timer (5 seconds)
+    let cooldownTime = 5;
+
+    if (hintButtonTimeout) {
+        clearInterval(hintButtonTimeout);
     }
+
+    hintButtonTimeout = setInterval(() => {
+        cooldownTime--;
+        if (cooldownTime > 0) {
+            hintButton.textContent = `Wait ${cooldownTime}s`;
+        } else {
+            // Re-enable the hint button after cooldown
+            clearInterval(hintButtonTimeout);
+            hintButton.textContent = "Hint?";
+            GameState.hintButtonCooldown = false;
+
+            // Only enable if in easy mode and game is active
+            if (GameState.difficulty === 'easy' && GameState.gameStarted) {
+                enableHintButton();
+            }
+        }
+    }, 1000);
 }
 
 // Enter guess mode
@@ -489,9 +550,6 @@ function enterGuessMode() {
         cancelAnimationFrame(GameState.animationId);
         GameState.animationId = null;
     }
-
-    // Clear current input
-    GameState.currentInput = '';
 
     // Restore any previously correct letters
     if (typeof WordHandler.restoreCorrectLetters === 'function') {
@@ -591,8 +649,40 @@ function repositionElements() {
 function toggleHintButton(show) {
     if (!hintButton) return;
 
+    // Only show hint button in easy mode
+    if (GameState.difficulty !== 'easy') {
+        hintButton.style.display = 'none';
+        return;
+    }
+
+    // Update display based on show parameter
     hintButton.style.display = show ? 'block' : 'none';
-    updateHintButton();
+
+    // Reset hint button state
+    if (show) {
+        hintButton.textContent = 'Hint?';
+        hintButton.disabled = true;
+        hintButton.style.opacity = "0.5";
+        hintButton.style.cursor = "not-allowed";
+
+        // Start with inactive state but not in cooldown
+        GameState.hintButtonActive = false;
+        GameState.hintButtonCooldown = false;
+
+        // Clear any existing timeouts
+        if (hintButtonTimeout) {
+            clearTimeout(hintButtonTimeout);
+        }
+
+        // Enable after 5 seconds if in easy mode
+        if (GameState.difficulty === 'easy') {
+            setTimeout(() => {
+                if (GameState.gameStarted && !GameState.hintButtonCooldown) {
+                    enableHintButton();
+                }
+            }, 5000);
+        }
+    }
 }
 
 // Show error message to user
@@ -629,6 +719,7 @@ export {
     updateVirtualKeyboard,
     repositionElements,
     toggleHintButton,
-    updateHintButton,
+    enableHintButton,
+    startHintCooldown,
     showError
 };

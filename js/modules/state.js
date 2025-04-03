@@ -48,6 +48,8 @@ const GameState = {
     // Hint system
     hintsUsed: 0,
     hintsAvailable: 1,
+    hintButtonActive: false,     // Tracks if hint button is enabled
+    hintButtonCooldown: false,   // Tracks if hint button is in cooldown
 
     // Audio settings
     audioEnabled: true,
@@ -92,6 +94,8 @@ const GameState = {
         this.hintsUsed = 0;
         this.showConfetti = false;
         this.guessAttempts = 0; // Reset guess attempts counter
+        this.hintButtonActive = false;
+        this.hintButtonCooldown = false;
 
         // Clear any existing timers
         if (this.elapsedTimer) clearInterval(this.elapsedTimer);
