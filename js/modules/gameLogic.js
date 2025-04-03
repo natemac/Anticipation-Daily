@@ -10,7 +10,8 @@ import { log } from '../game.js';
 
 // Configuration variables for easy adjustment
 const CONFIG = {
-    DRAWING_SPEED: 3000,       // ms per line (lower = faster)
+    PIXELS_PER_SECOND: 300,   // Animation speed in pixels per second
+    MINIMUM_LINE_TIME: 100,   // Minimum time for short lines (milliseconds)
     GUESS_TIME_LIMIT: 10,     // seconds for guessing
     HIDE_INITIAL_MESSAGES: true, // hide any messages at start
     ANIMATION_LINE_BY_LINE: true // animate lines individually from point to point
@@ -22,7 +23,8 @@ let elapsedTimerInterval;
 // Initialize the game logic
 function init() {
     // Apply configuration to game state
-    GameState.animationSpeed = CONFIG.DRAWING_SPEED;
+    GameState.pixelsPerSecond = CONFIG.PIXELS_PER_SECOND;
+    GameState.minimumLineTime = CONFIG.MINIMUM_LINE_TIME;
     GameState.guessTimeLimit = CONFIG.GUESS_TIME_LIMIT;
 
     log("Game logic module initialized");
