@@ -209,7 +209,8 @@ function endGame(success) {
         // Update menu state if successful
         if (success && typeof updatePuzzleCompletion === 'function') {
             const time = GameState.elapsedTime + (GameState.elapsedTimeHundredths / 100);
-            updatePuzzleCompletion(GameState.currentColor, time);
+            // Pass the guess attempts to the menu function
+            updatePuzzleCompletion(GameState.currentColor, time, GameState.guessAttempts);
         }
 
         // Return to menu

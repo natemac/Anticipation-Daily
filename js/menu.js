@@ -180,19 +180,85 @@ function updateAudioToggleUI(isOn) {
 }
 
 // Update the menu state when a game is completed
-function updatePuzzleCompletion(color, time) {
+function updatePuzzleCompletion(color, time, guesses = 0) {
+    // Fix: Update the guesses count from the parameter
     menuState.puzzles[color].completed = true;
     menuState.puzzles[color].time = time;
+    menuState.puzzles[color].guesses = guesses;
     menuState.completedCategories++;
 
-    // Update result overlay
+    // Update result overlay with enhanced styling
     const resultOverlay = document.getElementById(`${color}-result`);
-    resultOverlay.querySelector('.time-count').textContent = `Time: ${time.toFixed(2)}s`;
+
+    // Add CSS for the stamp effect if not already added
+    addCompletionStyles();
+
+    // Update the result overlay with better styling
+    resultOverlay.innerHTML = `
+        <div class="completion-stamp">
+            <div class="stamp-text">COMPLETED</div>
+        </div>
+        <div class="completion-stats">
+            <p class="stat-line">Time: ${time.toFixed(2)}s</p>
+            <p class="stat-line">Guesses: ${guesses}</p>
+        </div>
+    `;
+
     resultOverlay.classList.add('visible');
 
     // Show share button if all categories completed
     if (menuState.completedCategories === 4) {
         shareButton.style.display = 'block';
+    }
+}
+
+// Add styles for the completion stamp and stats
+function addCompletionStyles() {
+    if (!document.getElementById('completion-styles')) {
+        const styleElem = document.createElement('style');
+        styleElem.id = 'completion-styles';
+        styleElem.innerHTML = `
+            .completion-stamp {
+                font-family: 'Impact', sans-serif;
+                font-size: 38px;
+                color: #ff0000;
+                transform: rotate(-15deg);
+                border: 5px solid #ff0000;
+                padding: 8px 12px;
+                border-radius: 10px;
+                opacity: 0.9;
+                text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+                box-shadow: 0 0 10px rgba(0,0,0,0.5);
+                animation: stampBounce 0.5s ease-out;
+                background-color: rgba(255,255,255,0.9);
+                margin-bottom: 15px;
+            }
+
+            .stamp-text {
+                letter-spacing: 2px;
+            }
+
+            .completion-stats {
+                font-weight: bold;
+                font-size: 18px;
+                color: white;
+                text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+                background-color: rgba(0,0,0,0.5);
+                padding: 8px 15px;
+                border-radius: 10px;
+            }
+
+            .stat-line {
+                margin: 5px 0;
+            }
+
+            @keyframes stampBounce {
+                0% { transform: scale(2) rotate(-15deg); opacity: 0; }
+                70% { transform: scale(1.2) rotate(-15deg); opacity: 1; }
+                100% { transform: scale(1) rotate(-15deg); opacity: 0.9; }
+            }
+        `;
+        document.head.appendChild(styleElem);
     }
 }
 
@@ -205,7 +271,7 @@ function shareResults() {
         const category = document.querySelector(`.color-square[data-color="${color}"]`).dataset.category;
 
         if (puzzle.completed) {
-            shareText += `${category}: ✓ (${puzzle.time.toFixed(2)}s)\n`;
+            shareText += `${category}: ✓ (${puzzle.time.toFixed(2)}s, ${puzzle.guesses} guesses)\n`;
         } else {
             shareText += `${category}: ✗\n`;
         }

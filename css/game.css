@@ -46,6 +46,7 @@
     transition: transform 0.2s;
     position: relative;
     background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%);
+    overflow: hidden;
 }
 
 .color-square h3 {
@@ -92,10 +93,53 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s;
+    z-index: 10;
 }
 
 .result-overlay.visible {
     opacity: 1;
+    pointer-events: auto;
+}
+
+/* Enhanced completion UI */
+.completion-stamp {
+    font-family: 'Impact', sans-serif;
+    font-size: 38px;
+    color: #ff0000;
+    transform: rotate(-15deg);
+    border: 5px solid #ff0000;
+    padding: 8px 12px;
+    border-radius: 10px;
+    opacity: 0.9;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    animation: stampBounce 0.5s ease-out;
+    background-color: rgba(255,255,255,0.9);
+    margin-bottom: 15px;
+}
+
+.stamp-text {
+    letter-spacing: 2px;
+}
+
+.completion-stats {
+    font-weight: bold;
+    font-size: 18px;
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+    background-color: rgba(0,0,0,0.5);
+    padding: 8px 15px;
+    border-radius: 10px;
+}
+
+.stat-line {
+    margin: 5px 0;
+}
+
+@keyframes stampBounce {
+    0% { transform: scale(2) rotate(-15deg); opacity: 0; }
+    70% { transform: scale(1.2) rotate(-15deg); opacity: 1; }
+    100% { transform: scale(1) rotate(-15deg); opacity: 0.9; }
 }
 
 /* Controls container for side-by-side layout */
@@ -369,6 +413,75 @@ input:focus + .slider {
     font-weight: bold;
     margin-top: 20px;
     display: none;
+    animation: fadeInButton 0.5s ease-in;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeInButton {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hint button */
+.hint-button {
+    display: none;
+    background-color: #FFC107;
+    color: #333;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 15px;
+    margin: 10px 0;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.hint-button:hover {
+    background-color: #FFD54F;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.hint-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.hint-button:disabled {
+    background-color: #E0E0E0;
+    color: #9E9E9E;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Trophy animation for completed puzzles */
+.trophy-icon {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    width: 50px;
+    height: 50px;
+    background-color: gold;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+    animation: pulseGlow 2s infinite;
+    z-index: 15;
+}
+
+.trophy-icon:before {
+    content: '🏆';
+    font-size: 24px;
+}
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.7); }
+    50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.9); }
+    100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.7); }
 }
 
 /* Responsive layout adjustments */
@@ -414,6 +527,16 @@ input:focus + .slider {
         padding: 10px;
         font-size: 16px;
     }
+
+    .completion-stamp {
+        font-size: 28px;
+        padding: 5px 10px;
+    }
+
+    .completion-stats {
+        font-size: 16px;
+        padding: 5px 10px;
+    }
 }
 
 /* Extra adjustments for very small screens */
@@ -428,5 +551,9 @@ input:focus + .slider {
 
     .controls-container {
         gap: 5px;
+    }
+
+    .completion-stamp {
+        font-size: 22px;
     }
 }

@@ -231,6 +231,10 @@ function processLetter(letter) {
             // Wrong letter - show feedback and exit guess mode
             log("Incorrect letter");
 
+            // Increment guess count for tracking
+            GameState.guessAttempts++;
+            log("Guess attempts: " + GameState.guessAttempts);
+
             // Store correct letters before showing error
             storeCorrectLetters();
 
@@ -268,6 +272,10 @@ function processFullWord() {
         // Handle successful completion
         handleWordCompletion();
     } else {
+        // Increment guess count
+        GameState.guessAttempts++;
+        log("Guess attempts: " + GameState.guessAttempts);
+
         // Store correct letters before showing error
         storeCorrectLetters();
 
@@ -329,8 +337,9 @@ function endGame(success) {
     // Update menu state if successful
     if (success) {
         const time = GameState.elapsedTime + (GameState.elapsedTimeHundredths / 100);
+        // Pass guess count to updatePuzzleCompletion
         if (typeof updatePuzzleCompletion === 'function') {
-            updatePuzzleCompletion(GameState.currentColor, time);
+            updatePuzzleCompletion(GameState.currentColor, time, GameState.guessAttempts);
         }
     }
 
