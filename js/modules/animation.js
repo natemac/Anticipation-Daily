@@ -6,6 +6,8 @@ import * as Audio from './audio.js';
 import * as GameLogic from './gameLogic.js';
 import { log } from '../game.js';
 
+const PIXELS_PER_SECOND = 300; // Consistent drawing speed (adjust as needed)
+
 // Initialize the animation module
 function init() {
     // Nothing to initialize yet
@@ -102,12 +104,7 @@ function startPointToPointAnimation() {
     // Total number of lines to draw
     const totalSequenceLength = sequence.length;
 
-    // Animation speed based on difficulty
-    const timePerLine = GameState.difficulty === 'hard' ?
-        GameLogic.CONFIG.DRAWING_SPEED * 0.7 : // Faster in hard mode
-        GameLogic.CONFIG.DRAWING_SPEED;        // Normal in easy mode
-
-    log(`Starting point-to-point animation: ${totalSequenceLength} lines, ${timePerLine}ms per line`);
+    log(`Starting point-to-point animation: ${totalSequenceLength} lines with ${PIXELS_PER_SECOND}px/s speed`);
 
     // Cancel any existing animation but preserve drawing progress
     cancelAnimationFrame(GameState.animationId);
@@ -140,8 +137,46 @@ function startPointToPointAnimation() {
         // Prevent large jumps
         const cappedDelta = Math.min(deltaTime, 100);
 
-        // Update line progress based on time
-        lineProgress += cappedDelta / timePerLine;
+        // Get current line info
+        const line = sequence[currentLineIndex];
+        if (!line) {
+            return; // Safety check
+        }
+
+        // Calculate line length in pixels
+        const fromDot = dots[line.from];
+        const toDot = dots[line.to];
+        if (!fromDot || !toDot) {
+            // Skip to next line if dots are missing
+            currentLineIndex++;
+            lineProgress = 0;
+            GameState.animationId = requestAnimationFrame(animateLine);
+            return;
+        }
+
+        // Apply scaling to get screen coordinates
+        if (!GameState.scaling) {
+            Renderer.calculateScaling();
+        }
+        const scaling = GameState.scaling;
+
+        const fromX = (fromDot.x * scaling.scale) + scaling.offsetX;
+        const fromY = (fromDot.y * scaling.scale) + scaling.offsetY;
+        const toX = (toDot.x * scaling.scale) + scaling.offsetX;
+        const toY = (toDot.y * scaling.scale) + scaling.offsetY;
+
+        // Calculate line length using Pythagorean theorem
+        const lineLength = Math.sqrt(
+            Math.pow(toX - fromX, 2) +
+            Math.pow(toY - fromY, 2)
+        );
+
+        // Calculate time needed to draw this line at our pixel speed
+        // Minimum time of 100ms to ensure very short lines are still visible
+        const timeNeededForLine = Math.max(lineLength / PIXELS_PER_SECOND * 1000, 100);
+
+        // Update line progress based on time and line length
+        lineProgress += cappedDelta / timeNeededForLine;
 
         // If line is complete
         if (lineProgress >= 1) {
