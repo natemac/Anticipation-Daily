@@ -10,7 +10,7 @@ import { log } from '../game.js';
 
 // Configuration variables for easy adjustment
 const CONFIG = {
-    DRAWING_SPEED: 300,       // ms per line (lower = faster)
+    DRAWING_SPEED: 3000,       // ms per line (lower = faster)
     GUESS_TIME_LIMIT: 10,     // seconds for guessing
     HIDE_INITIAL_MESSAGES: true, // hide any messages at start
     ANIMATION_LINE_BY_LINE: true // animate lines individually from point to point
