@@ -357,9 +357,23 @@ function endGame(success) {
     // Update menu state if successful
     if (success) {
         const time = GameState.elapsedTime + (GameState.elapsedTimeHundredths / 100);
-        // Pass guess count to updatePuzzleCompletion
+
+        // Determine if completed on hard mode
+        const isHardMode = GameState.difficulty === 'hard';
+
+        // Determine if completed early (before drawing was fully revealed)
+        const totalSequenceLength = GameState.drawingData.sequence.length;
+        const isEarlyCompletion = GameState.drawingProgress < totalSequenceLength;
+
+        // Pass parameters to updatePuzzleCompletion
         if (typeof updatePuzzleCompletion === 'function') {
-            updatePuzzleCompletion(GameState.currentColor, time, GameState.guessAttempts);
+            updatePuzzleCompletion(
+                GameState.currentColor,
+                time,
+                GameState.guessAttempts,
+                isHardMode,
+                isEarlyCompletion
+            );
         }
     }
 

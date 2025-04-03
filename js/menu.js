@@ -11,10 +11,10 @@ import * as Audio from './modules/audio.js';
 const menuState = {
     completedCategories: 0,
     puzzles: {
-        yellow: { completed: false, guesses: 0, time: 0 },
-        green: { completed: false, guesses: 0, time: 0 },
-        blue: { completed: false, guesses: 0, time: 0 },
-        red: { completed: false, guesses: 0, time: 0 }
+        yellow: { completed: false, guesses: 0, time: 0, hardMode: false, earlyCompletion: false },
+        green: { completed: false, guesses: 0, time: 0, hardMode: false, earlyCompletion: false },
+        blue: { completed: false, guesses: 0, time: 0, hardMode: false, earlyCompletion: false },
+        red: { completed: false, guesses: 0, time: 0, hardMode: false, earlyCompletion: false }
     }
 };
 
@@ -180,11 +180,13 @@ function updateAudioToggleUI(isOn) {
 }
 
 // Update the menu state when a game is completed
-function updatePuzzleCompletion(color, time, guesses = 0) {
-    // Fix: Update the guesses count from the parameter
+function updatePuzzleCompletion(color, time, guesses = 0, isHardMode = false, isEarlyCompletion = false) {
+    // Update puzzle state
     menuState.puzzles[color].completed = true;
     menuState.puzzles[color].time = time;
     menuState.puzzles[color].guesses = guesses;
+    menuState.puzzles[color].hardMode = isHardMode;
+    menuState.puzzles[color].earlyCompletion = isEarlyCompletion;
     menuState.completedCategories++;
 
     // Update result overlay with enhanced styling
@@ -193,14 +195,31 @@ function updatePuzzleCompletion(color, time, guesses = 0) {
     // Add CSS for the stamp effect if not already added
     addCompletionStyles();
 
+    // Determine which stamp class to use based on completion properties
+    let stampClass = 'completion-stamp-default';
+
+    if (isHardMode && isEarlyCompletion) {
+        stampClass = 'completion-stamp-early-hard';
+    } else if (isHardMode) {
+        stampClass = 'completion-stamp-hard';
+    } else if (isEarlyCompletion) {
+        stampClass = 'completion-stamp-early';
+    }
+
     // Update the result overlay with better styling
     resultOverlay.innerHTML = `
-        <div class="completion-stamp">
-            <div class="stamp-text">COMPLETED</div>
+        <div class="completion-stamp ${stampClass}">
+            <div class="stamp-text">
+                COMPLETED
+                ${isHardMode ? '<span class="hard-badge">HARD</span>' : ''}
+            </div>
         </div>
         <div class="completion-stats">
             <p class="stat-line">Time: ${time.toFixed(2)}s</p>
             <p class="stat-line">Guesses: ${guesses}</p>
+            ${isEarlyCompletion ? '<p class="stat-line stat-achievement">Early completion! ⚡</p>' : ''}
+            ${isHardMode && !isEarlyCompletion ? '<p class="stat-line stat-achievement">Hard mode! 🏆</p>' : ''}
+            ${isHardMode && isEarlyCompletion ? '<p class="stat-line stat-achievement">Hard mode + Early! 🌟</p>' : ''}
         </div>
     `;
 
@@ -212,18 +231,17 @@ function updatePuzzleCompletion(color, time, guesses = 0) {
     }
 }
 
-// Add styles for the completion stamp and stats
+// Add styles for the completion stamp and stats with difficulty and timing variations
 function addCompletionStyles() {
     if (!document.getElementById('completion-styles')) {
         const styleElem = document.createElement('style');
         styleElem.id = 'completion-styles';
         styleElem.innerHTML = `
+            /* Base stamp style */
             .completion-stamp {
                 font-family: 'Impact', sans-serif;
                 font-size: 38px;
-                color: #ff0000;
                 transform: rotate(-15deg);
-                border: 5px solid #ff0000;
                 padding: 8px 12px;
                 border-radius: 10px;
                 opacity: 0.9;
@@ -232,10 +250,58 @@ function addCompletionStyles() {
                 animation: stampBounce 0.5s ease-out;
                 background-color: rgba(255,255,255,0.9);
                 margin-bottom: 15px;
+                position: relative;
+            }
+
+            /* Default stamp (red) */
+            .completion-stamp-default {
+                color: #ff0000;
+                border: 5px solid #ff0000;
+            }
+
+            /* Hard mode stamp (gold with special effects) */
+            .completion-stamp-hard {
+                color: #ffd700;
+                border: 5px solid #ffd700;
+                text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+                box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+                background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,223,0,0.25) 100%);
+            }
+
+            /* Early completion stamp (green with glow) */
+            .completion-stamp-early {
+                color: #00c853;
+                border: 5px solid #00c853;
+                animation: stampGlow 2s infinite alternate;
+            }
+
+            /* Early + Hard combination (extra special) */
+            .completion-stamp-early-hard {
+                color: #00c853;
+                border: 5px solid #ffd700;
+                animation: stampGlowGold 2s infinite alternate;
+                background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(0,200,83,0.25) 100%);
+            }
+
+            /* Hard mode badge */
+            .hard-badge {
+                position: absolute;
+                top: -10px;
+                right: -10px;
+                background-color: #ffd700;
+                color: #333;
+                font-size: 12px;
+                font-weight: bold;
+                padding: 3px 6px;
+                border-radius: 10px;
+                transform: rotate(15deg);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                text-shadow: none;
             }
 
             .stamp-text {
                 letter-spacing: 2px;
+                position: relative;
             }
 
             .completion-stats {
@@ -252,10 +318,25 @@ function addCompletionStyles() {
                 margin: 5px 0;
             }
 
+            .stat-achievement {
+                color: #ffd700;
+                font-weight: bold;
+            }
+
             @keyframes stampBounce {
                 0% { transform: scale(2) rotate(-15deg); opacity: 0; }
                 70% { transform: scale(1.2) rotate(-15deg); opacity: 1; }
                 100% { transform: scale(1) rotate(-15deg); opacity: 0.9; }
+            }
+
+            @keyframes stampGlow {
+                0% { box-shadow: 0 0 10px rgba(0, 200, 83, 0.5); }
+                100% { box-shadow: 0 0 20px rgba(0, 200, 83, 0.9); }
+            }
+
+            @keyframes stampGlowGold {
+                0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 15px rgba(0, 200, 83, 0.3); }
+                100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 25px rgba(0, 200, 83, 0.6); }
             }
         `;
         document.head.appendChild(styleElem);
@@ -271,7 +352,17 @@ function shareResults() {
         const category = document.querySelector(`.color-square[data-color="${color}"]`).dataset.category;
 
         if (puzzle.completed) {
-            shareText += `${category}: ✓ (${puzzle.time.toFixed(2)}s, ${puzzle.guesses} guesses)\n`;
+            // Add badge for hard mode or early completion
+            let achievementBadge = '';
+            if (puzzle.hardMode && puzzle.earlyCompletion) {
+                achievementBadge = ' 🌟';
+            } else if (puzzle.hardMode) {
+                achievementBadge = ' 🏆';
+            } else if (puzzle.earlyCompletion) {
+                achievementBadge = ' ⚡';
+            }
+
+            shareText += `${category}: ✓${achievementBadge} (${puzzle.time.toFixed(2)}s, ${puzzle.guesses} guesses)\n`;
         } else {
             shareText += `${category}: ✗\n`;
         }
