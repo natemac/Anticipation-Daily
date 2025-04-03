@@ -21,7 +21,7 @@
 .main-screen {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 10px; /* Reduced from 20px for better mobile fit */
     width: 100%;
 }
 
@@ -98,17 +98,31 @@
     opacity: 1;
 }
 
-.difficulty-container {
+/* Controls container for side-by-side layout */
+.controls-container {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 10px 0 20px 0;
+    justify-content: space-around;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px; /* Reduced from 20px */
+    width: 100%;
+    margin: 0; /* Removed margin completely */
 }
 
-.difficulty-title {
-    margin-bottom: 15px;
-    font-size: 20px;
+/* Adjust individual control containers */
+.difficulty-container, .audio-container {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px; /* Reduced from 15px */
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.difficulty-title, .audio-title {
+    margin-bottom: 8px; /* Reduced from 15px */
+    font-size: 16px; /* Reduced from 20px */
     font-weight: bold;
+    text-align: center;
 }
 
 .slider-container {
@@ -130,8 +144,9 @@
     position: relative;
     display: inline-block;
     width: 60px;
+    min-width: 60px;
     height: 30px;
-    margin: 0 10px;
+    margin: 0 5px; /* Reduced from 10px */
 }
 
 .toggle-switch input {
@@ -169,11 +184,36 @@ input:checked + .slider {
     background-color: #2196F3;
 }
 
+/* Add a class for active slider to force animation */
+.slider-active {
+    background-color: #2196F3;
+}
+
+/* Animation for slider transition */
+.slider, .slider:before {
+    transition: all 0.4s ease;
+}
+
+/* Ensure the slider button position is correct in both states */
+input:checked + .slider:before {
+    transform: translateX(30px);
+}
+
+/* Improve hover effect for better UX */
+.toggle-switch:hover .slider:before {
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.5);
+}
+
+/* Add focus outline for accessibility */
+input:focus + .slider {
+    box-shadow: 0 0 3px #2196F3;
+}
+
 .builder-button {
     display: block;
     width: 100%;
-    padding: 15px 20px;
-    margin: 10px 0 20px 0;
+    padding: 12px; /* Reduced from 15px 20px */
+    margin: 5px 0 10px 0; /* Reduced from 10px 0 20px 0 */
     font-size: 18px;
     font-weight: bold;
     text-align: center;
@@ -187,7 +227,7 @@ input:checked + .slider {
 }
 
 .game-screen {
-    display: none; /* It’s hidden initially. We'll show it on "Begin" */
+    display: none; /* It's hidden initially. We'll show it on "Begin" */
     flex-direction: column;
     align-items: center;
     width: 100%;
@@ -331,6 +371,18 @@ input:checked + .slider {
     display: none;
 }
 
+/* Responsive layout adjustments */
+@media (max-width: 600px) {
+    .controls-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .difficulty-container, .audio-container {
+        width: 100%;
+    }
+}
+
 @media (max-width: 480px) {
     .game-title {
         font-size: 24px;
@@ -361,5 +413,20 @@ input:checked + .slider {
     #guessInput {
         padding: 10px;
         font-size: 16px;
+    }
+}
+
+/* Extra adjustments for very small screens */
+@media (max-width: 360px) {
+    .color-grid {
+        gap: 5px; /* Even tighter on very small screens */
+    }
+
+    .difficulty-label {
+        font-size: 14px; /* Smaller font for tiny screens */
+    }
+
+    .controls-container {
+        gap: 5px;
     }
 }

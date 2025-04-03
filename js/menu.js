@@ -5,6 +5,7 @@
 import GameState from './modules/state.js';
 import * as GameLogic from './modules/gameLogic.js';
 import * as UI from './modules/ui.js';
+import * as Audio from './modules/audio.js';
 
 // Menu state object
 const menuState = {
@@ -18,7 +19,7 @@ const menuState = {
 };
 
 // DOM elements
-let mainScreen, gameScreen, colorSquares, difficultyToggle, shareButton;
+let mainScreen, gameScreen, colorSquares, difficultyToggle, audioToggle, shareButton;
 
 // Simple logging function for debugging
 function log(message) {
@@ -34,13 +35,14 @@ function initMenu() {
     gameScreen = document.querySelector('.game-screen');
     colorSquares = document.querySelectorAll('.color-square');
     difficultyToggle = document.getElementById('difficultyToggle');
+    audioToggle = document.getElementById('audioToggle');
     shareButton = document.getElementById('shareButton');
 
     // Set up event listeners
     setupMenuEventListeners();
 
-    // Initialize difficulty toggle
-    initDifficultyToggle();
+    // Initialize toggles
+    initToggles();
 
     log("Menu initialized");
 }
@@ -58,6 +60,18 @@ function setupMenuEventListeners() {
         // Update game state
         if (GameState) {
             GameState.setDifficulty(difficulty);
+        }
+    });
+
+    // Audio toggle
+    audioToggle.addEventListener('change', function() {
+        const enabled = this.checked;
+        updateAudioToggleUI(enabled);
+        if (Audio && typeof Audio.updateAudioState === 'function') {
+            Audio.updateAudioState(enabled);
+        }
+        if (GameState) {
+            GameState.toggleAudio(enabled);
         }
     });
 
@@ -83,39 +97,47 @@ function setupMenuEventListeners() {
     shareButton.addEventListener('click', () => {
         shareResults();
     });
+
+    // Direct click handlers for labels (better mobile experience)
+    document.getElementById('easyLabel').addEventListener('click', function() {
+        difficultyToggle.checked = false;
+        difficultyToggle.dispatchEvent(new Event('change'));
+    });
+
+    document.getElementById('hardLabel').addEventListener('click', function() {
+        difficultyToggle.checked = true;
+        difficultyToggle.dispatchEvent(new Event('change'));
+    });
+
+    document.getElementById('offLabel').addEventListener('click', function() {
+        audioToggle.checked = false;
+        audioToggle.dispatchEvent(new Event('change'));
+    });
+
+    document.getElementById('onLabel').addEventListener('click', function() {
+        audioToggle.checked = true;
+        audioToggle.dispatchEvent(new Event('change'));
+    });
 }
 
-// Difficulty toggle functionality
-function initDifficultyToggle() {
-    const easyLabel = document.getElementById('easyLabel');
-    const hardLabel = document.getElementById('hardLabel');
-
-    // Set initial state based on stored preference (if any)
+// Initialize toggle states
+function initToggles() {
+    // Set initial difficulty state based on stored preference
     const storedDifficulty = localStorage.getItem('difficultyMode');
-    if (storedDifficulty === 'hard') {
-        difficultyToggle.checked = true;
-        updateDifficultyUI(true);
-    } else {
-        difficultyToggle.checked = false;
-        updateDifficultyUI(false);
-    }
+    difficultyToggle.checked = storedDifficulty === 'hard';
+    updateDifficultyUI(difficultyToggle.checked);
 
-    // Also add direct click handlers to labels for better mobile experience
-    easyLabel.addEventListener('click', function() {
-        difficultyToggle.checked = false;
-        difficultyToggle.dispatchEvent(new Event('change'));
-    });
-
-    hardLabel.addEventListener('click', function() {
-        difficultyToggle.checked = true;
-        difficultyToggle.dispatchEvent(new Event('change'));
-    });
+    // Set initial audio state
+    const storedAudio = localStorage.getItem('audioEnabled');
+    audioToggle.checked = storedAudio !== 'false';
+    updateAudioToggleUI(audioToggle.checked);
 }
 
 // Update difficulty UI
 function updateDifficultyUI(isHard) {
     const easyLabel = document.getElementById('easyLabel');
     const hardLabel = document.getElementById('hardLabel');
+    const slider = difficultyToggle.nextElementSibling;
 
     if (isHard) {
         // Hard mode selected
@@ -123,12 +145,37 @@ function updateDifficultyUI(isHard) {
         easyLabel.style.fontWeight = 'normal';
         hardLabel.style.opacity = '1';
         hardLabel.style.fontWeight = 'bold';
+        // Force the slider to update its position
+        slider.classList.add('slider-active');
     } else {
         // Easy mode selected
         hardLabel.style.opacity = '0.5';
         hardLabel.style.fontWeight = 'normal';
         easyLabel.style.opacity = '1';
         easyLabel.style.fontWeight = 'bold';
+        // Reset slider position
+        slider.classList.remove('slider-active');
+    }
+}
+
+// Update audio toggle UI
+function updateAudioToggleUI(isOn) {
+    const offLabel = document.getElementById('offLabel');
+    const onLabel = document.getElementById('onLabel');
+    const slider = audioToggle.nextElementSibling;
+
+    if (isOn) {
+        offLabel.style.opacity = '0.5';
+        offLabel.style.fontWeight = 'normal';
+        onLabel.style.opacity = '1';
+        onLabel.style.fontWeight = 'bold';
+        slider.classList.add('slider-active');
+    } else {
+        onLabel.style.opacity = '0.5';
+        onLabel.style.fontWeight = 'normal';
+        offLabel.style.opacity = '1';
+        offLabel.style.fontWeight = 'bold';
+        slider.classList.remove('slider-active');
     }
 }
 
