@@ -17,7 +17,7 @@ The project consists of the following files:
   - `builder.css` - Styles specific to the builder tool
 - `js/`
   - `common.js` - Shared functionality between game and builder
-  - `game-data.js` - Default game data and drawings
+
   - `menu.js` - Menu and settings functionality
   - `builder.js` - Builder-specific logic and interactions
   - `touch-interface.js` - Touch input handling for the builder
@@ -65,6 +65,8 @@ The game now uses a modular architecture with ES modules to provide better organ
    - Controls drawing animation with smooth timing
    - Manages visual effects (confetti, pulses)
    - Provides consistent animation frame handling
+   - Features point-to-point smooth animation system
+   - Supports dynamic animation speed based on difficulty
 
 5. **UI.js**
    - Creates and updates UI elements
@@ -90,6 +92,7 @@ The game now uses a modular architecture with ES modules to provide better organ
    - Controls game flow and mechanics
    - Manages game initialization and loading
    - Handles timing and scoring
+   - Contains configurable animation parameters
 
 ### Benefits of Modular Architecture
 
@@ -182,7 +185,7 @@ Follow these steps to deploy the game on GitHub Pages:
 - **Hint System**:
   - Optional hint button that reveals the next letter
   - Limited hints to encourage skillful play
-  - Visual highlighting for hint letters
+  - Visual highlighting for hint letters with glowing animation effect
 
 - **Enhanced Mobile Experience**:
   - Improved virtual keyboard with better styling and layout
@@ -196,9 +199,31 @@ Follow these steps to deploy the game on GitHub Pages:
   - Fixed canvas rendering for high-DPI displays
   - More reliable timer and scoring system
 
+### Animation System Improvements
+
+- **Point-to-Point Animation**:
+  - Smooth line drawing from dot to dot rather than appearing all at once
+  - Provides more fluid drawing appearance with precise animation control
+  - Configurable speed that adjusts based on difficulty level
+
+- **Animation Configuration**:
+  - `DRAWING_SPEED` variable (default: 300ms) controls time per line segment
+  - Faster animations in hard mode (70% of normal speed)
+  - Configurable through the `CONFIG` object in gameLogic.js
+
+- **Enhanced Confetti Effects**:
+  - More particles with varied colors and sizes
+  - Improved physics for more natural particle movement
+  - Better performance with optimized rendering
+
+- **Timing Controls**:
+  - Adaptive timing preventing large jumps when tab was inactive
+  - Capped delta time for consistent animation speed
+  - Improved frame-rate independence
+
 ### Game Mechanics
 
-- **Drawing Animation**: Watch as the drawing appears line by line
+- **Drawing Animation**: Watch as the drawing appears line by line with smooth transitions
 - **Guessing**: Type letters directly into the character spaces
 - **Validation**: Each letter is checked immediately as you type
   - Correct letters appear in the spaces with a satisfying animation
@@ -235,6 +260,11 @@ Follow these steps to deploy the game on GitHub Pages:
 - **Hint System**: Added optional hints with visual highlighting for challenging puzzles
 - **Fixed Canvas Rendering**: Drawings now display correctly without requiring window resizing
 - **Improved Scaling**: Drawings maintain exact proportions between builder and game views
+- **Advanced Animation System**:
+  - Point-to-point animation for smoother drawing appearance
+  - Configurable animation speeds based on difficulty
+  - Better timing controls with frame-rate independence
+  - Enhanced visual effects for more engaging gameplay
 
 ## Directory Structure for GitHub Pages
 
@@ -250,8 +280,7 @@ your-repo-name/
 │   └── builder.css
 ├── js/
 │   ├── common.js
-│   ├── game-data.js
-│   ├── menu.js
+│   │   ├── menu.js
 │   ├── builder.js
 │   ├── touch-interface.js
 │   ├── mouse-interface.js
