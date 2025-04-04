@@ -108,14 +108,16 @@ function startGameWithData(color, category, data) {
         buttonTimer.style.backgroundColor = '#cccccc'; // Grey timer color
     }
 
-    // NEW FIX: Clear the word spaces div if it exists
+    // Clear the word spaces div if it exists, but don't hide it
     const wordSpacesDiv = document.getElementById('wordSpacesDiv');
     if (wordSpacesDiv) {
         wordSpacesDiv.innerHTML = '';
-        wordSpacesDiv.style.display = 'none'; // Hide until needed
+        // Keep it visible but empty
+        wordSpacesDiv.style.display = 'block';
+        wordSpacesDiv.style.visibility = 'visible';
     }
 
-    // NEW FIX: Reset correctLetters to ensure no leftover from previous game
+    // Reset correctLetters to ensure no leftover from previous game
     GameState.correctLetters = [];
     GameState.currentInput = '';
 
@@ -147,14 +149,6 @@ function startDrawing() {
     if (GameState.guessTimer) clearInterval(GameState.guessTimer);
     if (GameState.animationId) cancelAnimationFrame(GameState.animationId);
 
-    // NEW FIX: Show word spaces div if in easy mode
-    if (GameState.difficulty === 'easy') {
-        const wordSpacesDiv = document.getElementById('wordSpacesDiv');
-        if (wordSpacesDiv) {
-            wordSpacesDiv.style.display = 'block';
-        }
-    }
-
     // Ensure canvas is properly sized
     Renderer.resizeCanvas();
 
@@ -164,8 +158,10 @@ function startDrawing() {
     // Draw initial state
     if (GameState.difficulty === 'easy') {
         Renderer.drawDots();
-        WordHandler.updateWordSpaces();
     }
+
+    // Always update word spaces in both easy and hard modes
+    WordHandler.updateWordSpaces();
 
     // Start animation with a short delay to ensure rendering is ready
     setTimeout(() => {

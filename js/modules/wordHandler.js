@@ -21,8 +21,8 @@ function init() {
 
 // Update the word spaces display
 function updateWordSpaces() {
-    // Only update word spaces in easy mode
-    if (GameState.difficulty !== 'easy' || !GameState.drawingData) return;
+    // Return early if no drawing data
+    if (!GameState.drawingData) return;
 
     if (!wordSpacesDiv) {
         wordSpacesDiv = document.getElementById('wordSpacesDiv');
@@ -47,21 +47,25 @@ function updateWordSpaces() {
                           GameState.currentInput :
                           GameState.correctLetters.join('');
 
-    // Add word spaces with improved styling
-    for (let i = 0; i < answer.length; i++) {
-        const letterDiv = document.createElement('div');
-        letterDiv.style.position = 'relative';
-        letterDiv.style.width = '30px';
-        letterDiv.style.height = '40px';
-        letterDiv.style.margin = '0 2px';
-        letterDiv.style.display = 'inline-flex'; // Use flex for better centering
-        letterDiv.style.justifyContent = 'center';
-        letterDiv.style.alignItems = 'center';
-        letterDiv.style.fontFamily = 'Arial, sans-serif';
-        letterDiv.style.transition = 'all 0.2s ease';
+    if (GameState.difficulty === 'hard') {
+        // Hard mode - show a unified input field, hiding the word structure
+        const totalChars = answer.length;
+        const visibleChars = Math.min(totalChars, lettersToShow.length);
 
-        if (answer[i] !== ' ') {
-            // Add background for letters
+        // Create a box for each character in answer, but don't reveal spaces
+        for (let i = 0; i < totalChars; i++) {
+            const letterDiv = document.createElement('div');
+            letterDiv.style.position = 'relative';
+            letterDiv.style.width = '30px';
+            letterDiv.style.height = '40px';
+            letterDiv.style.margin = '0 2px';
+            letterDiv.style.display = 'inline-flex';
+            letterDiv.style.justifyContent = 'center';
+            letterDiv.style.alignItems = 'center';
+            letterDiv.style.fontFamily = 'Arial, sans-serif';
+            letterDiv.style.transition = 'all 0.2s ease';
+
+            // All characters get the same styling in hard mode
             letterDiv.style.backgroundColor = '#f5f5f5';
             letterDiv.style.borderRadius = '4px';
             letterDiv.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
@@ -77,8 +81,8 @@ function updateWordSpaces() {
             underline.style.borderRadius = '1px';
             letterDiv.appendChild(underline);
 
-            // Show letter if it's been entered correctly
-            if (i < lettersToShow.length) {
+            // Show letter if it's been entered
+            if (i < visibleChars) {
                 const letterSpan = document.createElement('span');
                 letterSpan.style.fontSize = '24px';
                 letterSpan.style.fontWeight = 'bold';
@@ -91,13 +95,62 @@ function updateWordSpaces() {
                 letterDiv.style.transform = 'translateY(-2px)';
                 letterDiv.style.boxShadow = '0 3px 5px rgba(0,0,0,0.1)';
             }
-        } else {
-            // For spaces, add a visible gap with subtle styling
-            letterDiv.style.width = '15px'; // Smaller width for spaces
-            letterDiv.style.backgroundColor = 'transparent';
-        }
 
-        letterContainer.appendChild(letterDiv);
+            letterContainer.appendChild(letterDiv);
+        }
+    } else {
+        // Easy mode - show word structure (spaces, etc.)
+        for (let i = 0; i < answer.length; i++) {
+            const letterDiv = document.createElement('div');
+            letterDiv.style.position = 'relative';
+            letterDiv.style.width = '30px';
+            letterDiv.style.height = '40px';
+            letterDiv.style.margin = '0 2px';
+            letterDiv.style.display = 'inline-flex'; // Use flex for better centering
+            letterDiv.style.justifyContent = 'center';
+            letterDiv.style.alignItems = 'center';
+            letterDiv.style.fontFamily = 'Arial, sans-serif';
+            letterDiv.style.transition = 'all 0.2s ease';
+
+            if (answer[i] !== ' ') {
+                // Add background for letters
+                letterDiv.style.backgroundColor = '#f5f5f5';
+                letterDiv.style.borderRadius = '4px';
+                letterDiv.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+
+                // Add underline
+                const underline = document.createElement('div');
+                underline.style.position = 'absolute';
+                underline.style.bottom = '5px';
+                underline.style.left = '2px';
+                underline.style.width = 'calc(100% - 4px)';
+                underline.style.height = '2px';
+                underline.style.backgroundColor = '#333';
+                underline.style.borderRadius = '1px';
+                letterDiv.appendChild(underline);
+
+                // Show letter if it's been entered correctly
+                if (i < lettersToShow.length) {
+                    const letterSpan = document.createElement('span');
+                    letterSpan.style.fontSize = '24px';
+                    letterSpan.style.fontWeight = 'bold';
+                    letterSpan.style.color = '#333';
+                    letterSpan.textContent = lettersToShow[i];
+                    letterDiv.appendChild(letterSpan);
+
+                    // Add 3D effect for entered letters
+                    letterDiv.style.backgroundColor = '#e8f5e9';
+                    letterDiv.style.transform = 'translateY(-2px)';
+                    letterDiv.style.boxShadow = '0 3px 5px rgba(0,0,0,0.1)';
+                }
+            } else {
+                // For spaces, add a visible gap with subtle styling
+                letterDiv.style.width = '15px'; // Smaller width for spaces
+                letterDiv.style.backgroundColor = 'transparent';
+            }
+
+            letterContainer.appendChild(letterDiv);
+        }
     }
 
     wordSpacesDiv.appendChild(letterContainer);
@@ -110,8 +163,8 @@ function updateWordSpaces() {
         if (cursorIndex < letterDivs.length) {
             const currentLetterDiv = letterDivs[cursorIndex];
 
-            // Skip spaces
-            if (answer[cursorIndex] === ' ') {
+            // Skip spaces in easy mode only (hard mode doesn't reveal spaces)
+            if (GameState.difficulty === 'easy' && answer[cursorIndex] === ' ') {
                 GameState.currentInput += ' ';
                 updateWordSpaces();
                 return;
@@ -149,6 +202,7 @@ function updateWordSpaces() {
     }
 }
 
+// Remaining functions unchanged
 // Store correct letters when an incorrect guess is made
 function storeCorrectLetters() {
     if (!GameState.guessMode) return;
@@ -215,8 +269,8 @@ function processLetter(letter) {
     if (letterIndex < currentWord.length) {
         const newLetter = letter.toUpperCase();
 
-        // Skip if the current position is a space
-        if (currentWord[letterIndex] === ' ') {
+        // Skip if the current position is a space (only in easy mode)
+        if (GameState.difficulty === 'easy' && currentWord[letterIndex] === ' ') {
             GameState.currentInput += ' ';
             updateWordSpaces();
 
@@ -365,8 +419,7 @@ function endGame(success) {
         const totalSequenceLength = GameState.drawingData.sequence.length;
         const isEarlyCompletion = GameState.drawingProgress < totalSequenceLength;
 
-        // FIXED: Increment the guess counter when entering guess mode for the first time
-        // This counts the current successful attempt as 1 (or higher if there were previous attempts)
+        // Increment the guess counter when entering guess mode for the first time
         GameState.guessAttempts++;
 
         log("Final guess count: " + GameState.guessAttempts);
