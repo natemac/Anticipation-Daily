@@ -10,7 +10,7 @@ import { log } from '../game.js';
 // Module variables
 let beginButton, backButton, canvas;
 let virtualKeyboard;
-let isMobileDevice;
+let isDeviceMobile; // Renamed variable to avoid conflict
 
 // Initialize the input handling
 function init() {
@@ -20,10 +20,10 @@ function init() {
     canvas = document.getElementById('gameCanvas');
 
     // Detect if we're on a mobile device
-    isMobileDevice = UI.detectMobileDevice();
+    isDeviceMobile = UI.detectMobileDevice();
 
     // Add mobile class to game container if on mobile
-    if (isMobileDevice) {
+    if (isDeviceMobile) {
         const gameContainer = document.querySelector('.game-container');
         if (gameContainer) {
             gameContainer.classList.add('drawing-mode');
@@ -37,7 +37,7 @@ function init() {
     initTouchHandling();
 
     // Create virtual keyboard if needed
-    if (isMobileDevice) {
+    if (isDeviceMobile) {
         // We'll rely on the mobile keyboard created in UI module
         log("Using mobile keyboard UI");
     } else {
@@ -45,7 +45,7 @@ function init() {
         createVirtualKeyboard();
     }
 
-    log("Input module initialized " + (isMobileDevice ? "(Mobile)" : "(Desktop)"));
+    log("Input module initialized " + (isDeviceMobile ? "(Mobile)" : "(Desktop)"));
 
     return true;
 }
@@ -63,7 +63,7 @@ function setupEventListeners() {
     }
 
     // Key press events for direct typing (desktop only)
-    if (!isMobileDevice) {
+    if (!isDeviceMobile) {
         document.addEventListener('keydown', handleKeyPress);
     }
 
@@ -75,7 +75,7 @@ function setupEventListeners() {
 
 // Initialize touch handling for mobile
 function initTouchHandling() {
-    if (isMobileDevice && canvas) {
+    if (isDeviceMobile && canvas) {
         canvas.addEventListener('touchstart', function(e) {
             if (GameState.gameStarted && !GameState.guessMode) {
                 // Enter guess mode on tap if game is in progress
@@ -94,7 +94,7 @@ function handleBeginButtonClick() {
             GameLogic.startDrawing();
 
             // If mobile, add drawing mode class
-            if (isMobileDevice) {
+            if (isDeviceMobile) {
                 const gameContainer = document.querySelector('.game-container');
                 if (gameContainer) {
                     gameContainer.classList.add('drawing-mode');
@@ -127,7 +127,7 @@ function handleBackButtonClick() {
     }
 
     // Remove mobile-specific classes
-    if (isMobileDevice) {
+    if (isDeviceMobile) {
         document.body.classList.remove('mobile-play');
         const gameContainer = document.querySelector('.game-container');
         if (gameContainer) {
@@ -357,8 +357,8 @@ function createKeyboardButton(text, bgColor, textColor, minWidth, flexGrow = fal
     return button;
 }
 
-// Check if we're on a mobile device - delegates to UI module's detection
-function isMobileDevice() {
+// Check if current device is mobile - Use UI module's detection
+function checkIsMobileDevice() {
     return UI.detectMobileDevice();
 }
 
@@ -369,5 +369,5 @@ export {
     handleKeyPress,
     handleBeginButtonClick,
     handleBackButtonClick,
-    isMobileDevice
+    checkIsMobileDevice // Renamed export to avoid conflict
 };
