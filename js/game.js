@@ -12,7 +12,14 @@ import * as Audio from './modules/audio.js';
 import * as GameLogic from './modules/gameLogic.js';
 import * as Menu from './menu.js';
 import * as VolumeControls from './modules/volume-controls.js';
-import * as MobileUI from './modules/mobileUI.js'; // Import our new mobile UI module
+// Import mobile UI module conditionally to avoid errors if it doesn't exist
+let MobileUI;
+try {
+    MobileUI = await import('./modules/mobileUI.js');
+} catch (e) {
+    console.log("Mobile UI module not available:", e);
+    MobileUI = { init: () => {}, detectMobileDevice: () => false };
+}
 
 // Make functions globally available for older code
 window.startGame = GameLogic.startGame;
@@ -48,7 +55,7 @@ function initGame() {
         initializeModule("Volume Controls", VolumeControls.init);
 
         // Initialize Mobile UI last to ensure it can access all other modules
-        if (typeof MobileUI !== 'undefined' && MobileUI.init) {
+        if (MobileUI && typeof MobileUI.init === 'function') {
             initializeModule("Mobile UI", MobileUI.init);
         }
 
@@ -57,6 +64,9 @@ function initGame() {
         window.addEventListener('load', handleFullLoad);
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('orientationchange', handleOrientationChange);
+
+        // Add mobile mode specific listeners
+        setupMobileExtensions();
 
         // Preload all audio assets
         if (Audio && typeof Audio.preloadAudio === 'function') {
@@ -111,12 +121,91 @@ function showErrorMessage(message) {
     errorMessage.textContent = message;
 }
 
+// Set up mobile extensions without modifying the original UI functions
+function setupMobileExtensions() {
+    // Create event listeners for UI mode changes
+    // This approach doesn't modify the original functions
+    document.addEventListener('guessmode-entered', function() {
+        // Add mobile-specific handling after the original function runs
+        if (MobileUI && typeof MobileUI.enterMobileGuessMode === 'function'
+            && MobileUI.detectMobileDevice()) {
+            MobileUI.enterMobileGuessMode();
+        }
+    });
+
+    document.addEventListener('guessmode-exited', function() {
+        // Add mobile-specific handling after the original function runs
+        if (MobileUI && typeof MobileUI.exitMobileGuessMode === 'function'
+            && MobileUI.detectMobileDevice()) {
+            MobileUI.exitMobileGuessMode();
+        }
+    });
+
+    // Create a proxy for UI.enterGuessMode to dispatch the event
+    const originalEnterGuessMode = UI.enterGuessMode;
+    // We'll use a global function that preserves the original but adds our event
+    window.enterGuessModeWithMobile = function() {
+        // Call the original function with the correct this context
+        originalEnterGuessMode.apply(UI);
+        // Dispatch an event that our listener above will catch
+        document.dispatchEvent(new CustomEvent('guessmode-entered'));
+    };
+
+    // Create a proxy for UI.exitGuessMode to dispatch the event
+    const originalExitGuessMode = UI.exitGuessMode;
+    // We'll use a global function that preserves the original but adds our event
+    window.exitGuessModeWithMobile = function() {
+        // Call the original function with the correct this context
+        originalExitGuessMode.apply(UI);
+        // Dispatch an event that our listener above will catch
+        document.dispatchEvent(new CustomEvent('guessmode-exited'));
+    };
+
+    // Now update the event listeners that call these functions
+    updateEventListeners();
+}
+
+// Update event listeners to use our wrapper functions
+function updateEventListeners() {
+    // Find the begin button and update its event listener if it exists
+    const beginButton = document.getElementById('beginButton');
+    if (beginButton) {
+        // Remove existing event listeners (if possible)
+        const newBeginButton = beginButton.cloneNode(true);
+        beginButton.parentNode.replaceChild(newBeginButton, beginButton);
+
+        // Add new event listener
+        newBeginButton.addEventListener('click', function() {
+            if (!GameState.gameStarted) {
+                if (typeof GameLogic.startDrawing === 'function') {
+                    GameLogic.startDrawing();
+                }
+            } else {
+                // Use our wrapper instead of direct UI.enterGuessMode call
+                window.enterGuessModeWithMobile();
+            }
+        });
+    }
+}
+
+// Handle window resize with debounce
+let resizeTimeout;
+function handleResize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        Renderer.resizeCanvas();
+        UI.repositionElements();
+    }, 100);
+}
+
 // Handle orientation changes on mobile
 function handleOrientationChange() {
     log("Orientation changed - adjusting layout");
 
-    // Forward to mobile UI handler
-    MobileUI.handleOrientationChange();
+    // Forward to mobile UI handler if available
+    if (MobileUI && typeof MobileUI.handleOrientationChange === 'function') {
+        MobileUI.handleOrientationChange();
+    }
 
     // Force a resize after orientation change
     clearTimeout(resizeTimeout);
@@ -153,7 +242,7 @@ function handleFullLoad() {
 
         // Only create virtual keyboard if we're NOT on a mobile device
         // For mobile devices, we use the MobileUI keyboard instead
-        if (!MobileUI.detectMobileDevice()) {
+        if (MobileUI && !MobileUI.detectMobileDevice()) {
             InputHandler.createVirtualKeyboard();
         }
     }, 300);
@@ -173,39 +262,6 @@ function handleVisibilityChange() {
     }
 }
 
-// Override the UI enter/exit guess mode functions with mobile-aware versions
-const originalEnterGuessMode = UI.enterGuessMode;
-UI.enterGuessMode = function() {
-    // Call original function
-    originalEnterGuessMode();
-
-    // Add mobile-specific handling
-    if (MobileUI.detectMobileDevice()) {
-        MobileUI.enterMobileGuessMode();
-    }
-};
-
-const originalExitGuessMode = UI.exitGuessMode;
-UI.exitGuessMode = function() {
-    // Call original function
-    originalExitGuessMode();
-
-    // Add mobile-specific handling
-    if (MobileUI.detectMobileDevice()) {
-        MobileUI.exitMobileGuessMode();
-    }
-};
-
-// Handle window resize with debounce
-let resizeTimeout;
-function handleResize() {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        Renderer.resizeCanvas();
-        UI.repositionElements();
-    }, 100);
-}
-
 // Initialize the game when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initGame);
 
@@ -213,5 +269,6 @@ document.addEventListener('DOMContentLoaded', initGame);
 export {
     log,
     initGame,
-    handleResize
+    handleResize,
+    handleOrientationChange
 };
