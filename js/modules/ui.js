@@ -1,4 +1,4 @@
-// ui.js - Handles UI elements and their interactions
+// ui.js - Handles UI elements and their interactions with mobile optimizations
 
 import GameState from './state.js';
 import * as Animation from './animation.js';
@@ -11,6 +11,8 @@ import { log } from '../game.js';
 let timerDisplay, beginButton, wrongMessage, backButton, buttonTimer;
 let wordSpacesDiv, hintButton;
 let hintButtonTimeout;
+let mobileKeyboard; // NEW: track mobile keyboard element
+let isMobileDevice; // NEW: track if we're on a mobile device
 
 // Initialize UI module
 function init() {
@@ -26,9 +28,22 @@ function init() {
         backButton.addEventListener('click', handleBackButton);
     }
 
+    // Detect mobile devices
+    isMobileDevice = detectMobileDevice();
+
+    // Add mobile class to body if on mobile
+    if (isMobileDevice) {
+        document.body.classList.add('mobile-device');
+    }
+
     // Create UI elements
     createWordSpacesDiv();
     createHintButton();
+
+    // NEW: Create mobile keyboard for touch devices
+    if (isMobileDevice) {
+        createMobileKeyboard();
+    }
 
     // Add audio toggle to settings
     addAudioToggle();
@@ -42,8 +57,17 @@ function init() {
         backButton,
         buttonTimer,
         wordSpacesDiv,
-        hintButton
+        hintButton,
+        mobileKeyboard
     };
+}
+
+// NEW: Detect if we're on a mobile device
+function detectMobileDevice() {
+    return (typeof window.orientation !== 'undefined') ||
+           (navigator.userAgent.indexOf('IEMobile') !== -1) ||
+           (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ||
+           window.innerWidth <= 768; // Also consider small screens as mobile
 }
 
 // Handle back button clicks
@@ -66,7 +90,6 @@ function createWordSpacesDiv() {
     wordSpacesDiv = document.createElement('div');
     wordSpacesDiv.id = 'wordSpacesDiv';
     wordSpacesDiv.style.width = '100%';
-    wordSpacesDiv.style.height = '60px';
     wordSpacesDiv.style.margin = '10px 0';
     wordSpacesDiv.style.textAlign = 'center';
     wordSpacesDiv.style.position = 'relative';
@@ -132,6 +155,57 @@ function createHintButton() {
     }
 
     return hintButton;
+}
+
+// NEW: Create the mobile keyboard for touch devices
+function createMobileKeyboard() {
+    // Only create if it doesn't already exist
+    if (document.getElementById('mobileKeyboard')) {
+        mobileKeyboard = document.getElementById('mobileKeyboard');
+        return mobileKeyboard;
+    }
+
+    // Create the keyboard container
+    mobileKeyboard = document.createElement('div');
+    mobileKeyboard.id = 'mobileKeyboard';
+    mobileKeyboard.className = 'mobile-keyboard';
+
+    // Define the keyboard layout
+    const rows = [
+        'QWERTYUIOP',
+        'ASDFGHJKL',
+        'ZXCVBNM'
+    ];
+
+    // Create keyboard rows
+    rows.forEach(row => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'keyboard-row';
+
+        // Create keys for this row
+        for (let letter of row) {
+            const key = document.createElement('div');
+            key.className = 'key';
+            key.textContent = letter;
+
+            // Add letter input handler
+            key.addEventListener('click', () => {
+                if (GameState.guessMode) {
+                    WordHandler.processLetter(letter);
+                }
+            });
+
+            rowDiv.appendChild(key);
+        }
+
+        mobileKeyboard.appendChild(rowDiv);
+    });
+
+    // Add the keyboard to the document body
+    document.body.appendChild(mobileKeyboard);
+
+    // Return the keyboard element
+    return mobileKeyboard;
 }
 
 // Add audio toggle to settings
@@ -606,7 +680,7 @@ function updateHintCooldown() {
 
 // Updated sections of ui.js that need to integrate with the new audio system
 
-// Enter guess mode - update to handle music transition
+// Enter guess mode - update to handle music transition and mobile layout
 function enterGuessMode() {
     log("Entering guess mode");
 
@@ -623,6 +697,18 @@ function enterGuessMode() {
 
     // Pause animation and timer
     GameState.guessMode = true;
+
+    // Add guess mode class to game container for mobile layout
+    if (isMobileDevice) {
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) {
+            gameContainer.classList.add('guess-mode');
+            gameContainer.classList.remove('drawing-mode');
+
+            // Add mobile play class to body for full-screen play
+            document.body.classList.add('mobile-play');
+        }
+    }
 
     // Start guessing music
     Audio.updateMusicForGameMode(true);
@@ -681,16 +767,30 @@ function enterGuessMode() {
         beginButton.querySelector('span').textContent = 'Guess';
     }
 
-    // Show virtual keyboard on mobile
-    updateVirtualKeyboard(true);
+    // Show mobile keyboard on touch devices
+    if (isMobileDevice && mobileKeyboard) {
+        mobileKeyboard.classList.add('active');
+    } else {
+        // Show virtual keyboard on mobile
+        updateVirtualKeyboard(true);
+    }
 }
 
-// Exit guess mode - update to handle music transition
+// Exit guess mode - update to handle music transition and mobile layout
 function exitGuessMode() {
     log("Exiting guess mode");
 
     // Resume animation and timer
     GameState.guessMode = false;
+
+    // Update mobile layout
+    if (isMobileDevice) {
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) {
+            gameContainer.classList.remove('guess-mode');
+            gameContainer.classList.add('drawing-mode');
+        }
+    }
 
     // Switch back to drawing music
     Audio.updateMusicForGameMode(false);
@@ -717,8 +817,13 @@ function exitGuessMode() {
         }
     }
 
-    // Hide virtual keyboard on mobile
-    updateVirtualKeyboard(false);
+    // Hide mobile keyboard on touch devices
+    if (isMobileDevice && mobileKeyboard) {
+        mobileKeyboard.classList.remove('active');
+    } else {
+        // Hide virtual keyboard on mobile
+        updateVirtualKeyboard(false);
+    }
 }
 
 // Update mobile virtual keyboard visibility
@@ -812,5 +917,6 @@ export {
     enableHintButton,
     startHintCooldown,
     showError,
-    updateHintButtonCounter
+    updateHintButtonCounter,
+    detectMobileDevice
 };
