@@ -365,11 +365,11 @@ function endGame(success) {
         const totalSequenceLength = GameState.drawingData.sequence.length;
         const isEarlyCompletion = GameState.drawingProgress < totalSequenceLength;
 
-        // Fix: Increment guess counter on successful completion
-        // Starting at 1 for the correct guess
-        if (GameState.guessAttempts === 0) {
-            GameState.guessAttempts = 1;
-        }
+        // FIXED: Increment the guess counter when entering guess mode for the first time
+        // This counts the current successful attempt as 1 (or higher if there were previous attempts)
+        GameState.guessAttempts++;
+
+        log("Final guess count: " + GameState.guessAttempts);
 
         // Pass parameters to updatePuzzleCompletion
         if (typeof updatePuzzleCompletion === 'function') {

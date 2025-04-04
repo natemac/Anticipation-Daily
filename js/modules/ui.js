@@ -622,6 +622,12 @@ function enterGuessMode() {
     // Pause animation and timer
     GameState.guessMode = true;
 
+    // IMPORTANT - Initialize guessAttempts to track guess attempts properly
+    // We don't increment here, as the final successful attempt will be counted in endGame
+    if (GameState.guessAttempts === 0) {
+        GameState.guessAttempts = 0; // Start counting at 0, will increment on first guess
+    }
+
     // Cancel any ongoing animation but keep drawing progress
     if (GameState.animationId) {
         cancelAnimationFrame(GameState.animationId);
