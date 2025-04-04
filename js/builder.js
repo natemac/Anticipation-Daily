@@ -68,7 +68,7 @@ function initBuilder() {
     cancelPointBtn = document.getElementById('cancelPointBtn');
     touchIndicator = document.getElementById('touchIndicator');
     itemNameInput = document.getElementById('itemName');
-    categorySelect = document.getElementById('category');
+    categoryName = document.getElementById('categoryName');
     submitBtn = document.getElementById('submitBtn');
     shareBtn = document.getElementById('shareBtn');
     exportBtn = document.getElementById('exportBtn');
@@ -1021,6 +1021,12 @@ function validateRecording() {
         return false;
     }
 
+    if (!document.getElementById('categoryName').value.trim()) {
+        alert('Please enter a category name.');
+        document.getElementById('categoryName').focus();
+        return false;
+    }
+
     return true;
 }
 
@@ -1052,10 +1058,13 @@ function getExportData() {
         to: indexMap[line.to]
     }));
 
-    // Return clean data for export
+    // Get the category name or use a default if not provided
+    const categoryName = document.getElementById('categoryName').value.trim() || 'Miscellaneous';
+
+    // Return clean data for export in the new format
     return {
         name: itemNameInput.value.trim().toUpperCase(),
-        category: categorySelect.value,
+        categoryName: categoryName,
         dots: usedDots,
         sequence: remappedSequence,
     };

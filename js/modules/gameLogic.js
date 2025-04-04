@@ -24,20 +24,31 @@ function init() {
 }
 
 // Start a new game with the selected category
-async function startGame(color, category) {
+function startGame(color, category) {
     log(`Starting game: ${category} (${color})`);
 
     try {
         // Try to load the JSON file
-        const response = await fetch(`items/${color}.json`);
+        fetch(`items/${color}.json`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Could not load ${color}.json (${response.status}: ${response.statusText})`);
+                }
+                return response.json();
+            })
+            .then(itemData => {
+                log('Successfully loaded drawing data');
 
-        if (!response.ok) {
-            throw new Error(`Could not load ${color}.json (${response.status}: ${response.statusText})`);
-        }
+                // Use categoryName from the JSON if available, otherwise use the provided category
+                const categoryName = itemData.categoryName || category;
 
-        const itemData = await response.json();
-        log('Successfully loaded drawing data');
-        startGameWithData(color, category, itemData);
+                startGameWithData(color, categoryName, itemData);
+            })
+            .catch(error => {
+                log('ERROR: Failed to load game data: ' + error.message);
+                // Show error to user
+                UI.showError(`Failed to load game data: ${error.message}`);
+            });
     } catch (error) {
         log('ERROR: Failed to load game data: ' + error.message);
         // Show error to user
@@ -46,6 +57,7 @@ async function startGame(color, category) {
 }
 
 // Start game with provided data
+// Updated startGameWithData function
 function startGameWithData(color, category, data) {
     log("Starting game with data");
 
@@ -60,7 +72,11 @@ function startGameWithData(color, category, data) {
 
     // Update game state with new data
     GameState.currentColor = color;
-    GameState.currentCategory = category;
+
+    // Use categoryName from the JSON if available, otherwise use the provided category
+    GameState.currentCategory = data.categoryName || category;
+
+    // Store drawing data
     GameState.drawingData = data;
 
     // Reset hint button
@@ -75,10 +91,13 @@ function startGameWithData(color, category, data) {
     // Stop any previous music
     Audio.stopAllMusic();
 
-    // Switch to game screen using the menu function
+    // Switch to game screen
     if (typeof showGameScreen === 'function') {
         showGameScreen();
     }
+
+    // Update the game title to show the current category
+    updateGameTitle(GameState.currentCategory);
 
     // Set background color based on category
     document.body.style.backgroundColor = `var(--${color}-color)`;

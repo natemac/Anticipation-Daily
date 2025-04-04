@@ -27,7 +27,7 @@ function log(message) {
     console.log(`[AnticipationMenu] ${message}`);
 }
 
-// Initialize the menu
+// Initialize function that now loads category data
 function initMenu() {
     log("Initializing menu...");
 
@@ -44,6 +44,9 @@ function initMenu() {
 
     // Initialize toggles
     initToggles();
+
+    // Load category data from JSON files
+    loadCategoryData();
 
     log("Menu initialized");
 }
@@ -407,16 +410,68 @@ function fallbackShare(text) {
     alert('Results copied to clipboard!');
 }
 
-// Switch between main menu and game screens
-function showMainMenu() {
-    mainScreen.style.display = 'flex';
-    gameScreen.style.display = 'none';
-    document.body.style.backgroundColor = '#f5f5f5';
+// Load category data from JSON files
+async function loadCategoryData() {
+    log("Loading category data from JSON files");
+
+    // Colors to load
+    const colors = ['yellow', 'green', 'blue', 'red'];
+    const colorSquares = document.querySelectorAll('.color-square');
+
+    // Load each color's JSON file
+    for (let i = 0; i < colors.length; i++) {
+        const color = colors[i];
+        const colorSquare = colorSquares[i];
+
+        try {
+            // Try to load the JSON file
+            const response = await fetch(`items/${color}.json`);
+
+            if (response.ok) {
+                const data = await response.json();
+
+                // Update the category name if available in the JSON
+                if (data && data.categoryName) {
+                    const heading = colorSquare.querySelector('h3');
+                    if (heading) {
+                        heading.textContent = data.categoryName;
+                    }
+
+                    // Also update the data-category attribute for reference
+                    colorSquare.setAttribute('data-category', data.categoryName);
+                }
+            } else {
+                log(`Could not load ${color}.json, keeping default category name`);
+            }
+        } catch (error) {
+            log(`Error loading ${color}.json: ${error.message}`);
+        }
+    }
+
+    log("Category data loading complete");
 }
 
+// Update game title based on current state
+function updateGameTitle(category = null) {
+    const gameTitleElement = document.querySelector('.game-title');
+    if (!gameTitleElement) return;
+
+    if (category && GameState.gameStarted) {
+        // If in game and category is provided, show the category name
+        gameTitleElement.textContent = category;
+    } else {
+        // Otherwise show the default title
+        gameTitleElement.textContent = 'Daily Anticipation';
+    }
+}
+
+// Modified showGameScreen function
 function showGameScreen() {
     mainScreen.style.display = 'none';
     gameScreen.style.display = 'flex';
+
+    // Update title with current category
+    updateGameTitle(GameState.currentCategory);
 
     // Force a redraw after the game screen becomes visible
     setTimeout(() => {
@@ -428,6 +483,16 @@ function showGameScreen() {
             }
         }
     }, 100);
+}
+
+// Modified showMainMenu function
+function showMainMenu() {
+    mainScreen.style.display = 'flex';
+    gameScreen.style.display = 'none';
+    document.body.style.backgroundColor = '#f5f5f5';
+
+    // Reset title to default when returning to menu
+    updateGameTitle();
 }
 
 // Initialize the menu when the DOM is loaded
