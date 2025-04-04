@@ -18,9 +18,7 @@ The project consists of the following files:
 - `js/`
   - `common.js` - Shared functionality between game and builder
   - `menu.js` - Menu and settings functionality
-  - `builder.js` - Builder-specific logic and interactions
-  - `touch-interface.js` - Touch input handling for the builder
-  - `mouse-interface.js` - Mouse input handling for the builder
+  - `builder.js` - Main entry point for the builder
   - `modules/` - Core game functionality divided into modules
     - `state.js` - Game state management and configuration
     - `renderer.js` - Canvas rendering and drawing
@@ -31,7 +29,15 @@ The project consists of the following files:
     - `input.js` - Keyboard and touch handling
     - `gameLogic.js` - Game mechanics and flow
     - `volume-controls.js` - Audio volume management
-  - `game.js` - Main entry point that coordinates all modules
+  - `modulesBuilder/` - Modular builder functionality
+    - `builderState.js` - Builder state management
+    - `builderRenderer.js` - Builder canvas rendering
+    - `builderGrid.js` - Grid and point operations
+    - `builderUI.js` - Builder interface management
+    - `builderInput.js` - Touch and mouse input handling
+    - `builderRecording.js` - Animation recording and playback
+    - `builderExport.js` - Data validation and export
+  - `game.js` - Main entry point that coordinates all game modules
 - `items/` - Directory containing JSON files with custom drawing data
 - `sounds/` - Directory containing audio files for game feedback
   - Category-specific background music:
@@ -46,11 +52,11 @@ The project consists of the following files:
     - `tick.mp3` - Subtle sound for UI interactions
     - `guess.mp3` - Sound effect when entering guess mode
 
-## Modular Code Architecture
+## Modular Architecture
 
-The game uses a modular architecture with ES modules to provide better organization and maintainability. Each module has a specific responsibility and communicates with other modules through clean interfaces.
+The project uses a modular ES modules architecture for better organization and maintainability:
 
-### Core Modules
+### Game Modules
 
 1. **State.js (Centralized State and Configuration)**
    - Manages global game state and persistent settings
@@ -107,72 +113,64 @@ The game uses a modular architecture with ES modules to provide better organizat
    - Persists volume settings across sessions
    - Real-time audio level adjustment
 
-## Game Features
+### Builder Modules
 
-- Four categories with dynamic names loaded from JSON files
-- Two difficulty levels (Easy shows dots and word spaces, Hard shows only drawing lines)
-- Timer system with countdown animation
-- Sharing capability for completed puzzles
-- Responsive design for mobile and desktop
-- Letter-by-letter validation with immediate feedback
-- Virtual keyboard support for mobile devices
-- Consistent drawing scaling between builder and game
-- Custom audio for each category with adaptive volume
+1. **builderState.js**
+   - Maintains builder state and configuration
+   - Stores grid, sketch, and recording data
+   - Handles touch state and mode management
+   - Tracks drawing data and animation sequence
 
-## Dynamic Category System
+2. **builderRenderer.js**
+   - Handles canvas drawing for the builder
+   - Renders grid, dots, and lines
+   - Manages preview and animation rendering
+   - Provides visual feedback for user interactions
 
-The game now features a dynamic category system:
+3. **builderGrid.js**
+   - Manages grid operations and calculations
+   - Handles finding and creating points
+   - Manages line connections between points
+   - Provides point deletion functionality
 
-- Category colors (yellow, green, blue, red) are determined by JSON filenames
-- Category names are defined within each JSON file's `categoryName` property
-- The game title dynamically updates to show the current category during gameplay
-- Users can create custom puzzles with their own category names using the builder
+4. **builderUI.js**
+   - Manages builder interface
+   - Handles mode transitions
+   - Controls button states and visibility
+   - Provides device-specific UI optimizations
 
-### JSON Structure
+5. **builderInput.js**
+   - Unifies touch and mouse input handling
+   - Provides different behaviors based on device type
+   - Implements mouse-specific features for desktop
+   - Manages touch-specific features for mobile
 
-The JSON format has been simplified to:
+6. **builderRecording.js**
+   - Handles animation recording
+   - Manages preview playback
+   - Controls recording state
+   - Provides animation timing and rendering
 
-```json
-{
-  "name": "ITEM_NAME",
-  "categoryName": "Category Display Name",
-  "dots": [
-    { "x": 210, "y": 105 },
-    { "x": 350, "y": 105 }
-  ],
-  "sequence": [
-    { "from": 0, "to": 1 }
-  ]
-}
-```
-
-## Audio System
-
-The game features a comprehensive audio system designed to enhance the gameplay experience:
-
-### Background Music
-- Each category has its own unique background music that matches the theme:
-  - **Yellow**: Ambient music with a journey feel
-  - **Green**: Playful, appetizing soundtrack
-  - **Blue**: Modern, technological soundscape
-  - **Red**: Relaxed, fun atmosphere music
-- Music continues playing throughout the gameplay but lowers volume during guessing
-- The system remembers playback position per category when switching between them
-
-### Sound Effects
-- **Correct Input**: Plays when the player enters a correct letter
-- **Incorrect Input**: Plays when the player makes a wrong guess
-- **Completion**: Celebratory sound when successfully completing a puzzle
-- **UI Tick**: Subtle feedback for UI interactions
-- **Guess Mode**: Special sound effect when entering guessing mode
-
-### Volume Controls
-- Separate sliders for music and sound effects
-- Settings are saved to localStorage for persistence
-- Test sound button to check audio levels
-- Real-time volume adjustments
+7. **builderExport.js**
+   - Validates drawing data
+   - Formats data for export
+   - Handles file generation and download
+   - Manages data import functionality
 
 ## Recent Enhancements and Fixes
+
+### Builder Improvements
+- **Modular Architecture**: Refactored builder.js into a modular system with separate responsibilities
+- **Improved Touch Interface**: Fixed button visibility and behavior in different modes
+- **Enhanced Mouse Interface**: Added clear instructions for mouse users
+- **Better Visual Feedback**: Fixed immediate feedback for actions like setting/canceling points
+- **Device Detection**: Automatically optimizes UI for touch vs mouse interfaces
+- **Navigation Enhancement**: Added "Back to Game" button for easy return to the main game
+- **Bug Fixes**:
+  - Fixed preview line not disappearing when canceling
+  - Fixed point deletion in Edit mode
+  - Fixed button state inconsistencies in Record mode
+  - Fixed button labels when switching between modes
 
 ### Dynamic Category System
 - **Custom category names** set in the builder or JSON files
@@ -200,78 +198,6 @@ The game features a comprehensive audio system designed to enhance the gameplay 
   - **Early completion! ⚡**: For guessing before the drawing animation finishes
   - **Got it in one ☝️**: For guessing correctly on the first attempt
 - Enhanced sharing functionality with achievement badges included in shared results
-
-### Bug Fixes
-- Fixed animation triggering on wrong category tiles
-- Corrected guess counter to properly count attempts (starting from 1)
-- Fixed hard mode character box display issues
-- Prevented previous game's answer from showing in new categories
-- Improved state reset between games for cleaner transitions
-
-### UI Improvements
-- Consistent character entry box experience in both easy and hard modes
-- Better visual distinction between modes:
-  - **Easy Mode**: Shows word structure with visible spaces
-  - **Hard Mode**: Displays all characters as boxes, hiding word structure
-- More satisfying completion animations and visual effects
-- Enhanced result display with clear achievement badges
-
-### Configuration Options
-
-The game includes various configuration options in the `CONFIG` object in `state.js`:
-
-```javascript
-const CONFIG = {
-    // Animation settings
-    PIXELS_PER_SECOND: 300,       // Animation speed in pixels per second
-    MINIMUM_LINE_TIME: 100,       // Minimum time for short lines (milliseconds)
-    ANIMATION_LINE_BY_LINE: true, // Animate lines individually from point to point
-
-    // Visual settings
-    DOT_RADIUS: 5,                // Size of dots on the grid
-
-    // Gameplay settings
-    GUESS_TIME_LIMIT: 10,         // Seconds for guessing
-    HIDE_INITIAL_MESSAGES: true,  // Hide any messages at game start
-
-    // Hint system
-    HINT_COOLDOWN_TIME: 5,        // Cooldown time in seconds between hints
-    HINTS_AVAILABLE: 0,           // Number of hints available per game (0 = unlimited)
-
-    // UI settings
-    WRONG_MESSAGE_DURATION: 800,  // Duration to show wrong messages (milliseconds)
-    CELEBRATION_DURATION: 1500,   // Duration of celebration before returning to menu
-
-    // Audio settings
-    MUSIC_ENABLED: true,          // Enable background music
-    SOUND_EFFECTS_ENABLED: true,  // Enable sound effects
-    MUSIC_VOLUME: 0.4,            // Default volume for background music (0-1)
-    SFX_VOLUME: 0.5,              // Default volume for sound effects (0-1)
-    FADE_DURATION: 500,           // Default duration for audio fades (milliseconds)
-
-    // Debug settings
-    DEBUG_MODE: false             // Enable debug logging and features
-};
-```
-
-You can adjust these parameters to fine-tune the game's behavior.
-
-## Adding Sound Files
-
-To enable the sound effects and music, add the following audio files to a `sounds` directory:
-
-1. **Category Music**:
-   - `yellow-music.mp3` - Background music for the Yellow category
-   - `green-music.mp3` - Background music for the Green category
-   - `blue-music.mp3` - Background music for the Blue category
-   - `red-music.mp3` - Background music for the Red category
-
-2. **Sound Effects**:
-   - `correct.mp3` - A short, pleasant sound for correct letter entries
-   - `incorrect.mp3` - A negative feedback sound for incorrect guesses
-   - `completion.mp3` - A celebratory sound for completing a puzzle
-   - `tick.mp3` - A subtle click sound for UI interactions
-   - `guess.mp3` - A sound effect for entering guessing mode
 
 ## Game Mechanics
 
@@ -315,6 +241,46 @@ This game uses ES modules, which are supported in all modern browsers. The game 
 - Mobile Safari (iOS 13+)
 - Chrome for Android (latest)
 
+## Configuration Options
+
+The game includes various configuration options in the `CONFIG` object in `state.js`:
+
+```javascript
+const CONFIG = {
+    // Animation settings
+    PIXELS_PER_SECOND: 300,       // Animation speed in pixels per second
+    MINIMUM_LINE_TIME: 100,       // Minimum time for short lines (milliseconds)
+    ANIMATION_LINE_BY_LINE: true, // Animate lines individually from point to point
+
+    // Visual settings
+    DOT_RADIUS: 5,                // Size of dots on the grid
+
+    // Gameplay settings
+    GUESS_TIME_LIMIT: 10,         // Seconds for guessing
+    HIDE_INITIAL_MESSAGES: true,  // Hide any messages at game start
+
+    // Hint system
+    HINT_COOLDOWN_TIME: 5,        // Cooldown time in seconds between hints
+    HINTS_AVAILABLE: 0,           // Number of hints available per game (0 = unlimited)
+
+    // UI settings
+    WRONG_MESSAGE_DURATION: 800,  // Duration to show wrong messages (milliseconds)
+    CELEBRATION_DURATION: 1500,   // Duration of celebration before returning to menu
+
+    // Audio settings
+    MUSIC_ENABLED: true,          // Enable background music
+    SOUND_EFFECTS_ENABLED: true,  // Enable sound effects
+    MUSIC_VOLUME: 0.4,            // Default volume for background music (0-1)
+    SFX_VOLUME: 0.5,              // Default volume for sound effects (0-1)
+    FADE_DURATION: 500,           // Default duration for audio fades (milliseconds)
+
+    // Debug settings
+    DEBUG_MODE: false             // Enable debug logging and features
+};
+```
+
+You can adjust these parameters to fine-tune the game's behavior.
+
 ## Future Improvements
 
 Potential future enhancements could include:
@@ -324,9 +290,9 @@ Potential future enhancements could include:
 - User accounts and progress tracking
 - Additional categories and themes
 - Multiplayer mode for collaborative drawing/guessing
-- Achievement system
-- More customization options
-- Additional music tracks and sound effects
+- More achievement types
+- Additional customization options
+- More music tracks and sound effects
 
 ## Credits
 
