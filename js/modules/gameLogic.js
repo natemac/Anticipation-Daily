@@ -24,31 +24,24 @@ function init() {
 }
 
 // Start a new game with the selected category
-function startGame(color, category) {
+async function startGame(color, category) {
     log(`Starting game: ${category} (${color})`);
 
     try {
         // Try to load the JSON file
-        fetch(`items/${color}.json`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Could not load ${color}.json (${response.status}: ${response.statusText})`);
-                }
-                return response.json();
-            })
-            .then(itemData => {
-                log('Successfully loaded drawing data');
+        const response = await fetch(`items/${color}.json`);
 
-                // Use categoryName from the JSON if available, otherwise use the provided category
-                const categoryName = itemData.categoryName || category;
+        if (!response.ok) {
+            throw new Error(`Could not load ${color}.json (${response.status}: ${response.statusText})`);
+        }
 
-                startGameWithData(color, categoryName, itemData);
-            })
-            .catch(error => {
-                log('ERROR: Failed to load game data: ' + error.message);
-                // Show error to user
-                UI.showError(`Failed to load game data: ${error.message}`);
-            });
+        const itemData = await response.json();
+
+        // Add the color to the data, determined by filename
+        itemData.category = color;
+
+        log('Successfully loaded drawing data');
+        startGameWithData(color, category, itemData);
     } catch (error) {
         log('ERROR: Failed to load game data: ' + error.message);
         // Show error to user
@@ -57,7 +50,6 @@ function startGame(color, category) {
 }
 
 // Start game with provided data
-// Updated startGameWithData function
 function startGameWithData(color, category, data) {
     log("Starting game with data");
 
@@ -97,7 +89,9 @@ function startGameWithData(color, category, data) {
     }
 
     // Update the game title to show the current category
-    updateGameTitle(GameState.currentCategory);
+    if (typeof updateGameTitle === 'function') {
+        updateGameTitle(GameState.currentCategory);
+    }
 
     // Set background color based on category
     document.body.style.backgroundColor = `var(--${color}-color)`;

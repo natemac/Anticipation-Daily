@@ -13,7 +13,7 @@ let gridCanvas, previewCanvas;
 let sketchBtn, editBtn, recordBtn, previewBtn;
 let setPointBtn, cancelPointBtn;
 let touchIndicator;
-let itemNameInput, categorySelect;
+let itemNameInput, categoryName;
 let submitBtn, shareBtn, exportBtn;
 let shareCode, shareLink, copyBtn;
 let previewOverlay, closePreviewBtn;
@@ -29,7 +29,556 @@ const state = {
     // Touch input state
     touch: {
         active: false,         // Is a point currently being set
-        tempPoint: null,       // Temporary point location {x, y, gridX, gridY}
+        tempPoint: null,       // Temporary point location {x, y, gridX, gridY
+// Start recording
+function startRecording() {
+    // Update state
+    state.recording.isRecording = true;
+    isCurrentlyRecording = true;
+
+    // Update UI
+    recordingIndicator.style.display = 'block';
+    recordBtn.textContent = 'Stop';
+    recordBtn.classList.remove('tertiary-btn', 'primary-btn');
+    recordBtn.classList.add('secondary-btn');
+
+    // Show Set Point button during active recording
+    setPointBtn.style.display = 'block';
+
+    console.log('Recording started');
+}
+
+// Stop recording
+function stopRecording() {
+    // Update state
+    state.recording.isRecording = false;
+    isCurrentlyRecording = false;
+
+    // Update UI
+    recordingIndicator.style.display = 'none';
+    recordBtn.textContent = 'Record';
+    recordBtn.classList.remove('secondary-btn');
+    recordBtn.classList.add('tertiary-btn');
+
+    // Keep in record mode but with record button inactive
+    // (user must explicitly switch to Sketch to edit)
+    setPointBtn.style.display = 'none'; // Hide Set Point button while not recording
+
+    console.log('Recording stopped. Sequence:', state.recording.sequence);
+}
+
+// Set Point button handler
+function handleSetPoint() {
+    // Only process in sketch or record mode
+    if (state.mode !== 'sketch' && state.mode !== 'record') return;
+
+    // Skip if we're in record mode but not actively recording
+    if (state.mode === 'record' && !isCurrentlyRecording) return;
+
+    const lastX = state.touch.lastTouchX;
+    const lastY = state.touch.lastTouchY;
+
+    if (lastX === 0 && lastY === 0) return; // No touch registered
+
+    const gridPoint = findNearestGridPoint(lastX, lastY);
+
+    // Prevent placing points on the edges
+    if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+        gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
+        showEdgeWarning();
+        return;
+    }
+
+    // Get the data arrays based on current mode
+    const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
+
+    // If we have a pending point, create a line
+    if (state.touch.pendingPoint !== null) {
+        // Check if there's already a dot at this location
+        const existingDotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
+        let newDotIndex;
+
+        if (existingDotIndex !== -1) {
+            // Use existing dot
+            newDotIndex = existingDotIndex;
+        } else {
+            // Create a new dot
+            const newDot = {
+                gridX: gridPoint.x,
+                gridY: gridPoint.y,
+                x: gridPoint.canvasX,
+                y: gridPoint.canvasY
+            };
+
+            dotsArray.push(newDot);
+            newDotIndex = dotsArray.length - 1;
+        }
+
+        // Add line between pending point and new point
+        if (state.touch.pendingPoint !== newDotIndex) { // Prevent self-connections
+            addLine(state.touch.pendingPoint, newDotIndex);
+
+            // Make the new dot the pending point for continued line drawing
+            state.touch.pendingPoint = newDotIndex;
+        }
+    } else {
+        // No pending point, just create or select a dot
+        const existingDotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
+
+        if (existingDotIndex !== -1) {
+            // Use existing dot as the pending point
+            state.touch.pendingPoint = existingDotIndex;
+        } else {
+            // Create a new dot
+            const newDot = {
+                gridX: gridPoint.x,
+                gridY: gridPoint.y,
+                x: gridPoint.canvasX,
+                y: gridPoint.canvasY
+            };
+
+            dotsArray.push(newDot);
+            state.touch.pendingPoint = dotsArray.length - 1;
+        }
+    }
+
+    // Reset temp point - we'll create a new one on next touch/move
+    state.touch.tempPoint = null;
+    state.touch.previewLine = null;
+
+    // Reset the touch indicator style to the pending point
+    const pendingDot = dotsArray[state.touch.pendingPoint];
+    updateTouchIndicator(pendingDot.x, pendingDot.y);
+
+    // Redraw canvas
+    redrawCanvas();
+}
+
+// Cancel/Remove button handler
+function handleCancelPoint() {
+    // Handle differently based on mode
+    if (state.mode === 'edit') {
+        // In edit mode, delete selected dot
+        if (state.touch.lastTouchX && state.touch.lastTouchY) {
+            const gridPoint = findNearestGridPoint(state.touch.lastTouchX, state.touch.lastTouchY);
+            const dotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
+
+            if (dotIndex !== -1) {
+                deleteDotAndConnectedLines(dotIndex);
+            }
+        }
+    } else if ((state.mode === 'sketch') ||
+             (state.mode === 'record' && isCurrentlyRecording)) {
+        // In sketch/record mode, cancel the pending point
+        state.touch.pendingPoint = null;
+        state.touch.tempPoint = null;
+        state.touch.previewLine = null;
+
+        // Hide touch indicator
+        touchIndicator.style.display = 'none';
+    }
+
+    // Redraw canvas
+    redrawCanvas();
+}
+
+// Update the touch indicator
+function updateTouchIndicator(x, y) {
+    // Find the nearest grid point
+    const gridPoint = findNearestGridPoint(x, y);
+
+    // Use the snapped grid coordinates
+    touchIndicator.style.display = 'block';
+    touchIndicator.style.left = gridPoint.canvasX + 'px';
+    touchIndicator.style.top = gridPoint.canvasY + 'px';
+
+    // Update the grid position display
+    positionDisplay.textContent = `Grid: ${gridPoint.x},${gridPoint.y}`;
+
+    // Check if we're on an edge
+    const isOnEdge = gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
+                    gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID;
+
+    // Change indicator color if on edge
+    if (isOnEdge) {
+        touchIndicator.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
+        touchIndicator.style.borderColor = 'red';
+    } else {
+        touchIndicator.style.backgroundColor = 'rgba(0, 255, 0, 0.5)';
+        touchIndicator.style.borderColor = 'green';
+    }
+
+    // Set the hover point for drawing
+    state.hoveredGridPoint = gridPoint;
+}
+
+// Show edge warning
+function showEdgeWarning() {
+    // Create a temporary flash element
+    const flash = document.createElement('div');
+    flash.style.position = 'absolute';
+    flash.style.top = '50%';
+    flash.style.left = '50%';
+    flash.style.transform = 'translate(-50%, -50%)';
+    flash.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+    flash.style.padding = '10px 20px';
+    flash.style.borderRadius = '5px';
+    flash.style.color = 'white';
+    flash.style.fontWeight = 'bold';
+    flash.style.zIndex = '10';
+    flash.textContent = 'Cannot draw on edges';
+
+    // Add it to the grid container
+    gridCanvas.parentElement.appendChild(flash);
+
+    // Remove after duration
+    setTimeout(() => {
+        gridCanvas.parentElement.removeChild(flash);
+    }, 300);
+}
+
+// Preview animation
+function previewAnimation() {
+    if (state.recording.sequence.length === 0) {
+        alert('Please record a drawing sequence first.');
+        return;
+    }
+
+    previewOverlay.style.display = 'flex';
+
+    // Set mode to preview without clearing recording state
+    state.mode = 'preview';
+
+    // Update UI for preview mode
+    sketchBtn.classList.remove('primary-btn');
+    sketchBtn.classList.add('tertiary-btn');
+    editBtn.classList.remove('primary-btn');
+    editBtn.classList.add('tertiary-btn');
+    recordBtn.classList.remove('primary-btn', 'secondary-btn');
+    recordBtn.classList.add('tertiary-btn');
+    previewBtn.classList.remove('tertiary-btn');
+    previewBtn.classList.add('primary-btn');
+
+    // Setup preview canvas
+    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+    // Make sure preview canvas is properly sized
+    const previewSize = Math.min(400, window.innerWidth * 0.8);
+    previewCanvas.width = previewSize;
+    previewCanvas.height = previewSize;
+
+    // Calculate scale factor for preview canvas
+    const scaleX = previewCanvas.width / gridCanvas.width;
+    const scaleY = previewCanvas.height / gridCanvas.height;
+    const scale = Math.min(scaleX, scaleY);
+
+    // Collect all dots used in the recording sequence
+    const usedDotIndices = new Set();
+    state.recording.sequence.forEach(line => {
+        usedDotIndices.add(line.from);
+        usedDotIndices.add(line.to);
+    });
+
+    // Animation variables
+    let currentLineIndex = 0;
+    let completedLines = [];
+    let animationProgress = 0;
+    let animationId = null;
+    state.recording.isPlaying = true;
+
+    // Function to draw everything in its current state
+    function drawPreviewFrame() {
+        // Clear canvas
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+        // Draw grid
+        previewCtx.strokeStyle = '#eee';
+        previewCtx.lineWidth = 1;
+
+        for (let i = 0; i <= GRID_SIZE; i++) {
+            const x = i * state.gridPointSize * scale;
+            previewCtx.beginPath();
+            previewCtx.moveTo(x, 0);
+            previewCtx.lineTo(x, previewCanvas.height);
+            previewCtx.stroke();
+
+            const y = i * state.gridPointSize * scale;
+            previewCtx.beginPath();
+            previewCtx.moveTo(0, y);
+            previewCtx.lineTo(previewCanvas.width, y);
+            previewCtx.stroke();
+        }
+
+        // Draw ALL dots from the beginning
+        previewCtx.fillStyle = '#333';
+        usedDotIndices.forEach(dotIndex => {
+            if (state.recording.dots[dotIndex]) { // Safety check
+                const dot = state.recording.dots[dotIndex];
+                previewCtx.beginPath();
+                previewCtx.arc(dot.x * scale, dot.y * scale, DOT_RADIUS, 0, Math.PI * 2);
+                previewCtx.fill();
+
+                // Draw index number
+                previewCtx.fillStyle = '#fff';
+                previewCtx.textAlign = 'center';
+                previewCtx.textBaseline = 'middle';
+                previewCtx.font = '8px Arial';
+                previewCtx.fillText(dotIndex.toString(), dot.x * scale, dot.y * scale);
+                previewCtx.fillStyle = '#333';
+            }
+        });
+
+        // Draw completed lines
+        previewCtx.strokeStyle = '#4CAF50'; // Green for recording lines
+        previewCtx.lineWidth = 4; // Double thickness
+
+        for (let i = 0; i < completedLines.length; i++) {
+            const lineIndex = completedLines[i];
+            const line = state.recording.sequence[lineIndex];
+            const from = state.recording.dots[line.from];
+            const to = state.recording.dots[line.to];
+
+            previewCtx.beginPath();
+            previewCtx.moveTo(from.x * scale, from.y * scale);
+            previewCtx.lineTo(to.x * scale, to.y * scale);
+            previewCtx.stroke();
+        }
+
+        // Draw animated line (if we're still animating)
+        if (currentLineIndex < state.recording.sequence.length) {
+            const line = state.recording.sequence[currentLineIndex];
+            const from = state.recording.dots[line.from];
+            const to = state.recording.dots[line.to];
+
+            // Calculate endpoints of the animated line segment
+            const startX = from.x * scale;
+            const startY = from.y * scale;
+            const endX = to.x * scale;
+            const endY = to.y * scale;
+
+            // Calculate current end point based on progress
+            const currentEndX = startX + (endX - startX) * animationProgress;
+            const currentEndY = startY + (endY - startY) * animationProgress;
+
+            // Draw the partially completed line
+            previewCtx.strokeStyle = '#4CAF50';
+            previewCtx.lineWidth = 4;
+            previewCtx.beginPath();
+            previewCtx.moveTo(startX, startY);
+            previewCtx.lineTo(currentEndX, currentEndY);
+            previewCtx.stroke();
+        }
+    }
+
+    // Function to animate the current line
+    function animateLine() {
+        if (!state.recording.isPlaying || currentLineIndex >= state.recording.sequence.length) {
+            cancelAnimationFrame(animationId);
+            return;
+        }
+
+        // Increment progress
+        animationProgress += 0.05; // Adjust for speed
+
+        // If line is complete
+        if (animationProgress >= 1) {
+            // Add to completed lines
+            completedLines.push(currentLineIndex);
+
+            // Move to next line
+            currentLineIndex++;
+            animationProgress = 0;
+
+            // Draw the current state
+            drawPreviewFrame();
+
+            // Pause briefly between lines
+            setTimeout(() => {
+                if (state.recording.isPlaying) {
+                    animationId = requestAnimationFrame(animateLine);
+                }
+            }, 200);
+            return;
+        }
+
+        // Draw the current frame
+        drawPreviewFrame();
+
+        // Continue animation
+        animationId = requestAnimationFrame(animateLine);
+    }
+
+    // Start by drawing the initial frame with all dots
+    drawPreviewFrame();
+
+    // Start the animation
+    animationId = requestAnimationFrame(animateLine);
+}
+
+// Stop preview
+function stopPreview() {
+    state.recording.isPlaying = false;
+    previewOverlay.style.display = 'none';
+
+    // Cancel any ongoing animations
+    if (window.animationId) {
+        cancelAnimationFrame(window.animationId);
+    }
+
+    setMode('record');
+}
+
+// Generate random ID
+function generateRandomId(length = 8) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+// Validate recording data
+function validateRecording() {
+    if (state.recording.dots.length < 2) {
+        alert('Please create at least 2 points in the recording.');
+        return false;
+    }
+
+    if (state.recording.sequence.length === 0) {
+        alert('Please record a drawing sequence.');
+        return false;
+    }
+
+    if (!itemNameInput.value.trim()) {
+        alert('Please enter a name for the item.');
+        itemNameInput.focus();
+        return false;
+    }
+
+    if (!document.getElementById('categoryName').value.trim()) {
+        alert('Please enter a category name.');
+        document.getElementById('categoryName').focus();
+        return false;
+    }
+
+    return true;
+}
+
+// Get recording data for export
+function getExportData() {
+    // Collect only dots used in the recording sequence
+    const usedDotIndices = new Set();
+    state.recording.sequence.forEach(line => {
+        usedDotIndices.add(line.from);
+        usedDotIndices.add(line.to);
+    });
+
+    // Create a map from old indices to new indices
+    const indexMap = {};
+    const usedDots = [];
+
+    // Add only the used dots to the exported data
+    Array.from(usedDotIndices).sort((a, b) => a - b).forEach((oldIndex, newIndex) => {
+        indexMap[oldIndex] = newIndex;
+        usedDots.push({
+            x: state.recording.dots[oldIndex].x,
+            y: state.recording.dots[oldIndex].y
+        });
+    });
+
+    // Remap the line indices
+    const remappedSequence = state.recording.sequence.map(line => ({
+        from: indexMap[line.from],
+        to: indexMap[line.to]
+    }));
+
+    // Get the category name or use a default if not provided
+    const categoryName = document.getElementById('categoryName').value.trim() || 'Miscellaneous';
+
+    // Return clean data for export in the new format
+    return {
+        name: itemNameInput.value.trim().toUpperCase(),
+        categoryName: categoryName,
+        dots: usedDots,
+        sequence: remappedSequence,
+    };
+}
+
+// Share drawing
+function shareDrawing() {
+    if (!validateRecording()) return;
+
+    const shareId = generateRandomId();
+
+    // In a real app, you would save to server here
+
+    shareLink.value = `https://yourdomain.com/share/${shareId}`;
+    shareCode.style.display = 'flex';
+}
+
+// Submit drawing
+function submitDrawing() {
+    if (!validateRecording()) return;
+
+    const exportData = getExportData();
+
+    // In a real app, you would send to server here
+
+    alert('Drawing submitted for review!');
+}
+
+// Export drawing data
+function exportDrawingData() {
+    if (!validateRecording()) return;
+
+    const exportData = getExportData();
+
+    // Format the data as a JSON string with proper indentation
+    const jsonString = JSON.stringify(exportData, null, 2);
+
+    // Create a download link for the text file
+    const blob = new Blob([jsonString], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+
+    // Create filename based on the item name
+    const filename = (exportData.name.toLowerCase().replace(/\s+/g, '_') || 'drawing') + '.json';
+
+    // Set up download link
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = filename;
+
+    // Add to DOM, click, then remove
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    // Also show in the export overlay
+    document.getElementById('exportData').value = jsonString;
+    exportOverlay.style.display = 'flex';
+}
+
+// Copy to clipboard
+function copyExportDataToClipboard() {
+    exportData.select();
+    document.execCommand('copy');
+    alert('Drawing data copied to clipboard!');
+}
+
+// Copy share link
+function copyShareLinkToClipboard() {
+    shareLink.select();
+    document.execCommand('copy');
+    alert('Share link copied to clipboard!');
+}
+
+// Initialize the builder when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize common elements
+    initBuilder();
+});
+}
         pendingPoint: null,    // Index of point waiting for connection
         previewLine: null,     // Preview line from pendingPoint to tempPoint
         lastTouchX: 0,         // Last touch/mouse X position
@@ -594,552 +1143,3 @@ function setMode(mode) {
 
     redrawCanvas();
 }
-
-// Start recording
-function startRecording() {
-    // Update state
-    state.recording.isRecording = true;
-    isCurrentlyRecording = true;
-
-    // Update UI
-    recordingIndicator.style.display = 'block';
-    recordBtn.textContent = 'Stop - 12:33am';
-    recordBtn.classList.remove('tertiary-btn', 'primary-btn');
-    recordBtn.classList.add('secondary-btn');
-
-    // Show Set Point button during active recording
-    setPointBtn.style.display = 'block';
-
-    console.log('Recording started');
-}
-
-// Stop recording
-function stopRecording() {
-    // Update state
-    state.recording.isRecording = false;
-    isCurrentlyRecording = false;
-
-    // Update UI
-    recordingIndicator.style.display = 'none';
-    recordBtn.textContent = 'Record';
-    recordBtn.classList.remove('secondary-btn');
-    recordBtn.classList.add('tertiary-btn');
-
-    // Keep in record mode but with record button inactive
-    // (user must explicitly switch to Sketch to edit)
-    setPointBtn.style.display = 'none'; // Hide Set Point button while not recording
-
-    console.log('Recording stopped. Sequence:', state.recording.sequence);
-}
-
-// Set Point button handler
-function handleSetPoint() {
-    // Only process in sketch or record mode
-    if (state.mode !== 'sketch' && state.mode !== 'record') return;
-
-    // Skip if we're in record mode but not actively recording
-    if (state.mode === 'record' && !isCurrentlyRecording) return;
-
-    const lastX = state.touch.lastTouchX;
-    const lastY = state.touch.lastTouchY;
-
-    if (lastX === 0 && lastY === 0) return; // No touch registered
-
-    const gridPoint = findNearestGridPoint(lastX, lastY);
-
-    // Prevent placing points on the edges
-    if (gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
-        gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID) {
-        showEdgeWarning();
-        return;
-    }
-
-    // Get the data arrays based on current mode
-    const dotsArray = (state.mode === 'sketch') ? state.sketch.dots : state.recording.dots;
-
-    // If we have a pending point, create a line
-    if (state.touch.pendingPoint !== null) {
-        // Check if there's already a dot at this location
-        const existingDotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
-        let newDotIndex;
-
-        if (existingDotIndex !== -1) {
-            // Use existing dot
-            newDotIndex = existingDotIndex;
-        } else {
-            // Create a new dot
-            const newDot = {
-                gridX: gridPoint.x,
-                gridY: gridPoint.y,
-                x: gridPoint.canvasX,
-                y: gridPoint.canvasY
-            };
-
-            dotsArray.push(newDot);
-            newDotIndex = dotsArray.length - 1;
-        }
-
-        // Add line between pending point and new point
-        if (state.touch.pendingPoint !== newDotIndex) { // Prevent self-connections
-            addLine(state.touch.pendingPoint, newDotIndex);
-
-            // Make the new dot the pending point for continued line drawing
-            state.touch.pendingPoint = newDotIndex;
-        }
-    } else {
-        // No pending point, just create or select a dot
-        const existingDotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
-
-        if (existingDotIndex !== -1) {
-            // Use existing dot as the pending point
-            state.touch.pendingPoint = existingDotIndex;
-        } else {
-            // Create a new dot
-            const newDot = {
-                gridX: gridPoint.x,
-                gridY: gridPoint.y,
-                x: gridPoint.canvasX,
-                y: gridPoint.canvasY
-            };
-
-            dotsArray.push(newDot);
-            state.touch.pendingPoint = dotsArray.length - 1;
-        }
-    }
-
-    // Reset temp point - we'll create a new one on next touch/move
-    state.touch.tempPoint = null;
-    state.touch.previewLine = null;
-
-    // Reset the touch indicator style to the pending point
-    const pendingDot = dotsArray[state.touch.pendingPoint];
-    updateTouchIndicator(pendingDot.x, pendingDot.y);
-
-    // Redraw canvas
-    redrawCanvas();
-}
-
-// Cancel/Remove button handler
-function handleCancelPoint() {
-    // Handle differently based on mode
-    if (state.mode === 'edit') {
-        // In edit mode, delete selected dot
-        if (state.touch.lastTouchX && state.touch.lastTouchY) {
-            const gridPoint = findNearestGridPoint(state.touch.lastTouchX, state.touch.lastTouchY);
-            const dotIndex = findDotAtGridPoint(gridPoint.x, gridPoint.y);
-
-            if (dotIndex !== -1) {
-                deleteDotAndConnectedLines(dotIndex);
-            }
-        }
-    } else if ((state.mode === 'sketch') ||
-             (state.mode === 'record' && isCurrentlyRecording)) {
-        // In sketch/record mode, cancel the pending point
-        state.touch.pendingPoint = null;
-        state.touch.tempPoint = null;
-        state.touch.previewLine = null;
-
-        // Hide touch indicator
-        touchIndicator.style.display = 'none';
-    }
-
-    // Redraw canvas
-    redrawCanvas();
-}
-
-// Update the touch indicator
-function updateTouchIndicator(x, y) {
-    // Find the nearest grid point
-    const gridPoint = findNearestGridPoint(x, y);
-
-    // Use the snapped grid coordinates
-    touchIndicator.style.display = 'block';
-    touchIndicator.style.left = gridPoint.canvasX + 'px';
-    touchIndicator.style.top = gridPoint.canvasY + 'px';
-
-    // Update the grid position display
-    positionDisplay.textContent = `Grid: ${gridPoint.x},${gridPoint.y}`;
-
-    // Check if we're on an edge
-    const isOnEdge = gridPoint.x < MIN_DRAW_GRID || gridPoint.x > MAX_DRAW_GRID ||
-                    gridPoint.y < MIN_DRAW_GRID || gridPoint.y > MAX_DRAW_GRID;
-
-    // Change indicator color if on edge
-    if (isOnEdge) {
-        touchIndicator.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
-        touchIndicator.style.borderColor = 'red';
-    } else {
-        touchIndicator.style.backgroundColor = 'rgba(0, 255, 0, 0.5)';
-        touchIndicator.style.borderColor = 'green';
-    }
-
-    // Set the hover point for drawing
-    state.hoveredGridPoint = gridPoint;
-}
-
-// Show edge warning
-function showEdgeWarning() {
-    // Create a temporary flash element
-    const flash = document.createElement('div');
-    flash.style.position = 'absolute';
-    flash.style.top = '50%';
-    flash.style.left = '50%';
-    flash.style.transform = 'translate(-50%, -50%)';
-    flash.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
-    flash.style.padding = '10px 20px';
-    flash.style.borderRadius = '5px';
-    flash.style.color = 'white';
-    flash.style.fontWeight = 'bold';
-    flash.style.zIndex = '10';
-    flash.textContent = 'Cannot draw on edges';
-
-    // Add it to the grid container
-    gridCanvas.parentElement.appendChild(flash);
-
-    // Remove after duration
-    setTimeout(() => {
-        gridCanvas.parentElement.removeChild(flash);
-    }, 300);
-}
-
-// Preview animation
-function previewAnimation() {
-    if (state.recording.sequence.length === 0) {
-        alert('Please record a drawing sequence first.');
-        return;
-    }
-
-    previewOverlay.style.display = 'flex';
-
-    // Set mode to preview without clearing recording state
-    state.mode = 'preview';
-
-    // Update UI for preview mode
-    sketchBtn.classList.remove('primary-btn');
-    sketchBtn.classList.add('tertiary-btn');
-    editBtn.classList.remove('primary-btn');
-    editBtn.classList.add('tertiary-btn');
-    recordBtn.classList.remove('primary-btn', 'secondary-btn');
-    recordBtn.classList.add('tertiary-btn');
-    previewBtn.classList.remove('tertiary-btn');
-    previewBtn.classList.add('primary-btn');
-
-    // Setup preview canvas
-    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-
-    // Make sure preview canvas is properly sized
-    const previewSize = Math.min(400, window.innerWidth * 0.8);
-    previewCanvas.width = previewSize;
-    previewCanvas.height = previewSize;
-
-    // Calculate scale factor for preview canvas
-    const scaleX = previewCanvas.width / gridCanvas.width;
-    const scaleY = previewCanvas.height / gridCanvas.height;
-    const scale = Math.min(scaleX, scaleY);
-
-    // Collect all dots used in the recording sequence
-    const usedDotIndices = new Set();
-    state.recording.sequence.forEach(line => {
-        usedDotIndices.add(line.from);
-        usedDotIndices.add(line.to);
-    });
-
-    // Animation variables
-    let currentLineIndex = 0;
-    let completedLines = [];
-    let animationProgress = 0;
-    let animationId = null;
-    state.recording.isPlaying = true;
-
-    // Function to draw everything in its current state
-    function drawPreviewFrame() {
-        // Clear canvas
-        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-
-        // Draw grid
-        previewCtx.strokeStyle = '#eee';
-        previewCtx.lineWidth = 1;
-
-        for (let i = 0; i <= GRID_SIZE; i++) {
-            const x = i * state.gridPointSize * scale;
-            previewCtx.beginPath();
-            previewCtx.moveTo(x, 0);
-            previewCtx.lineTo(x, previewCanvas.height);
-            previewCtx.stroke();
-
-            const y = i * state.gridPointSize * scale;
-            previewCtx.beginPath();
-            previewCtx.moveTo(0, y);
-            previewCtx.lineTo(previewCanvas.width, y);
-            previewCtx.stroke();
-        }
-
-        // Draw ALL dots from the beginning
-        previewCtx.fillStyle = '#333';
-        usedDotIndices.forEach(dotIndex => {
-            if (state.recording.dots[dotIndex]) { // Safety check
-                const dot = state.recording.dots[dotIndex];
-                previewCtx.beginPath();
-                previewCtx.arc(dot.x * scale, dot.y * scale, DOT_RADIUS, 0, Math.PI * 2);
-                previewCtx.fill();
-
-                // Draw index number
-                previewCtx.fillStyle = '#fff';
-                previewCtx.textAlign = 'center';
-                previewCtx.textBaseline = 'middle';
-                previewCtx.font = '8px Arial';
-                previewCtx.fillText(dotIndex.toString(), dot.x * scale, dot.y * scale);
-                previewCtx.fillStyle = '#333';
-            }
-        });
-
-        // Draw completed lines
-        previewCtx.strokeStyle = '#4CAF50'; // Green for recording lines
-        previewCtx.lineWidth = 4; // Double thickness
-
-        for (let i = 0; i < completedLines.length; i++) {
-            const lineIndex = completedLines[i];
-            const line = state.recording.sequence[lineIndex];
-            const from = state.recording.dots[line.from];
-            const to = state.recording.dots[line.to];
-
-            previewCtx.beginPath();
-            previewCtx.moveTo(from.x * scale, from.y * scale);
-            previewCtx.lineTo(to.x * scale, to.y * scale);
-            previewCtx.stroke();
-        }
-
-        // Draw animated line (if we're still animating)
-        if (currentLineIndex < state.recording.sequence.length) {
-            const line = state.recording.sequence[currentLineIndex];
-            const from = state.recording.dots[line.from];
-            const to = state.recording.dots[line.to];
-
-            // Calculate endpoints of the animated line segment
-            const startX = from.x * scale;
-            const startY = from.y * scale;
-            const endX = to.x * scale;
-            const endY = to.y * scale;
-
-            // Calculate current end point based on progress
-            const currentEndX = startX + (endX - startX) * animationProgress;
-            const currentEndY = startY + (endY - startY) * animationProgress;
-
-            // Draw the partially completed line
-            previewCtx.strokeStyle = '#4CAF50';
-            previewCtx.lineWidth = 4;
-            previewCtx.beginPath();
-            previewCtx.moveTo(startX, startY);
-            previewCtx.lineTo(currentEndX, currentEndY);
-            previewCtx.stroke();
-        }
-    }
-
-    // Function to animate the current line
-    function animateLine() {
-        if (!state.recording.isPlaying || currentLineIndex >= state.recording.sequence.length) {
-            cancelAnimationFrame(animationId);
-            return;
-        }
-
-        // Increment progress
-        animationProgress += 0.05; // Adjust for speed
-
-        // If line is complete
-        if (animationProgress >= 1) {
-            // Add to completed lines
-            completedLines.push(currentLineIndex);
-
-            // Move to next line
-            currentLineIndex++;
-            animationProgress = 0;
-
-            // Draw the current state
-            drawPreviewFrame();
-
-            // Pause briefly between lines
-            setTimeout(() => {
-                if (state.recording.isPlaying) {
-                    animationId = requestAnimationFrame(animateLine);
-                }
-            }, 200);
-            return;
-        }
-
-        // Draw the current frame
-        drawPreviewFrame();
-
-        // Continue animation
-        animationId = requestAnimationFrame(animateLine);
-    }
-
-    // Start by drawing the initial frame with all dots
-    drawPreviewFrame();
-
-    // Start the animation
-    animationId = requestAnimationFrame(animateLine);
-}
-
-// Stop preview
-function stopPreview() {
-    state.recording.isPlaying = false;
-    previewOverlay.style.display = 'none';
-
-    // Cancel any ongoing animations
-    if (window.animationId) {
-        cancelAnimationFrame(window.animationId);
-    }
-
-    setMode('record');
-}
-
-// Generate random ID
-function generateRandomId(length = 8) {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-}
-
-// Validate recording data
-function validateRecording() {
-    if (state.recording.dots.length < 2) {
-        alert('Please create at least 2 points in the recording.');
-        return false;
-    }
-
-    if (state.recording.sequence.length === 0) {
-        alert('Please record a drawing sequence.');
-        return false;
-    }
-
-    if (!itemNameInput.value.trim()) {
-        alert('Please enter a name for the item.');
-        itemNameInput.focus();
-        return false;
-    }
-
-    if (!document.getElementById('categoryName').value.trim()) {
-        alert('Please enter a category name.');
-        document.getElementById('categoryName').focus();
-        return false;
-    }
-
-    return true;
-}
-
-// Get recording data for export
-function getExportData() {
-    // Collect only dots used in the recording sequence
-    const usedDotIndices = new Set();
-    state.recording.sequence.forEach(line => {
-        usedDotIndices.add(line.from);
-        usedDotIndices.add(line.to);
-    });
-
-    // Create a map from old indices to new indices
-    const indexMap = {};
-    const usedDots = [];
-
-    // Add only the used dots to the exported data
-    Array.from(usedDotIndices).sort((a, b) => a - b).forEach((oldIndex, newIndex) => {
-        indexMap[oldIndex] = newIndex;
-        usedDots.push({
-            x: state.recording.dots[oldIndex].x,
-            y: state.recording.dots[oldIndex].y
-        });
-    });
-
-    // Remap the line indices
-    const remappedSequence = state.recording.sequence.map(line => ({
-        from: indexMap[line.from],
-        to: indexMap[line.to]
-    }));
-
-    // Get the category name or use a default if not provided
-    const categoryName = document.getElementById('categoryName').value.trim() || 'Miscellaneous';
-
-    // Return clean data for export in the new format
-    return {
-        name: itemNameInput.value.trim().toUpperCase(),
-        categoryName: categoryName,
-        dots: usedDots,
-        sequence: remappedSequence,
-    };
-}
-
-// Share drawing
-function shareDrawing() {
-    if (!validateRecording()) return;
-
-    const shareId = generateRandomId();
-
-    // In a real app, you would save to server here
-
-    shareLink.value = `https://yourdomain.com/share/${shareId}`;
-    shareCode.style.display = 'flex';
-}
-
-// Submit drawing
-function submitDrawing() {
-    if (!validateRecording()) return;
-
-    const exportData = getExportData();
-
-    // In a real app, you would send to server here
-
-    alert('Drawing submitted for review!');
-}
-
-// Export drawing data
-function exportDrawingData() {
-    if (!validateRecording()) return;
-
-    const exportData = getExportData();
-
-    // Format the data as a JSON string with proper indentation
-    const jsonString = JSON.stringify(exportData, null, 2);
-
-    // Create a download link for the text file
-    const blob = new Blob([jsonString], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-
-    // Create filename based on the item name
-    const filename = (exportData.name.toLowerCase().replace(/\s+/g, '_') || 'drawing') + '.json';
-
-    // Set up download link
-    const downloadLink = document.createElement('a');
-    downloadLink.href = url;
-    downloadLink.download = filename;
-
-    // Add to DOM, click, then remove
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-
-    // Also show in the export overlay
-    document.getElementById('exportData').value = jsonString;
-    exportOverlay.style.display = 'flex';
-}
-
-// Copy to clipboard
-function copyExportDataToClipboard() {
-    exportData.select();
-    document.execCommand('copy');
-    alert('Drawing data copied to clipboard!');
-}
-
-// Copy share link
-function copyShareLinkToClipboard() {
-    shareLink.select();
-    document.execCommand('copy');
-    alert('Share link copied to clipboard!');
-}
-
-// Initialize the builder when the DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize common elements
-    initBuilder();
-});
