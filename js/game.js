@@ -196,6 +196,16 @@ UI.exitGuessMode = function() {
     }
 };
 
+// Handle window resize with debounce
+let resizeTimeout;
+function handleResize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        Renderer.resizeCanvas();
+        UI.repositionElements();
+    }, 100);
+}
+
 // Initialize the game when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initGame);
 
@@ -203,6 +213,5 @@ document.addEventListener('DOMContentLoaded', initGame);
 export {
     log,
     initGame,
-    handleOrientationChange,
     handleResize
 };
