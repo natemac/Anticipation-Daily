@@ -12,6 +12,7 @@ import * as Audio from './modules/audio.js';
 import * as GameLogic from './modules/gameLogic.js';
 import * as Menu from './menu.js';
 import * as VolumeControls from './modules/volume-controls.js';
+import * as MobileUI from './modules/mobileUI.js'; // Import our new mobile UI module
 
 // Make functions globally available for older code
 window.startGame = GameLogic.startGame;
@@ -44,93 +45,18 @@ function initGame() {
     WordHandler.init();
     GameLogic.init();
     VolumeControls.init(); // Initialize volume controls
-
-    // NEW: Initialize mobile layout
-    initMobileLayout();
+    MobileUI.init(); // Initialize our new mobile UI module
 
     // Set up window-level event listeners
     window.addEventListener('resize', handleResize);
     window.addEventListener('load', handleFullLoad);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('orientationchange', handleOrientationChange);
 
     // Preload all audio assets
     Audio.preloadAudio();
 
     log("Game initialized");
-}
-
-// NEW: Initialize mobile-specific layout optimizations
-function initMobileLayout() {
-    // Check if we're on a mobile device
-    const isMobile = UI.detectMobileDevice();
-
-    if (isMobile) {
-        log("Mobile device detected - initializing mobile layout");
-
-        // Add mobile classes
-        document.body.classList.add('mobile-device');
-
-        // Create a container for our buttons on mobile
-        const gameControlsDiv = document.querySelector('.game-controls');
-        if (gameControlsDiv) {
-            // Create a mobile-specific controls container
-            const mobileControlsDiv = document.createElement('div');
-            mobileControlsDiv.className = 'game-controls-mobile';
-
-            // Move buttons into this container
-            const beginButton = document.getElementById('beginButton');
-            const hintButton = document.getElementById('hintButton');
-
-            if (beginButton && hintButton) {
-                // Clone the buttons to avoid DOM manipulation issues
-                const beginClone = beginButton.cloneNode(true);
-                const hintClone = hintButton.cloneNode(true);
-
-                // Add event listeners to clones
-                beginClone.addEventListener('click', () => {
-                    if (!GameState.gameStarted) {
-                        GameLogic.startDrawing();
-                    } else {
-                        UI.enterGuessMode();
-                    }
-                });
-
-                hintClone.addEventListener('click', () => {
-                    // Find and call the useHint function
-                    const useHintFn = document.getElementById('hintButton').onclick;
-                    if (useHintFn) {
-                        useHintFn();
-                    }
-                });
-
-                // Add to mobile container
-                mobileControlsDiv.appendChild(beginClone);
-                mobileControlsDiv.appendChild(hintClone);
-
-                // Replace standard controls with mobile controls
-                gameControlsDiv.parentElement.insertBefore(mobileControlsDiv, gameControlsDiv);
-
-                // Only hide the original controls when in game, not in the menu
-                if (GameState.gameStarted) {
-                    gameControlsDiv.style.display = 'none';
-                }
-            }
-        }
-
-        // Handle orientation changes
-        window.addEventListener('orientationchange', handleOrientationChange);
-
-        // Add viewport meta tag if not present (for proper mobile scaling)
-        if (!document.querySelector('meta[name="viewport"]')) {
-            const metaTag = document.createElement('meta');
-            metaTag.name = 'viewport';
-            metaTag.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-            document.head.appendChild(metaTag);
-        }
-
-        // Prevent double-tap zooming on mobile
-        document.addEventListener('touchend', preventDoubleTapZoom);
-    }
 }
 
 // Handle window resize with debounce
@@ -146,6 +72,9 @@ function handleResize() {
 // Handle orientation changes on mobile
 function handleOrientationChange() {
     log("Orientation changed - adjusting layout");
+
+    // Forward to mobile UI handler
+    MobileUI.handleOrientationChange();
 
     // Force a resize after orientation change
     clearTimeout(resizeTimeout);
@@ -179,7 +108,10 @@ function handleFullLoad() {
     // Force another init check after everything loads
     setTimeout(() => {
         Renderer.checkCanvasInitialization();
-        if (!UI.detectMobileDevice()) {
+
+        // Only create virtual keyboard if we're NOT on a mobile device
+        // For mobile devices, we use the MobileUI keyboard instead
+        if (!MobileUI.detectMobileDevice()) {
             InputHandler.createVirtualKeyboard();
         }
     }, 300);
@@ -199,11 +131,36 @@ function handleVisibilityChange() {
     }
 }
 
+// Override the UI enter/exit guess mode functions with mobile-aware versions
+const originalEnterGuessMode = UI.enterGuessMode;
+UI.enterGuessMode = function() {
+    // Call original function
+    originalEnterGuessMode();
+
+    // Add mobile-specific handling
+    if (MobileUI.detectMobileDevice()) {
+        MobileUI.enterMobileGuessMode();
+    }
+};
+
+const originalExitGuessMode = UI.exitGuessMode;
+UI.exitGuessMode = function() {
+    // Call original function
+    originalExitGuessMode();
+
+    // Add mobile-specific handling
+    if (MobileUI.detectMobileDevice()) {
+        MobileUI.exitMobileGuessMode();
+    }
+};
+
 // Initialize the game when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initGame);
 
 // Export public functions for external access
 export {
     log,
-    initMobileLayout
+    initGame,
+    handleOrientationChange,
+    handleResize
 };

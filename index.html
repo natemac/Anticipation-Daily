@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Daily Anticipation</title>
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="Play Daily Anticipation - a drawing-based word guessing game inspired by Nintendo's Anticipation">
     <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/game.css">
+    <link rel="stylesheet" href="css/mobile-game.css">
 </head>
 <body>
     <div class="game-title">Daily Anticipation</div>
@@ -79,8 +82,11 @@
         </div>
 
         <div class="game-screen">
-            <!-- New timer display that counts up -->
-            <div class="timer-display" id="timerDisplay">00:00</div>
+            <!-- Mobile Info Bar -->
+            <div class="mobile-info-bar">
+                <div class="timer-display" id="timerDisplay">00:00</div>
+                <div class="mobile-category" id="mobileCategoryDisplay"></div>
+            </div>
 
             <div class="canvas-container">
                 <canvas id="gameCanvas"></canvas>
@@ -92,11 +98,18 @@
                     <span>Begin</span>
                 </button>
                 <input type="text" id="guessInput" placeholder="Type your guess here...">
+                <button class="hint-button" id="hintButton">Hint?</button>
             </div>
             <button class="back-button" id="backButton">← Back</button>
             <div class="wrong-message" id="wrongMessage">WRONG!</div>
         </div>
     </div>
+
+    <!-- Mobile Category Display -->
+    <div class="category-display hidden" id="categoryDisplay"></div>
+
+    <!-- Confetti Canvas for completion celebration -->
+    <canvas id="confettiCanvas" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100;"></canvas>
 
     <!-- Load non-module scripts -->
     <script src="js/common.js"></script>
@@ -110,6 +123,8 @@
     <script type="module" src="js/modules/wordHandler.js"></script>
     <script type="module" src="js/modules/audio.js"></script>
     <script type="module" src="js/modules/gameLogic.js"></script>
+    <script type="module" src="js/modules/volume-controls.js"></script>
+    <script type="module" src="js/modules/mobileUI.js"></script>
     <script type="module" src="js/menu.js"></script>
     <script type="module" src="js/game.js"></script>
 </body>
