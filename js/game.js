@@ -29,44 +29,86 @@ function log(message) {
     console.log(`[AnticipationGame] ${message}`);
 }
 
-// Initialize the game
+// Initialize the game with better error handling
 function initGame() {
-    log("Initializing game...");
+    try {
+        log("Initializing game...");
 
-    // Initialize game state first
-    GameState.init();
+        // Initialize game state first
+        GameState.init();
 
-    // Initialize modules in the correct order
-    Renderer.init();
-    Audio.init();
-    UI.init();
-    InputHandler.init();
-    Animation.init();
-    WordHandler.init();
-    GameLogic.init();
-    VolumeControls.init(); // Initialize volume controls
-    MobileUI.init(); // Initialize our new mobile UI module
+        // Initialize modules in the correct order with error handling
+        initializeModule("Renderer", Renderer.init);
+        initializeModule("Audio", Audio.init);
+        initializeModule("UI", UI.init);
+        initializeModule("Input Handler", InputHandler.init);
+        initializeModule("Animation", Animation.init);
+        initializeModule("Word Handler", WordHandler.init);
+        initializeModule("Game Logic", GameLogic.init);
+        initializeModule("Volume Controls", VolumeControls.init);
 
-    // Set up window-level event listeners
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('load', handleFullLoad);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('orientationchange', handleOrientationChange);
+        // Initialize Mobile UI last to ensure it can access all other modules
+        if (typeof MobileUI !== 'undefined' && MobileUI.init) {
+            initializeModule("Mobile UI", MobileUI.init);
+        }
 
-    // Preload all audio assets
-    Audio.preloadAudio();
+        // Set up window-level event listeners
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('load', handleFullLoad);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('orientationchange', handleOrientationChange);
 
-    log("Game initialized");
+        // Preload all audio assets
+        if (Audio && typeof Audio.preloadAudio === 'function') {
+            Audio.preloadAudio();
+        }
+
+        log("Game initialized successfully");
+    } catch (error) {
+        console.error("Error during game initialization:", error);
+        showErrorMessage("Failed to initialize the game. Try refreshing the page.");
+    }
 }
 
-// Handle window resize with debounce
-let resizeTimeout;
-function handleResize() {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        Renderer.resizeCanvas();
-        UI.repositionElements();
-    }, 100);
+// Helper function to initialize a module with error handling
+function initializeModule(moduleName, initFunction) {
+    try {
+        if (typeof initFunction === 'function') {
+            const result = initFunction();
+            log(`${moduleName} module initialized`);
+            return result;
+        } else {
+            throw new Error(`${moduleName} init is not a function`);
+        }
+    } catch (error) {
+        console.error(`Error initializing ${moduleName} module:`, error);
+        // Continue with initialization, but log the error
+        return null;
+    }
+}
+
+// Display a user-friendly error message
+function showErrorMessage(message) {
+    // Create an error message element if it doesn't exist
+    let errorMessage = document.getElementById('errorMessage');
+    if (!errorMessage) {
+        errorMessage = document.createElement('div');
+        errorMessage.id = 'errorMessage';
+        errorMessage.style.position = 'fixed';
+        errorMessage.style.top = '50%';
+        errorMessage.style.left = '50%';
+        errorMessage.style.transform = 'translate(-50%, -50%)';
+        errorMessage.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+        errorMessage.style.color = 'white';
+        errorMessage.style.padding = '20px';
+        errorMessage.style.borderRadius = '10px';
+        errorMessage.style.maxWidth = '80%';
+        errorMessage.style.textAlign = 'center';
+        errorMessage.style.zIndex = '9999';
+        document.body.appendChild(errorMessage);
+    }
+
+    errorMessage.textContent = message;
 }
 
 // Handle orientation changes on mobile

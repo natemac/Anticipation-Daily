@@ -38,48 +38,50 @@ function init() {
     log("Initializing audio system");
 
     // Create and configure sound effects
-    sounds.correct = new Audio('sounds/correct.mp3');
-    sounds.incorrect = new Audio('sounds/incorrect.mp3');
-    sounds.completion = new Audio('sounds/completion.mp3');
-    sounds.tick = new Audio('sounds/tick.mp3');
-    sounds.guess = new Audio('sounds/guess.mp3');
+    sounds.correct = createAudio('sounds/correct.mp3', 0.5);
+    sounds.incorrect = createAudio('sounds/incorrect.mp3', 0.6);
+    sounds.completion = createAudio('sounds/completion.mp3', 0.7);
+    sounds.tick = createAudio('sounds/tick.mp3', 0.3);
+    sounds.guess = createAudio('sounds/guess.mp3', 0.6);
 
     // Create and configure background music for each category
-    sounds.yellowMusic = new Audio('sounds/yellow-music.mp3');
-    sounds.greenMusic = new Audio('sounds/green-music.mp3');
-    sounds.blueMusic = new Audio('sounds/blue-music.mp3');
-    sounds.redMusic = new Audio('sounds/red-music.mp3');
-
-    // Configure all sounds
-    Object.values(sounds).forEach(sound => {
-        if (sound) {
-            sound.load(); // Start preloading
-            updateMuteState(sound);
-        }
-    });
-
-    // Configure music tracks - all should loop
-    sounds.yellowMusic.loop = true;
-    sounds.greenMusic.loop = true;
-    sounds.blueMusic.loop = true;
-    sounds.redMusic.loop = true;
-
-    // Set volume levels
-    const musicVolume = 0.4;
-    sounds.yellowMusic.volume = musicVolume;
-    sounds.greenMusic.volume = musicVolume;
-    sounds.blueMusic.volume = musicVolume;
-    sounds.redMusic.volume = musicVolume;
-
-    sounds.correct.volume = 0.5;
-    sounds.incorrect.volume = 0.6;
-    sounds.completion.volume = 0.7;
-    sounds.tick.volume = 0.3;
-    sounds.guess.volume = 0.6;
+    sounds.yellowMusic = createAudio('sounds/yellow-music.mp3', 0.4, true);
+    sounds.greenMusic = createAudio('sounds/green-music.mp3', 0.4, true);
+    sounds.blueMusic = createAudio('sounds/blue-music.mp3', 0.4, true);
+    sounds.redMusic = createAudio('sounds/red-music.mp3', 0.4, true);
 
     log("Audio system initialized and preloading started");
 
     return sounds;
+}
+
+// Helper function to create and configure audio elements
+function createAudio(src, volume = 0.5, loop = false) {
+    try {
+        const audio = new Audio(src);
+
+        // Configure audio
+        audio.load(); // Start preloading
+        audio.volume = volume;
+        audio.muted = !GameState.audioEnabled;
+
+        if (loop) {
+            audio.loop = true;
+        }
+
+        return audio;
+    } catch (e) {
+        console.error(`Error creating audio for ${src}:`, e);
+        // Return a dummy audio object that won't cause errors when methods are called on it
+        return {
+            play: () => Promise.resolve(),
+            pause: () => {},
+            load: () => {},
+            volume: 0,
+            muted: true,
+            currentTime: 0
+        };
+    }
 }
 
 // Update audio mute state based on game state
@@ -131,50 +133,68 @@ function playSound(soundName) {
 function startDrawingMusic(category = null) {
     if (!GameState.audioEnabled) return;
 
-    // Use current category from GameState if not provided
-    const currentCategory = category || GameState.currentColor || 'yellow';
+    try {
+        // Use current category from GameState if not provided
+        const currentCategory = category || GameState.currentColor || 'yellow';
 
-    // Store current category
-    musicState.currentCategory = currentCategory;
+        // Store current category
+        musicState.currentCategory = currentCategory;
 
-    // Get the right music track for this category
-    const musicTrackName = `${currentCategory}Music`;
-    musicState.currentTrack = musicTrackName;
-    musicState.isPlaying = true;
+        // Get the right music track for this category
+        const musicTrackName = `${currentCategory}Music`;
+        musicState.currentTrack = musicTrackName;
+        musicState.isPlaying = true;
 
-    // Pause any other music first
-    Object.entries(sounds).forEach(([key, sound]) => {
-        if (key.includes('Music') && key !== musicTrackName && sound) {
-            // Store current time before pausing
-            if (sound.currentTime > 0 && !sound.paused) {
-                const category = key.replace('Music', '');
-                musicState.musicPositions[category] = sound.currentTime;
+        // Pause any other music first
+        Object.entries(sounds).forEach(([key, sound]) => {
+            if (key.includes('Music') && key !== musicTrackName && sound) {
+                // Store current time before pausing
+                if (sound.currentTime > 0 && !sound.paused) {
+                    const category = key.replace('Music', '');
+                    musicState.musicPositions[category] = sound.currentTime;
+                }
+                sound.pause();
             }
-            sound.pause();
+        });
+
+        const music = sounds[musicTrackName];
+        if (!music) {
+            log(`Music track ${musicTrackName} not found!`);
+            return;
         }
-    });
 
-    const music = sounds[musicTrackName];
-    if (!music) {
-        log(`Music track ${musicTrackName} not found!`);
-        return;
+        // Resume from where we left off if we have a stored position
+        if (musicState.musicPositions[currentCategory] > 0) {
+            music.currentTime = musicState.musicPositions[currentCategory];
+        }
+
+        // Play with fade-in effect
+        music.volume = 0;
+
+        // More robust play with multiple fallback attempts
+        const playPromise = music.play().catch(err => {
+            log(`Error playing ${currentCategory} music: ${err.message}`);
+
+            // Try once more with user interaction
+            document.body.addEventListener('click', function audioUnlocker() {
+                music.play().catch(e => console.log("Second play attempt failed", e));
+                document.body.removeEventListener('click', audioUnlocker);
+            }, { once: true });
+        });
+
+        // Fade in (only if play was successful)
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                fadeInAudio(music, GameState.musicVolume || 0.4, 1000);
+            }).catch(err => {
+                // Already logged above
+            });
+        }
+
+        log(`${currentCategory} music started`);
+    } catch (e) {
+        console.error("Error starting drawing music:", e);
     }
-
-    // Resume from where we left off if we have a stored position
-    if (musicState.musicPositions[currentCategory] > 0) {
-        music.currentTime = musicState.musicPositions[currentCategory];
-    }
-
-    // Play with fade-in effect
-    music.volume = 0;
-    music.play().catch(err => {
-        log(`Error playing ${currentCategory} music: ${err.message}`);
-    });
-
-    // Fade in
-    fadeInAudio(music, GameState.musicVolume || 0.4, 1000);
-
-    log(`${currentCategory} music started`);
 }
 
 // Pause drawing music and store current time

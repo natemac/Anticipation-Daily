@@ -12,6 +12,17 @@ function init() {
     // Get canvas element
     canvas = document.getElementById('gameCanvas');
 
+    // Safety check - if canvas doesn't exist, log error and exit initialization
+    if (!canvas) {
+        console.error("Canvas element with ID 'gameCanvas' not found. Initialization aborted.");
+        return {
+            canvas: null,
+            ctx: null,
+            confettiCanvas: null,
+            confettiCtx: null
+        };
+    }
+
     // Initialize main canvas
     initializeGameCanvas();
 
@@ -30,32 +41,36 @@ function init() {
 function initializeGameCanvas() {
     log("Setting up canvas with improved initialization...");
 
-    // Get a standard 2D context with explicit options for better performance
-    ctx = canvas.getContext('2d', {
-        alpha: false,          // Disable alpha for better performance
-        desynchronized: true,  // Use desynchronized mode for better performance
-        willReadFrequently: false
-    });
+    try {
+        // Get a standard 2D context with explicit options for better performance
+        ctx = canvas.getContext('2d', {
+            alpha: false,          // Disable alpha for better performance
+            desynchronized: true,  // Use desynchronized mode for better performance
+            willReadFrequently: false
+        });
 
-    // Ensure the canvas container is visible
-    const container = canvas.parentElement;
-    if (container) {
-        container.style.visibility = 'visible';
-        container.style.opacity = '1';
+        // Ensure the canvas container is visible
+        const container = canvas.parentElement;
+        if (container) {
+            container.style.visibility = 'visible';
+            container.style.opacity = '1';
+        }
+
+        // Set proper dimensions immediately
+        resizeCanvas();
+
+        // Draw initial content to ensure browser initializes canvas properly
+        preRenderCanvas();
+
+        // Add a slight delay before finalizing initialization
+        setTimeout(() => {
+            // Mark canvas as ready
+            GameState.canvasReady = true;
+            log("Canvas fully initialized and ready");
+        }, 100);
+    } catch (e) {
+        console.error("Error initializing canvas:", e);
     }
-
-    // Set proper dimensions immediately
-    resizeCanvas();
-
-    // Draw initial content to ensure browser initializes canvas properly
-    preRenderCanvas();
-
-    // Add a slight delay before finalizing initialization
-    setTimeout(() => {
-        // Mark canvas as ready
-        GameState.canvasReady = true;
-        log("Canvas fully initialized and ready");
-    }, 100);
 }
 
 // Create confetti canvas for successful completion
@@ -101,6 +116,12 @@ function preRenderCanvas() {
 
 // Resize canvas to match container with retina display support
 function resizeCanvas() {
+    // Check if canvas reference exists before trying to use it
+    if (!canvas || !ctx) {
+        console.log("Canvas not initialized yet, skipping resize");
+        return;
+    }
+
     const container = canvas.parentElement;
     if (!container) return;
 
