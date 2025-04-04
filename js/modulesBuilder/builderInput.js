@@ -26,6 +26,12 @@ function initTouchHandling(gridCanvas, touchIndicator) {
     gridCanvas.addEventListener('touchstart', (e) => handleTouchStart(e, touchIndicator), { passive: false });
     gridCanvas.addEventListener('touchmove', (e) => handleTouchMove(e, touchIndicator), { passive: false });
     gridCanvas.addEventListener('touchend', (e) => handleTouchEnd(e, touchIndicator), { passive: false });
+
+    // Make sure touch controls are visible
+    const touchControlsContainer = document.querySelector('.touch-controls');
+    if (touchControlsContainer) {
+        touchControlsContainer.style.display = 'flex';
+    }
 }
 
 // Initialize mouse-specific handling
@@ -41,6 +47,46 @@ function initMouseHandling(gridCanvas, touchIndicator) {
     // Additional desktop-specific features
     gridCanvas.addEventListener('mouseleave', (e) => handleMouseLeave(e, touchIndicator));
     gridCanvas.addEventListener('contextmenu', (e) => handleContextMenu(e, touchIndicator));
+
+    // Hide touch controls for mouse interface
+    const touchControlsContainer = document.querySelector('.touch-controls');
+    if (touchControlsContainer) {
+        touchControlsContainer.style.display = 'none';
+    }
+
+    // Hide the touch buttons
+    const setPointBtn = document.getElementById('setPointBtn');
+    const cancelPointBtn = document.getElementById('cancelPointBtn');
+
+    if (setPointBtn) setPointBtn.style.display = 'none';
+    if (cancelPointBtn) cancelPointBtn.style.display = 'none';
+
+    // Create mouse instructions if they don't exist
+    createMouseInstructions(gridCanvas);
+}
+
+// Create mouse instructions
+function createMouseInstructions(gridCanvas) {
+    // Check if instructions already exist
+    if (document.querySelector('.mouse-instructions')) {
+        return;
+    }
+
+    // Create the instructions element
+    const instructionsElement = document.createElement('div');
+    instructionsElement.className = 'mouse-instructions';
+    instructionsElement.innerHTML = '<p>Left click to set point • Double-click to cancel next point</p>';
+    instructionsElement.style.textAlign = 'center';
+    instructionsElement.style.padding = '10px';
+    instructionsElement.style.marginBottom = '20px';
+    instructionsElement.style.color = '#555';
+    instructionsElement.style.fontStyle = 'italic';
+
+    // Add instructions after grid, before the form
+    const gridContainer = document.querySelector('.grid-container');
+    if (gridContainer && gridContainer.nextElementSibling) {
+        gridContainer.parentNode.insertBefore(instructionsElement, gridContainer.nextElementSibling);
+    }
 }
 
 // Handle touch events
@@ -294,11 +340,11 @@ function handleContextMenu(e, touchIndicator) {
             BuilderState.touch.pendingPoint = null;
             BuilderState.touch.tempPoint = null;
             BuilderState.touch.previewLine = null;
-            
+
             if (touchIndicator) {
                 touchIndicator.style.display = 'none';
             }
-            
+
             redrawCanvas();
         }
     }
@@ -319,12 +365,12 @@ function initKeyboardShortcuts() {
                     BuilderState.touch.pendingPoint = null;
                     BuilderState.touch.tempPoint = null;
                     BuilderState.touch.previewLine = null;
-                    
+
                     const touchIndicator = document.getElementById('touchIndicator');
                     if (touchIndicator) {
                         touchIndicator.style.display = 'none';
                     }
-                    
+
                     redrawCanvas();
                 }
                 break;

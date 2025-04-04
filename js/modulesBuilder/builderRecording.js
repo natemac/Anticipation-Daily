@@ -14,6 +14,15 @@ export function startRecording(recordBtn, recordingIndicator) {
     recordBtn.classList.remove('tertiary-btn', 'primary-btn');
     recordBtn.classList.add('secondary-btn');
 
+    // Make sure the Set Point button is enabled and visible during active recording
+    const setPointBtn = document.getElementById('setPointBtn');
+    if (setPointBtn) {
+        setPointBtn.style.display = 'block';
+        setPointBtn.disabled = false;
+        setPointBtn.style.opacity = '1';
+    }
+
+    console.log('Recording started');
     return true;
 }
 
@@ -32,9 +41,13 @@ export function stopRecording(recordBtn, recordingIndicator, setPointBtn) {
     // Keep in record mode but with record button inactive
     // (user must explicitly switch to Sketch to edit)
     if (setPointBtn) {
-        setPointBtn.style.display = 'none'; // Hide Set Point button while not recording
+        // Keep the button visible but disabled when not recording
+        setPointBtn.style.display = 'block';
+        setPointBtn.disabled = true;
+        setPointBtn.style.opacity = '0.5';
     }
 
+    console.log('Recording stopped. Sequence:', BuilderState.recording.sequence);
     return BuilderState.recording.sequence;
 }
 
@@ -51,7 +64,7 @@ export function previewAnimation(previewOverlay) {
     BuilderState.mode = 'preview';
 
     const { previewCtx, gridCanvas } = getCanvasElements();
-    
+
     // Setup preview canvas
     previewCtx.clearRect(0, 0, previewCtx.canvas.width, previewCtx.canvas.height);
 
@@ -206,14 +219,14 @@ export function previewAnimation(previewOverlay) {
 
     // Start the animation
     animationId = requestAnimationFrame(animateLine);
-    
+
     return true;
 }
 
 // Stop preview
 export function stopPreview(previewOverlay, setMode) {
     BuilderState.recording.isPlaying = false;
-    
+
     if (previewOverlay) {
         previewOverlay.style.display = 'none';
     }
@@ -228,7 +241,7 @@ export function stopPreview(previewOverlay, setMode) {
     } else {
         BuilderState.mode = 'record';
     }
-    
+
     return true;
 }
 
@@ -237,6 +250,6 @@ function getCanvasElements() {
     const previewCanvas = document.getElementById('previewCanvas');
     const previewCtx = previewCanvas.getContext('2d');
     const gridCanvas = document.getElementById('gridCanvas');
-    
+
     return { previewCanvas, previewCtx, gridCanvas };
 }
