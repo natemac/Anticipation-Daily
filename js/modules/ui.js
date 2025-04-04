@@ -604,7 +604,9 @@ function updateHintCooldown() {
     }
 }
 
-// Enter guess mode
+// Updated sections of ui.js that need to integrate with the new audio system
+
+// Enter guess mode - update to handle music transition
 function enterGuessMode() {
     log("Entering guess mode");
 
@@ -621,6 +623,9 @@ function enterGuessMode() {
 
     // Pause animation and timer
     GameState.guessMode = true;
+
+    // Start guessing music
+    Audio.updateMusicForGameMode(true);
 
     // IMPORTANT - Initialize guessAttempts to track guess attempts properly
     // We don't increment here, as the final successful attempt will be counted in endGame
@@ -680,12 +685,15 @@ function enterGuessMode() {
     updateVirtualKeyboard(true);
 }
 
-// Exit guess mode
+// Exit guess mode - update to handle music transition
 function exitGuessMode() {
     log("Exiting guess mode");
 
     // Resume animation and timer
     GameState.guessMode = false;
+
+    // Switch back to drawing music
+    Audio.updateMusicForGameMode(false);
 
     // Stop the guess timer
     stopGuessTimer();

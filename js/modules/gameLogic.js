@@ -127,7 +127,7 @@ function startGameWithData(color, category, data) {
     }, 100);
 }
 
-// Start the drawing animation
+// Start the drawing animation - updated to start category-specific background music
 function startDrawing() {
     log("Starting drawing animation");
 
@@ -155,6 +155,9 @@ function startDrawing() {
     // Start the timer counting up
     startElapsedTimer();
 
+    // Start category-specific music
+    Audio.startDrawingMusic(GameState.currentColor);
+
     // Draw initial state
     if (GameState.difficulty === 'easy') {
         Renderer.drawDots();
@@ -172,6 +175,7 @@ function startDrawing() {
         }
     }, 50);
 }
+
 
 // Start the elapsed timer
 function startElapsedTimer() {
@@ -196,7 +200,7 @@ function startElapsedTimer() {
     return GameState.elapsedTimer;
 }
 
-// End the game and go back to menu
+// End the game and go back to menu - updated to handle music
 function endGame(success) {
     // Use the WordHandler endGame function but ensure it exists
     if (typeof WordHandler.endGame === 'function') {
@@ -206,6 +210,9 @@ function endGame(success) {
         // Fallback implementation
         GameState.gameStarted = false;
         GameState.timerActive = false;
+
+        // Stop all music
+        Audio.stopAllMusic();
 
         // Update menu state if successful
         if (success && typeof updatePuzzleCompletion === 'function') {
@@ -219,6 +226,18 @@ function endGame(success) {
             showMainMenu();
         }
     }
+}
+
+// Modified initialization to preload audio
+function init() {
+    log("Game logic module initialized");
+
+    // Preload all audio files
+    if (typeof Audio.preloadAudio === 'function') {
+        Audio.preloadAudio();
+    }
+
+    return true;
 }
 
 // Export public functions

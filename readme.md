@@ -161,14 +161,65 @@ const CONFIG = {
 
 You can adjust these parameters to fine-tune the game's behavior.
 
-## Adding Sound Files
+# Audio Files Required for Daily Anticipation Game
 
-To enable the sound effects, add the following audio files to a `sounds` directory:
+## Background Music
+1. **Drawing Music**  
+   Filename: `sounds/drawing-music.mp3`  
+   Description: Ambient background music that plays continuously throughout gameplay.  
+   Requirements: Should be loopable, ambient, and not too distracting.
 
-1. `correct.mp3` - A short, pleasant sound for correct letter entries
-2. `incorrect.mp3` - A negative feedback sound for incorrect guesses
-3. `completion.mp3` - A celebratory sound for completing a puzzle
-4. `tick.mp3` - A subtle click sound for UI interactions
+## Game Mode Sound Effects
+1. **Guessing Mode SFX**  
+   Filename: `sounds/guessing-mode.mp3`  
+   Description: A one-time sound effect that plays when entering guessing mode.  
+   Requirements: Short, attention-grabbing sound effect that signals a mode change.
+
+## Sound Effects
+1. **Correct Input SFX**  
+   Filename: `sounds/correct.mp3`  
+   Description: Plays when the user enters a correct letter.  
+   Requirements: Short, positive sound effect.
+
+2. **Incorrect SFX**  
+   Filename: `sounds/incorrect.mp3`  
+   Description: Plays when the user enters an incorrect letter.  
+   Requirements: Short, negative sound effect.
+
+3. **Victory SFX**  
+   Filename: `sounds/completion.mp3`  
+   Description: Plays when the user correctly guesses the word.  
+   Requirements: Celebratory sound effect.
+
+4. **UI Interaction SFX**  
+   Filename: `sounds/tick.mp3`  
+   Description: Plays during UI interactions (buttons, etc.).  
+   Requirements: Very short, subtle click sound.
+
+## Implementation Details
+
+1. All audio files should be:
+   - MP3 format for broad browser compatibility
+   - Optimized for web (reasonable file size)
+   - Properly licensed for use in the game
+
+2. Audio files should be placed in a `sounds` directory at the root of the project.
+
+3. The audio system is designed to:
+   - Preload all audio files at startup
+   - Respect the user's audio preferences
+   - Continue the drawing music from where it left off when switching back from guessing mode
+   - Support fade-in and fade-out effects for smooth transitions
+   - Adjust volume levels independently for music and sound effects
+
+## Recommended Audio Levels
+
+- Drawing Music: 40% volume (0.4)
+- Guessing Music: 40% volume (0.4)
+- Correct SFX: 50% volume (0.5)
+- Incorrect SFX: 60% volume (0.6)
+- Victory SFX: 70% volume (0.7)
+- Tick SFX: 30% volume (0.3)
 
 ## Game Mechanics
 

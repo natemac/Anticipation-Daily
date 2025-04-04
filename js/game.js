@@ -11,6 +11,7 @@ import * as WordHandler from './modules/wordHandler.js';
 import * as Audio from './modules/audio.js';
 import * as GameLogic from './modules/gameLogic.js';
 import * as Menu from './menu.js';
+import * as VolumeControls from './modules/volume-controls.js';
 
 // Make functions globally available for older code
 window.startGame = GameLogic.startGame;
@@ -42,11 +43,15 @@ function initGame() {
     Animation.init();
     WordHandler.init();
     GameLogic.init();
+    VolumeControls.init(); // Initialize volume controls
 
     // Set up window-level event listeners
     window.addEventListener('resize', handleResize);
     window.addEventListener('load', handleFullLoad);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Preload all audio assets
+    Audio.preloadAudio();
 
     log("Game initialized");
 }

@@ -241,7 +241,7 @@ function restoreCorrectLetters() {
     log("Restored correct letters: " + GameState.currentInput);
 }
 
-// Process letter input with validation
+// Process letter input with validation - updated for audio feedback
 function processLetter(letter) {
     if (!GameState.guessMode) return;
 
@@ -273,8 +273,8 @@ function processLetter(letter) {
             GameState.currentInput += newLetter;
             updateWordSpaces();
 
-            // Play correct sound
-            Audio.playTick();
+            // Play correct input sound
+            Audio.playCorrect();
 
             // Add satisfying visual feedback for correct letter
             Animation.pulseElement(getLetterElement(letterIndex), 'green');
@@ -316,7 +316,7 @@ function processLetter(letter) {
     }
 }
 
-// Process full word validation
+// Process full word validation - updated for audio feedback
 function processFullWord() {
     if (!GameState.guessMode) return;
 
