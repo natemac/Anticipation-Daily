@@ -198,51 +198,56 @@ function pauseDrawingMusic() {
     log(`${musicState.currentCategory} music paused at ${music.currentTime}`);
 }
 
-// Start playing guessing music
-function startGuessingMusic() {
+// Play guessing mode sound effect (one-time SFX)
+function playGuessSFX() {
     if (!GameState.audioEnabled) return;
 
-    // Store current track
-    musicState.currentTrack = 'guessingMusic';
-    musicState.isPlaying = true;
+    // Play the guessing mode sound effect
+    const sfx = sounds.guess;
 
-    // Pause drawing music first
-    if (sounds.drawingMusic.playing) {
-        pauseDrawingMusic();
+    if (!sfx) {
+        log("Guess SFX not found!");
+        return;
     }
 
-    const music = sounds.guessingMusic;
+    // Reset to beginning
+    sfx.currentTime = 0;
 
-    // Reset to beginning each time
-    music.currentTime = 0;
-
-    // Play with fade-in
-    music.volume = 0;
-    music.play().catch(err => {
-        log("Error playing guessing music: " + err.message);
+    // Play the sound effect
+    sfx.play().catch(err => {
+        log("Error playing guess SFX: " + err.message);
     });
 
-    // Fade in
-    fadeInAudio(music, 0.4, 800);
-
-    log("Guessing music started");
+    log("Guess SFX played");
 }
 
-// Stop guessing music
-function stopGuessingMusic() {
-    if (musicState.currentTrack !== 'guessingMusic') return;
+// Handle audio when switching game modes
+function updateMusicForGameMode(isGuessMode) {
+    if (isGuessMode) {
+        // Play the guessing mode sound effect while keeping current music playing
+        playGuessSFX();
 
-    const music = sounds.guessingMusic;
+        // Get the current music track
+        const currentMusicTrack = musicState.currentTrack;
+        if (!currentMusicTrack || !sounds[currentMusicTrack]) return;
 
-    // Fade out
-    fadeOutAudio(music, 500).then(() => {
-        music.pause();
-        music.currentTime = 0;
-    });
+        // Optionally reduce music volume during guessing
+        if (sounds[currentMusicTrack] && sounds[currentMusicTrack].volume > 0.2) {
+            // Temporarily lower music volume slightly
+            fadeAudioTo(sounds[currentMusicTrack], 0.25, 400);
+        }
+    } else {
+        // Restore music volume when exiting guess mode
+        const currentMusicTrack = musicState.currentTrack;
+        if (!currentMusicTrack || !sounds[currentMusicTrack]) return;
 
-    musicState.isPlaying = false;
+        fadeAudioTo(sounds[currentMusicTrack], GameState.musicVolume || 0.4, 600);
 
-    log("Guessing music stopped");
+        // If music isn't playing, start it
+        if (!musicState.isPlaying) {
+            startDrawingMusic();
+        }
+    }
 }
 
 // Stop all music
@@ -318,35 +323,6 @@ function fadeOutAudio(audioElement, duration) {
             audioElement.volume = newVolume;
         }, 50);
     });
-}
-
-// Handle audio when switching game modes
-function updateMusicForGameMode(isGuessMode) {
-    if (isGuessMode) {
-        // Play the guessing mode sound effect while keeping current music playing
-        playGuessSFX();
-
-        // Get the current music track
-        const currentMusicTrack = musicState.currentTrack;
-        if (!currentMusicTrack || !sounds[currentMusicTrack]) return;
-
-        // Optionally reduce music volume during guessing
-        if (sounds[currentMusicTrack] && sounds[currentMusicTrack].volume > 0.2) {
-            // Temporarily lower music volume slightly
-            fadeAudioTo(sounds[currentMusicTrack], 0.25, 400);
-        }
-    } else {
-        // Restore music volume when exiting guess mode
-        const currentMusicTrack = musicState.currentTrack;
-        if (!currentMusicTrack || !sounds[currentMusicTrack]) return;
-
-        fadeAudioTo(sounds[currentMusicTrack], GameState.musicVolume || 0.4, 600);
-
-        // If music isn't playing, start it
-        if (!musicState.isPlaying) {
-            startDrawingMusic();
-        }
-    }
 }
 
 // Helper function to fade audio to a target volume
