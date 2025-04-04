@@ -35,10 +35,10 @@ The project consists of the following files:
 - `items/` - Directory containing JSON files with custom drawing data
 - `sounds/` - Directory containing audio files for game feedback
   - Category-specific background music:
-    - `yellow-music.mp3` - Background music for Travel category
-    - `green-music.mp3` - Background music for Food category
-    - `blue-music.mp3` - Background music for Man-made category
-    - `red-music.mp3` - Background music for Leisure category
+    - `yellow-music.mp3` - Background music for Yellow category
+    - `green-music.mp3` - Background music for Green category
+    - `blue-music.mp3` - Background music for Blue category
+    - `red-music.mp3` - Background music for Red category
   - Sound effects:
     - `correct.mp3` - Sound for correct letter entry
     - `incorrect.mp3` - Sound for incorrect guesses
@@ -109,7 +109,7 @@ The game uses a modular architecture with ES modules to provide better organizat
 
 ## Game Features
 
-- Four categories to play (Travel, Food, Man-made, Leisure)
+- Four categories with dynamic names loaded from JSON files
 - Two difficulty levels (Easy shows dots and word spaces, Hard shows only drawing lines)
 - Timer system with countdown animation
 - Sharing capability for completed puzzles
@@ -119,16 +119,43 @@ The game uses a modular architecture with ES modules to provide better organizat
 - Consistent drawing scaling between builder and game
 - Custom audio for each category with adaptive volume
 
+## Dynamic Category System
+
+The game now features a dynamic category system:
+
+- Category colors (yellow, green, blue, red) are determined by JSON filenames
+- Category names are defined within each JSON file's `categoryName` property
+- The game title dynamically updates to show the current category during gameplay
+- Users can create custom puzzles with their own category names using the builder
+
+### JSON Structure
+
+The JSON format has been simplified to:
+
+```json
+{
+  "name": "ITEM_NAME",
+  "categoryName": "Category Display Name",
+  "dots": [
+    { "x": 210, "y": 105 },
+    { "x": 350, "y": 105 }
+  ],
+  "sequence": [
+    { "from": 0, "to": 1 }
+  ]
+}
+```
+
 ## Audio System
 
 The game features a comprehensive audio system designed to enhance the gameplay experience:
 
 ### Background Music
 - Each category has its own unique background music that matches the theme:
-  - **Yellow (Travel)**: Ambient music with a journey feel
-  - **Green (Food)**: Playful, appetizing soundtrack
-  - **Blue (Man-made)**: Modern, technological soundscape
-  - **Red (Leisure)**: Relaxed, fun atmosphere music
+  - **Yellow**: Ambient music with a journey feel
+  - **Green**: Playful, appetizing soundtrack
+  - **Blue**: Modern, technological soundscape
+  - **Red**: Relaxed, fun atmosphere music
 - Music continues playing throughout the gameplay but lowers volume during guessing
 - The system remembers playback position per category when switching between them
 
@@ -146,6 +173,12 @@ The game features a comprehensive audio system designed to enhance the gameplay 
 - Real-time volume adjustments
 
 ## Recent Enhancements and Fixes
+
+### Dynamic Category System
+- **Custom category names** set in the builder or JSON files
+- **Automatic color assignment** based on JSON filename (yellow.json, green.json, etc.)
+- **Dynamic title updates** showing the current category during gameplay
+- **Simplified JSON format** with cleaner structure
 
 ### Audio Improvements
 - **Category-specific music system** that provides unique audio for each puzzle type
@@ -228,10 +261,10 @@ You can adjust these parameters to fine-tune the game's behavior.
 To enable the sound effects and music, add the following audio files to a `sounds` directory:
 
 1. **Category Music**:
-   - `yellow-music.mp3` - Background music for the Travel category
-   - `green-music.mp3` - Background music for the Food category
-   - `blue-music.mp3` - Background music for the Man-made category
-   - `red-music.mp3` - Background music for the Leisure category
+   - `yellow-music.mp3` - Background music for the Yellow category
+   - `green-music.mp3` - Background music for the Green category
+   - `blue-music.mp3` - Background music for the Blue category
+   - `red-music.mp3` - Background music for the Red category
 
 2. **Sound Effects**:
    - `correct.mp3` - A short, pleasant sound for correct letter entries
@@ -260,7 +293,7 @@ The builder tool allows you to create custom drawings that can be loaded into th
 - Sketch mode for planning drawings
 - Record mode for creating the final animation sequence
 - Preview mode to verify how drawings will look to players
-- Export functionality to create JSON files
+- Export functionality to create JSON files with custom category names
 - Grid system with edge restrictions
 
 ### Building Process
@@ -268,7 +301,8 @@ The builder tool allows you to create custom drawings that can be loaded into th
 1. Use Sketch mode to create the basic structure
 2. Use Record mode to define the animation sequence
 3. Preview your animation to see how it will look to players
-4. Export your drawing as a JSON file that can be loaded by the game
+4. Enter a name and category name for your drawing
+5. Export your drawing as a JSON file that can be loaded by the game
 
 ## Browser Compatibility
 
