@@ -218,11 +218,16 @@ export function setMode(mode) {
             case 'record':
                 recordBtn.className = 'primary-btn';
 
-                // FIX: Always show both buttons in record mode
+                // FIX: Always ensure record mode has Set Point and Cancel Point buttons
+                // with consistent labeling regardless of previous mode
                 setPointBtn.style.display = 'block';
                 cancelPointBtn.style.display = 'block';
 
-                // If coming from sketch mode to record mode (not already recording)
+                // Always set the correct label for Record mode
+                cancelPointBtn.textContent = 'Cancel Point';
+                setPointBtn.textContent = 'Set Point';
+
+                // If coming from any mode to record mode (not already recording)
                 if (!BuilderState.isCurrentlyRecording) {
                     // Disable both buttons if not recording
                     setPointBtn.disabled = true;
@@ -234,11 +239,9 @@ export function setMode(mode) {
                     // Enable both buttons when recording
                     setPointBtn.disabled = false;
                     setPointBtn.style.opacity = '1';
-                    setPointBtn.textContent = 'Set Point';
 
                     cancelPointBtn.disabled = false;
                     cancelPointBtn.style.opacity = '1';
-                    cancelPointBtn.textContent = 'Cancel Point';
                 }
                 break;
 
