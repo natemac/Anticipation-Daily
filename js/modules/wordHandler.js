@@ -47,25 +47,21 @@ function updateWordSpaces() {
                           GameState.currentInput :
                           GameState.correctLetters.join('');
 
-    if (GameState.difficulty === 'hard') {
-        // Hard mode - show a unified input field, hiding the word structure
-        const totalChars = answer.length;
-        const visibleChars = Math.min(totalChars, lettersToShow.length);
+    // Add word spaces with improved styling
+    for (let i = 0; i < answer.length; i++) {
+        const letterDiv = document.createElement('div');
+        letterDiv.style.position = 'relative';
+        letterDiv.style.width = '30px';
+        letterDiv.style.height = '40px';
+        letterDiv.style.margin = '0 2px';
+        letterDiv.style.display = 'inline-flex'; // Use flex for better centering
+        letterDiv.style.justifyContent = 'center';
+        letterDiv.style.alignItems = 'center';
+        letterDiv.style.fontFamily = 'Arial, sans-serif';
+        letterDiv.style.transition = 'all 0.2s ease';
 
-        // Create a box for each character in answer, but don't reveal spaces
-        for (let i = 0; i < totalChars; i++) {
-            const letterDiv = document.createElement('div');
-            letterDiv.style.position = 'relative';
-            letterDiv.style.width = '30px';
-            letterDiv.style.height = '40px';
-            letterDiv.style.margin = '0 2px';
-            letterDiv.style.display = 'inline-flex';
-            letterDiv.style.justifyContent = 'center';
-            letterDiv.style.alignItems = 'center';
-            letterDiv.style.fontFamily = 'Arial, sans-serif';
-            letterDiv.style.transition = 'all 0.2s ease';
-
-            // All characters get the same styling in hard mode
+        if (answer[i] !== ' ') {
+            // Add background for letters
             letterDiv.style.backgroundColor = '#f5f5f5';
             letterDiv.style.borderRadius = '4px';
             letterDiv.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
@@ -81,8 +77,8 @@ function updateWordSpaces() {
             underline.style.borderRadius = '1px';
             letterDiv.appendChild(underline);
 
-            // Show letter if it's been entered
-            if (i < visibleChars) {
+            // Show letter if it's been entered correctly
+            if (i < lettersToShow.length) {
                 const letterSpan = document.createElement('span');
                 letterSpan.style.fontSize = '24px';
                 letterSpan.style.fontWeight = 'bold';
@@ -95,30 +91,18 @@ function updateWordSpaces() {
                 letterDiv.style.transform = 'translateY(-2px)';
                 letterDiv.style.boxShadow = '0 3px 5px rgba(0,0,0,0.1)';
             }
+        } else {
+            // For spaces, add a visible gap with subtle styling
+            letterDiv.style.width = '15px'; // Smaller width for spaces
 
-            letterContainer.appendChild(letterDiv);
-        }
-    } else {
-        // Easy mode - show word structure (spaces, etc.)
-        for (let i = 0; i < answer.length; i++) {
-            const letterDiv = document.createElement('div');
-            letterDiv.style.position = 'relative';
-            letterDiv.style.width = '30px';
-            letterDiv.style.height = '40px';
-            letterDiv.style.margin = '0 2px';
-            letterDiv.style.display = 'inline-flex'; // Use flex for better centering
-            letterDiv.style.justifyContent = 'center';
-            letterDiv.style.alignItems = 'center';
-            letterDiv.style.fontFamily = 'Arial, sans-serif';
-            letterDiv.style.transition = 'all 0.2s ease';
-
-            if (answer[i] !== ' ') {
-                // Add background for letters
+            // In hard mode, make spaces look like regular letter boxes
+            if (GameState.difficulty === 'hard') {
+                letterDiv.style.width = '30px';
                 letterDiv.style.backgroundColor = '#f5f5f5';
                 letterDiv.style.borderRadius = '4px';
                 letterDiv.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
 
-                // Add underline
+                // Add underline to make it look like other letter boxes
                 const underline = document.createElement('div');
                 underline.style.position = 'absolute';
                 underline.style.bottom = '5px';
@@ -129,28 +113,28 @@ function updateWordSpaces() {
                 underline.style.borderRadius = '1px';
                 letterDiv.appendChild(underline);
 
-                // Show letter if it's been entered correctly
+                // Show space character if entered (invisible but takes space)
                 if (i < lettersToShow.length) {
                     const letterSpan = document.createElement('span');
                     letterSpan.style.fontSize = '24px';
                     letterSpan.style.fontWeight = 'bold';
                     letterSpan.style.color = '#333';
-                    letterSpan.textContent = lettersToShow[i];
+                    letterSpan.textContent = ' '; // Space character
+                    letterSpan.style.visibility = 'hidden'; // Make it invisible
                     letterDiv.appendChild(letterSpan);
 
-                    // Add 3D effect for entered letters
+                    // Add 3D effect for entered spaces
                     letterDiv.style.backgroundColor = '#e8f5e9';
                     letterDiv.style.transform = 'translateY(-2px)';
                     letterDiv.style.boxShadow = '0 3px 5px rgba(0,0,0,0.1)';
                 }
             } else {
-                // For spaces, add a visible gap with subtle styling
-                letterDiv.style.width = '15px'; // Smaller width for spaces
+                // In easy mode, make spaces visible as gaps
                 letterDiv.style.backgroundColor = 'transparent';
             }
-
-            letterContainer.appendChild(letterDiv);
         }
+
+        letterContainer.appendChild(letterDiv);
     }
 
     wordSpacesDiv.appendChild(letterContainer);
@@ -163,8 +147,8 @@ function updateWordSpaces() {
         if (cursorIndex < letterDivs.length) {
             const currentLetterDiv = letterDivs[cursorIndex];
 
-            // Skip spaces in easy mode only (hard mode doesn't reveal spaces)
-            if (GameState.difficulty === 'easy' && answer[cursorIndex] === ' ') {
+            // Skip spaces in both modes, but handle differently
+            if (answer[cursorIndex] === ' ') {
                 GameState.currentInput += ' ';
                 updateWordSpaces();
                 return;
@@ -202,7 +186,6 @@ function updateWordSpaces() {
     }
 }
 
-// Remaining functions unchanged
 // Store correct letters when an incorrect guess is made
 function storeCorrectLetters() {
     if (!GameState.guessMode) return;
@@ -269,8 +252,8 @@ function processLetter(letter) {
     if (letterIndex < currentWord.length) {
         const newLetter = letter.toUpperCase();
 
-        // Skip if the current position is a space (only in easy mode)
-        if (GameState.difficulty === 'easy' && currentWord[letterIndex] === ' ') {
+        // Skip if the current position is a space
+        if (currentWord[letterIndex] === ' ') {
             GameState.currentInput += ' ';
             updateWordSpaces();
 
