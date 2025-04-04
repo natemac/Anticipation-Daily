@@ -97,50 +97,38 @@ The game uses a modular architecture with ES modules to provide better organizat
 - Virtual keyboard support for mobile devices
 - Consistent drawing scaling between builder and game
 
-### Recent Improvements
+## Recent Enhancements and Fixes
 
-#### 1. Centralized Configuration System
-- All tunable parameters are now defined in one place in `state.js`
-- Easy to adjust animation speeds, timers, and game behavior
-- Configuration organized by functionality (animation, UI, gameplay)
-- Includes a DEBUG_MODE flag for easier development
+### Enhanced Completion Stamps System
+- **Differentiated completion stamps** based on how the player solved the puzzle:
+  - **Standard Completion (Red)**: Basic completion stamp
+  - **Hard Mode Completion (Gold)**: Gold stamp with "HARD" badge for completing in hard mode
+  - **Early Completion (Green)**: Green glowing stamp for completing before drawing is finished
+  - **First-Try Completion**: Special "Got it in one ☝️" achievement
 
-#### 2. Enhanced Hint System
-- Improved hint button with configurable cooldown timer
-- Hints reveal the next missing letter in sequence
-- Supports both limited and unlimited hint modes:
-  - Set `HINTS_AVAILABLE: 0` for unlimited hints
-  - Set any positive number for limited hints
-- Hint button is only available in Easy mode
-- 5-second delay before hint becomes available
-- 5-second cooldown between hints
-- Cooldown timer only counts when main timer is running
-- Visual feedback for cooldown state
-- Doesn't automatically enter guess mode
+### Achievement System
+- **Achievement badges** for special accomplishments:
+  - **Hard mode! 🏆**: For completing puzzles in hard mode
+  - **Early completion! ⚡**: For guessing before the drawing animation finishes
+  - **Got it in one ☝️**: For guessing correctly on the first attempt
+- Enhanced sharing functionality with achievement badges included in shared results
 
-#### 3. Improved Completion UI
-- Added stamp-style "COMPLETED" indicator
-- Enhanced stats display with better formatting
-- Shows guesses count and time in the results
-- Animated celebration effects
-- Trophy icon for completed categories
-- Share button appears after completing all categories
+### Bug Fixes
+- Fixed animation triggering on wrong category tiles
+- Corrected guess counter to properly count attempts (starting from 1)
+- Fixed hard mode character box display issues
+- Prevented previous game's answer from showing in new categories
+- Improved state reset between games for cleaner transitions
 
-#### 4. Bug Fixes
-- Fixed issue with guess counter always showing zero
-- Improved hint button behavior to preserve progress
-- Fixed timer issues during guess mode
-- Enhanced hard mode to properly disable hints
-- Fixed spacing and formatting in UI elements
+### UI Improvements
+- Consistent character entry box experience in both easy and hard modes
+- Better visual distinction between modes:
+  - **Easy Mode**: Shows word structure with visible spaces
+  - **Hard Mode**: Displays all characters as boxes, hiding word structure
+- More satisfying completion animations and visual effects
+- Enhanced result display with clear achievement badges
 
-#### 5. Visual Improvements
-- Added pulse animations for correct/incorrect guesses
-- Enhanced letter highlighting for hints
-- Improved contrast and readability
-- Responsive design for all screen sizes
-- Better mobile support with virtual keyboard
-
-## Configuration Options
+### Configuration Options
 
 The game includes various configuration options in the `CONFIG` object in `state.js`:
 
@@ -160,7 +148,7 @@ const CONFIG = {
 
     // Hint system
     HINT_COOLDOWN_TIME: 5,        // Cooldown time in seconds between hints
-    HINTS_AVAILABLE: 1,           // Number of hints available per game (0 = unlimited)
+    HINTS_AVAILABLE: 0,           // Number of hints available per game (0 = unlimited)
 
     // UI settings
     WRONG_MESSAGE_DURATION: 800,  // Duration to show wrong messages (milliseconds)
@@ -192,6 +180,7 @@ To enable the sound effects, add the following audio files to a `sounds` directo
 - **Timing**: Complete each puzzle as quickly as possible for a better score
 - **Hints**: Use limited or unlimited hints to get unstuck on difficult puzzles
 - **Celebration**: Enjoy a confetti animation upon successful completion
+- **Achievements**: Earn special stamps and badges for skilled play
 
 ## Anticipation Builder
 
