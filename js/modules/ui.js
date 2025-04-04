@@ -11,8 +11,8 @@ import { log } from '../game.js';
 let timerDisplay, beginButton, wrongMessage, backButton, buttonTimer;
 let wordSpacesDiv, hintButton;
 let hintButtonTimeout;
-let mobileKeyboard; // NEW: track mobile keyboard element
-let isMobileDevice; // NEW: track if we're on a mobile device
+let mobileKeyboard; // Track mobile keyboard element
+let isMobileDevice; // Track if we're on a mobile device
 
 // Initialize UI module
 function init() {
@@ -40,7 +40,7 @@ function init() {
     createWordSpacesDiv();
     createHintButton();
 
-    // NEW: Create mobile keyboard for touch devices
+    // NEW: Create mobile keyboard ONLY for touch devices
     if (isMobileDevice) {
         createMobileKeyboard();
     }
@@ -48,7 +48,7 @@ function init() {
     // Add audio toggle to settings
     addAudioToggle();
 
-    log("UI module initialized");
+    log("UI module initialized" + (isMobileDevice ? " (Mobile)" : " (Desktop)"));
 
     return {
         timerDisplay,
@@ -62,12 +62,15 @@ function init() {
     };
 }
 
-// NEW: Detect if we're on a mobile device
+// Detect if we're on a mobile device
 function detectMobileDevice() {
-    return (typeof window.orientation !== 'undefined') ||
-           (navigator.userAgent.indexOf('IEMobile') !== -1) ||
-           (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) ||
-           window.innerWidth <= 768; // Also consider small screens as mobile
+    // Improved mobile detection that doesn't misidentify desktops
+    const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const hasTouchPoints = navigator.maxTouchPoints > 0;
+    const isSmallScreen = window.innerWidth < 768;
+
+    // Only consider it mobile if it has a mobile user agent AND either touch capability or small screen
+    return isMobileUserAgent && (hasTouchPoints || isSmallScreen);
 }
 
 // Handle back button clicks
@@ -157,7 +160,7 @@ function createHintButton() {
     return hintButton;
 }
 
-// NEW: Create the mobile keyboard for touch devices
+// Create the mobile keyboard for touch devices - SIMPLIFIED VERSION
 function createMobileKeyboard() {
     // Only create if it doesn't already exist
     if (document.getElementById('mobileKeyboard')) {
@@ -678,8 +681,6 @@ function updateHintCooldown() {
     }
 }
 
-// Updated sections of ui.js that need to integrate with the new audio system
-
 // Enter guess mode - update to handle music transition and mobile layout
 function enterGuessMode() {
     log("Entering guess mode");
@@ -767,12 +768,14 @@ function enterGuessMode() {
         beginButton.querySelector('span').textContent = 'Guess';
     }
 
-    // Show mobile keyboard on touch devices
+    // Show mobile keyboard ONLY on touch devices
     if (isMobileDevice && mobileKeyboard) {
         mobileKeyboard.classList.add('active');
     } else {
-        // Show virtual keyboard on mobile
-        updateVirtualKeyboard(true);
+        // Show virtual keyboard ONLY when necessary
+        if (isMobileDevice) {
+            updateVirtualKeyboard(true);
+        }
     }
 }
 
@@ -821,19 +824,24 @@ function exitGuessMode() {
     if (isMobileDevice && mobileKeyboard) {
         mobileKeyboard.classList.remove('active');
     } else {
-        // Hide virtual keyboard on mobile
-        updateVirtualKeyboard(false);
+        // Hide virtual keyboard if it was shown
+        if (isMobileDevice) {
+            updateVirtualKeyboard(false);
+        }
     }
 }
 
 // Update mobile virtual keyboard visibility
 function updateVirtualKeyboard(show) {
-    const event = new CustomEvent('guessmode-changed', {
-        detail: {
-            active: show
-        }
-    });
-    document.dispatchEvent(event);
+    // Only trigger this event if we're on a mobile device
+    if (isMobileDevice) {
+        const event = new CustomEvent('guessmode-changed', {
+            detail: {
+                active: show
+            }
+        });
+        document.dispatchEvent(event);
+    }
 }
 
 // Reposition UI elements after resize
