@@ -14,6 +14,12 @@ let elapsedTimerInterval;
 // Initialize the game logic
 function init() {
     log("Game logic module initialized");
+
+    // Preload all audio files
+    if (typeof Audio.preloadAudio === 'function') {
+        Audio.preloadAudio();
+    }
+
     return true;
 }
 
@@ -65,6 +71,9 @@ function startGameWithData(color, category, data) {
     if (confettiCanvas) {
         confettiCanvas.style.display = 'none';
     }
+
+    // Stop any previous music
+    Audio.stopAllMusic();
 
     // Switch to game screen using the menu function
     if (typeof showGameScreen === 'function') {
@@ -176,7 +185,6 @@ function startDrawing() {
     }, 50);
 }
 
-
 // Start the elapsed timer
 function startElapsedTimer() {
     // Clear any existing timer
@@ -226,18 +234,6 @@ function endGame(success) {
             showMainMenu();
         }
     }
-}
-
-// Modified initialization to preload audio
-function init() {
-    log("Game logic module initialized");
-
-    // Preload all audio files
-    if (typeof Audio.preloadAudio === 'function') {
-        Audio.preloadAudio();
-    }
-
-    return true;
 }
 
 // Export public functions
