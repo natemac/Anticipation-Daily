@@ -26,18 +26,26 @@ The project consists of the following files:
     - `state.js` - Game state management and configuration
     - `renderer.js` - Canvas rendering and drawing
     - `animation.js` - Animation and visual effects
-    - `audio.js` - Sound management
+    - `audio.js` - Sound and music management
     - `ui.js` - User interface elements
     - `wordHandler.js` - Word display and validation
     - `input.js` - Keyboard and touch handling
     - `gameLogic.js` - Game mechanics and flow
+    - `volume-controls.js` - Audio volume management
   - `game.js` - Main entry point that coordinates all modules
 - `items/` - Directory containing JSON files with custom drawing data
 - `sounds/` - Directory containing audio files for game feedback
-  - `correct.mp3` - Sound for correct letter entry
-  - `incorrect.mp3` - Sound for incorrect guesses
-  - `completion.mp3` - Sound for successful puzzle completion
-  - `tick.mp3` - Subtle sound for UI interactions
+  - Category-specific background music:
+    - `yellow-music.mp3` - Background music for Travel category
+    - `green-music.mp3` - Background music for Food category
+    - `blue-music.mp3` - Background music for Man-made category
+    - `red-music.mp3` - Background music for Leisure category
+  - Sound effects:
+    - `correct.mp3` - Sound for correct letter entry
+    - `incorrect.mp3` - Sound for incorrect guesses
+    - `completion.mp3` - Sound for successful puzzle completion
+    - `tick.mp3` - Subtle sound for UI interactions
+    - `guess.mp3` - Sound effect when entering guess mode
 
 ## Modular Code Architecture
 
@@ -64,27 +72,41 @@ The game uses a modular architecture with ES modules to provide better organizat
    - Manages visual effects like confetti and pulses
    - Provides smooth animation timing
 
-4. **UI.js**
+4. **Audio.js**
+   - Manages all game sounds and music
+   - Category-specific background music
+   - Sound effects for game interactions
+   - Smooth transitions with fade effects
+   - Remembers playback positions for each category
+   - Adjusts volume during different game phases
+
+5. **UI.js**
    - Creates and updates UI elements
    - Manages timers and visual feedback
    - Handles game mode transitions
    - Controls hint button behavior and cooldowns
 
-5. **WordHandler.js**
+6. **WordHandler.js**
    - Renders and updates word spaces
    - Processes letter and word validation
    - Handles word completion logic
    - Manages correct letter tracking
 
-6. **Input.js**
+7. **Input.js**
    - Processes keyboard and touch input
    - Creates virtual keyboard for mobile
    - Handles input validation and feedback
 
-7. **GameLogic.js**
+8. **GameLogic.js**
    - Controls game flow and mechanics
    - Manages game initialization and loading
    - Handles timing and scoring
+
+9. **Volume-Controls.js**
+   - Provides UI for audio settings
+   - Separate controls for music and sound effects
+   - Persists volume settings across sessions
+   - Real-time audio level adjustment
 
 ## Game Features
 
@@ -96,8 +118,42 @@ The game uses a modular architecture with ES modules to provide better organizat
 - Letter-by-letter validation with immediate feedback
 - Virtual keyboard support for mobile devices
 - Consistent drawing scaling between builder and game
+- Custom audio for each category with adaptive volume
+
+## Audio System
+
+The game features a comprehensive audio system designed to enhance the gameplay experience:
+
+### Background Music
+- Each category has its own unique background music that matches the theme:
+  - **Yellow (Travel)**: Ambient music with a journey feel
+  - **Green (Food)**: Playful, appetizing soundtrack
+  - **Blue (Man-made)**: Modern, technological soundscape
+  - **Red (Leisure)**: Relaxed, fun atmosphere music
+- Music continues playing throughout the gameplay but lowers volume during guessing
+- The system remembers playback position per category when switching between them
+
+### Sound Effects
+- **Correct Input**: Plays when the player enters a correct letter
+- **Incorrect Input**: Plays when the player makes a wrong guess
+- **Completion**: Celebratory sound when successfully completing a puzzle
+- **UI Tick**: Subtle feedback for UI interactions
+- **Guess Mode**: Special sound effect when entering guessing mode
+
+### Volume Controls
+- Separate sliders for music and sound effects
+- Settings are saved to localStorage for persistence
+- Test sound button to check audio levels
+- Real-time volume adjustments
 
 ## Recent Enhancements and Fixes
+
+### Audio Improvements
+- **Category-specific music system** that provides unique audio for each puzzle type
+- **Seamless audio transitions** with fade-in/fade-out effects when switching modes
+- **Persistence of playback position** when returning to previously played categories
+- **Volume adjustment system** with separate controls for music and sound effects
+- **Mobile-friendly audio** with optimized loading and playback
 
 ### Enhanced Completion Stamps System
 - **Differentiated completion stamps** based on how the player solved the puzzle:
@@ -154,6 +210,13 @@ const CONFIG = {
     WRONG_MESSAGE_DURATION: 800,  // Duration to show wrong messages (milliseconds)
     CELEBRATION_DURATION: 1500,   // Duration of celebration before returning to menu
 
+    // Audio settings
+    MUSIC_ENABLED: true,          // Enable background music
+    SOUND_EFFECTS_ENABLED: true,  // Enable sound effects
+    MUSIC_VOLUME: 0.4,            // Default volume for background music (0-1)
+    SFX_VOLUME: 0.5,              // Default volume for sound effects (0-1)
+    FADE_DURATION: 500,           // Default duration for audio fades (milliseconds)
+
     // Debug settings
     DEBUG_MODE: false             // Enable debug logging and features
 };
@@ -161,65 +224,22 @@ const CONFIG = {
 
 You can adjust these parameters to fine-tune the game's behavior.
 
-# Audio Files Required for Daily Anticipation Game
+## Adding Sound Files
 
-## Background Music
-1. **Drawing Music**  
-   Filename: `sounds/drawing-music.mp3`  
-   Description: Ambient background music that plays continuously throughout gameplay.  
-   Requirements: Should be loopable, ambient, and not too distracting.
+To enable the sound effects and music, add the following audio files to a `sounds` directory:
 
-## Game Mode Sound Effects
-1. **Guessing Mode SFX**  
-   Filename: `sounds/guessing-mode.mp3`  
-   Description: A one-time sound effect that plays when entering guessing mode.  
-   Requirements: Short, attention-grabbing sound effect that signals a mode change.
+1. **Category Music**:
+   - `yellow-music.mp3` - Background music for the Travel category
+   - `green-music.mp3` - Background music for the Food category
+   - `blue-music.mp3` - Background music for the Man-made category
+   - `red-music.mp3` - Background music for the Leisure category
 
-## Sound Effects
-1. **Correct Input SFX**  
-   Filename: `sounds/correct.mp3`  
-   Description: Plays when the user enters a correct letter.  
-   Requirements: Short, positive sound effect.
-
-2. **Incorrect SFX**  
-   Filename: `sounds/incorrect.mp3`  
-   Description: Plays when the user enters an incorrect letter.  
-   Requirements: Short, negative sound effect.
-
-3. **Victory SFX**  
-   Filename: `sounds/completion.mp3`  
-   Description: Plays when the user correctly guesses the word.  
-   Requirements: Celebratory sound effect.
-
-4. **UI Interaction SFX**  
-   Filename: `sounds/tick.mp3`  
-   Description: Plays during UI interactions (buttons, etc.).  
-   Requirements: Very short, subtle click sound.
-
-## Implementation Details
-
-1. All audio files should be:
-   - MP3 format for broad browser compatibility
-   - Optimized for web (reasonable file size)
-   - Properly licensed for use in the game
-
-2. Audio files should be placed in a `sounds` directory at the root of the project.
-
-3. The audio system is designed to:
-   - Preload all audio files at startup
-   - Respect the user's audio preferences
-   - Continue the drawing music from where it left off when switching back from guessing mode
-   - Support fade-in and fade-out effects for smooth transitions
-   - Adjust volume levels independently for music and sound effects
-
-## Recommended Audio Levels
-
-- Drawing Music: 40% volume (0.4)
-- Guessing Music: 40% volume (0.4)
-- Correct SFX: 50% volume (0.5)
-- Incorrect SFX: 60% volume (0.6)
-- Victory SFX: 70% volume (0.7)
-- Tick SFX: 30% volume (0.3)
+2. **Sound Effects**:
+   - `correct.mp3` - A short, pleasant sound for correct letter entries
+   - `incorrect.mp3` - A negative feedback sound for incorrect guesses
+   - `completion.mp3` - A celebratory sound for completing a puzzle
+   - `tick.mp3` - A subtle click sound for UI interactions
+   - `guess.mp3` - A sound effect for entering guessing mode
 
 ## Game Mechanics
 
@@ -232,6 +252,7 @@ You can adjust these parameters to fine-tune the game's behavior.
 - **Hints**: Use limited or unlimited hints to get unstuck on difficult puzzles
 - **Celebration**: Enjoy a confetti animation upon successful completion
 - **Achievements**: Earn special stamps and badges for skilled play
+- **Audio Feedback**: Immersive audio experience enhances gameplay
 
 ## Anticipation Builder
 
@@ -272,6 +293,7 @@ Potential future enhancements could include:
 - Multiplayer mode for collaborative drawing/guessing
 - Achievement system
 - More customization options
+- Additional music tracks and sound effects
 
 ## Credits
 

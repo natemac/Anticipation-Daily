@@ -64,22 +64,23 @@ function initTouchHandling() {
     }
 }
 
-// Handle begin button click
-function handleBeginButtonClick() {
-    if (!GameState.gameStarted) {
-        if (typeof startGame === 'function') {
-            // Forward to gameLogic.startDrawing()
-            startDrawing();
-        }
-    } else {
-        UI.enterGuessMode();
-    }
-}
-
 // Handle back button click
 function handleBackButtonClick() {
-    if (typeof endGame === 'function') {
-        WordHandler.endGame(false);
+    // Always stop music when going back to the menu, regardless of game state
+    if (typeof Audio.stopAllMusic === 'function') {
+        Audio.stopAllMusic();
+    }
+
+    // If the game has started, use the proper endGame function
+    if (GameState.gameStarted) {
+        if (typeof GameLogic.endGame === 'function') {
+            GameLogic.endGame(false);
+        }
+    } else {
+        // Even if the game hasn't started, we still need to return to the menu
+        if (typeof showMainMenu === 'function') {
+            showMainMenu();
+        }
     }
 }
 
