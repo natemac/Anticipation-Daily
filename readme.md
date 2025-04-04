@@ -17,7 +17,6 @@ The project consists of the following files:
   - `builder.css` - Styles specific to the builder tool
 - `js/`
   - `common.js` - Shared functionality between game and builder
-  - `game-data.js` - Default game data and drawings
   - `menu.js` - Menu and settings functionality
   - `builder.js` - Builder-specific logic and interactions
   - `touch-interface.js` - Touch input handling for the builder

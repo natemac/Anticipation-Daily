@@ -3,6 +3,8 @@
 import GameState from './state.js';
 import * as WordHandler from './wordHandler.js';
 import * as UI from './ui.js';
+import * as Audio from './audio.js';
+import * as GameLogic from './gameLogic.js';
 import { log } from '../game.js';
 
 // Module variables
@@ -61,6 +63,18 @@ function initTouchHandling() {
                 e.preventDefault();
             }
         }, { passive: false });
+    }
+}
+
+// Handle begin button click
+function handleBeginButtonClick() {
+    if (!GameState.gameStarted) {
+        if (typeof GameLogic.startDrawing === 'function') {
+            // Forward to gameLogic.startDrawing()
+            GameLogic.startDrawing();
+        }
+    } else {
+        UI.enterGuessMode();
     }
 }
 
