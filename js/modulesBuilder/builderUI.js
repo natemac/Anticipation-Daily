@@ -173,6 +173,7 @@ export function setMode(mode) {
         return;
     }
 
+    const prevMode = BuilderState.mode;
     BuilderState.mode = mode;
 
     const { sketchBtn, editBtn, recordBtn, previewBtn, setPointBtn, cancelPointBtn } = uiElements;
@@ -193,8 +194,13 @@ export function setMode(mode) {
             case 'sketch':
                 sketchBtn.className = 'primary-btn';
                 setPointBtn.style.display = 'block';
+                setPointBtn.disabled = false;
+                setPointBtn.style.opacity = '1';
                 setPointBtn.textContent = 'Set Point';
+
                 cancelPointBtn.style.display = 'block';
+                cancelPointBtn.disabled = false;
+                cancelPointBtn.style.opacity = '1';
                 cancelPointBtn.textContent = 'Cancel Point';
                 break;
 
@@ -202,26 +208,36 @@ export function setMode(mode) {
                 editBtn.className = 'primary-btn';
                 // In edit mode, change behavior of touch controls
                 setPointBtn.style.display = 'none';
+
                 cancelPointBtn.style.display = 'block';
+                cancelPointBtn.disabled = false;
+                cancelPointBtn.style.opacity = '1';
                 cancelPointBtn.textContent = 'Remove Point';
                 break;
 
             case 'record':
                 recordBtn.className = 'primary-btn';
 
-                // FIX: Always show Set Point button, but enable it only when recording
+                // FIX: Always show both buttons in record mode
                 setPointBtn.style.display = 'block';
                 cancelPointBtn.style.display = 'block';
 
+                // If coming from sketch mode to record mode (not already recording)
                 if (!BuilderState.isCurrentlyRecording) {
-                    // Disable the Set Point button if not recording
+                    // Disable both buttons if not recording
                     setPointBtn.disabled = true;
                     setPointBtn.style.opacity = '0.5';
+
+                    cancelPointBtn.disabled = true;
+                    cancelPointBtn.style.opacity = '0.5';
                 } else {
-                    // Enable it when recording
+                    // Enable both buttons when recording
                     setPointBtn.disabled = false;
                     setPointBtn.style.opacity = '1';
                     setPointBtn.textContent = 'Set Point';
+
+                    cancelPointBtn.disabled = false;
+                    cancelPointBtn.style.opacity = '1';
                     cancelPointBtn.textContent = 'Cancel Point';
                 }
                 break;
@@ -256,6 +272,7 @@ export function setMode(mode) {
     BuilderState.touch.previewLine = null;
     uiElements.touchIndicator.style.display = 'none';
 
+    // Immediately redraw canvas after mode change
     redrawCanvas();
 }
 

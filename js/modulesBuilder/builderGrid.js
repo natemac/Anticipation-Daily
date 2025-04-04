@@ -1,7 +1,7 @@
 // builderGrid.js - Handles grid and dot operations for the Anticipation Builder
 
 import BuilderState, { GRID_SIZE, MIN_DRAW_GRID, MAX_DRAW_GRID } from './builderState.js';
-import { showEdgeWarning } from './builderRenderer.js';
+import { showEdgeWarning, redrawCanvas } from './builderRenderer.js';
 
 // Find the nearest grid point to coordinates
 export function findNearestGridPoint(x, y) {
@@ -71,7 +71,7 @@ export function updateTouchIndicator(touchIndicator, positionDisplay, x, y) {
 
     // Set the hover point for drawing
     BuilderState.hoveredGridPoint = gridPoint;
-    
+
     return gridPoint;
 }
 
@@ -104,10 +104,10 @@ export function addLine(fromIndex, toIndex) {
                 BuilderState.recording.sequence.push({ from: fromIndex, to: toIndex });
             }
         }
-        
+
         return newLine;
     }
-    
+
     return null;
 }
 
@@ -155,6 +155,9 @@ export function deleteDotAndConnectedLines(dotIndex) {
     BuilderState.touch.pendingPoint = null;
     BuilderState.touch.tempPoint = null;
     BuilderState.touch.previewLine = null;
+
+    // Immediately redraw canvas to reflect changes
+    redrawCanvas();
 }
 
 // Handle setting a point
@@ -246,6 +249,9 @@ export function handleSetPoint(touchIndicator) {
         }
     }
 
+    // Immediately redraw canvas to show solid line instead of dotted preview line
+    redrawCanvas();
+
     return gridPoint;
 }
 
@@ -260,6 +266,11 @@ export function handleCancelPoint(touchIndicator) {
 
             if (dotIndex !== -1) {
                 deleteDotAndConnectedLines(dotIndex);
+
+                // Immediately hide touch indicator
+                if (touchIndicator) {
+                    touchIndicator.style.display = 'none';
+                }
             }
         }
     } else if ((BuilderState.mode === 'sketch') ||
@@ -273,5 +284,8 @@ export function handleCancelPoint(touchIndicator) {
         if (touchIndicator) {
             touchIndicator.style.display = 'none';
         }
+
+        // Immediately redraw to remove the dotted line
+        redrawCanvas();
     }
 }

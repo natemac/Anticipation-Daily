@@ -16,10 +16,18 @@ export function startRecording(recordBtn, recordingIndicator) {
 
     // Make sure the Set Point button is enabled and visible during active recording
     const setPointBtn = document.getElementById('setPointBtn');
+    const cancelPointBtn = document.getElementById('cancelPointBtn');
+
     if (setPointBtn) {
         setPointBtn.style.display = 'block';
         setPointBtn.disabled = false;
         setPointBtn.style.opacity = '1';
+    }
+
+    if (cancelPointBtn) {
+        cancelPointBtn.style.display = 'block';
+        cancelPointBtn.disabled = false;
+        cancelPointBtn.style.opacity = '1';
     }
 
     console.log('Recording started');
@@ -38,13 +46,21 @@ export function stopRecording(recordBtn, recordingIndicator, setPointBtn) {
     recordBtn.classList.remove('secondary-btn');
     recordBtn.classList.add('tertiary-btn');
 
-    // Keep in record mode but with record button inactive
-    // (user must explicitly switch to Sketch to edit)
+    // Keep in record mode but with both buttons disabled when not recording
+    const cancelPointBtn = document.getElementById('cancelPointBtn');
+
     if (setPointBtn) {
-        // Keep the button visible but disabled when not recording
+        // Keep the Set Point button visible but disabled when not recording
         setPointBtn.style.display = 'block';
         setPointBtn.disabled = true;
         setPointBtn.style.opacity = '0.5';
+    }
+
+    if (cancelPointBtn) {
+        // Also keep Cancel Point button visible but disabled when not recording
+        cancelPointBtn.style.display = 'block';
+        cancelPointBtn.disabled = true;
+        cancelPointBtn.style.opacity = '0.5';
     }
 
     console.log('Recording stopped. Sequence:', BuilderState.recording.sequence);
