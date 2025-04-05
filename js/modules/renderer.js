@@ -1,27 +1,38 @@
-// renderer.js - Minimal defensive version
+// renderer.js - Fixed module that avoids temporal dead zone issues
 
 import GameState from './state.js';
 import { log } from '../game.js';
 
-// Module variables
-let canvas = null;
-let ctx = null;
-let confettiCanvas = null;
-let confettiCtx = null;
+// Create a module-level object to store references instead of using top-level variables
+// This avoids temporal dead zone issues with lexical declarations
+const CanvasRefs = {
+    canvas: null,
+    ctx: null,
+    confettiCanvas: null,
+    confettiCtx: null,
+    initialized: false
+};
 
 // Initialize the renderer
 function init() {
+    log("Initializing renderer module");
+
     // Get canvas element
-    canvas = document.getElementById('gameCanvas');
+    CanvasRefs.canvas = document.getElementById('gameCanvas');
 
     // Exit if canvas not found
-    if (!canvas) {
-        console.error("Canvas element not found");
+    if (!CanvasRefs.canvas) {
+        console.error("Canvas element not found during initialization");
         return false;
     }
 
     // Get context
-    ctx = canvas.getContext('2d');
+    try {
+        CanvasRefs.ctx = CanvasRefs.canvas.getContext('2d');
+    } catch (e) {
+        console.error("Error getting canvas context:", e);
+        return false;
+    }
 
     // Set up confetti canvas
     createConfettiCanvas();
@@ -29,49 +40,67 @@ function init() {
     // Initialize canvas size
     resizeCanvas();
 
+    // Mark as initialized
+    CanvasRefs.initialized = true;
+
+    log("Renderer initialized successfully");
     return true;
 }
 
-// Safely get canvas
+// Safely get canvas - avoids creating a new variable
 function getCanvas() {
-    if (!canvas) {
-        canvas = document.getElementById('gameCanvas');
+    if (!CanvasRefs.canvas) {
+        CanvasRefs.canvas = document.getElementById('gameCanvas');
+        if (CanvasRefs.canvas && !CanvasRefs.ctx) {
+            try {
+                CanvasRefs.ctx = CanvasRefs.canvas.getContext('2d');
+            } catch (e) {
+                console.error("Error getting canvas context:", e);
+            }
+        }
     }
-    return canvas;
+    return CanvasRefs.canvas;
 }
 
 // Create confetti canvas
 function createConfettiCanvas() {
-    confettiCanvas = document.createElement('canvas');
-    confettiCanvas.id = 'confettiCanvas';
-    confettiCanvas.style.position = 'absolute';
-    confettiCanvas.style.top = '0';
-    confettiCanvas.style.left = '0';
-    confettiCanvas.style.width = '100%';
-    confettiCanvas.style.height = '100%';
-    confettiCanvas.style.pointerEvents = 'none';
-    confettiCanvas.style.zIndex = '100';
-    confettiCanvas.style.display = 'none';
+    try {
+        CanvasRefs.confettiCanvas = document.createElement('canvas');
+        CanvasRefs.confettiCanvas.id = 'confettiCanvas';
+        CanvasRefs.confettiCanvas.style.position = 'absolute';
+        CanvasRefs.confettiCanvas.style.top = '0';
+        CanvasRefs.confettiCanvas.style.left = '0';
+        CanvasRefs.confettiCanvas.style.width = '100%';
+        CanvasRefs.confettiCanvas.style.height = '100%';
+        CanvasRefs.confettiCanvas.style.pointerEvents = 'none';
+        CanvasRefs.confettiCanvas.style.zIndex = '100';
+        CanvasRefs.confettiCanvas.style.display = 'none';
 
-    const gameScreen = document.querySelector('.game-screen');
-    if (gameScreen) {
-        gameScreen.appendChild(confettiCanvas);
-        confettiCtx = confettiCanvas.getContext('2d');
+        const gameScreen = document.querySelector('.game-screen');
+        if (gameScreen) {
+            gameScreen.appendChild(CanvasRefs.confettiCanvas);
+            CanvasRefs.confettiCtx = CanvasRefs.confettiCanvas.getContext('2d');
+        }
+    } catch (error) {
+        console.error("Error creating confetti canvas:", error);
     }
 }
 
 // Resize canvas
 function resizeCanvas() {
-    const canvasElement = getCanvas();
-    if (!canvasElement || !ctx) return;
+    const canvas = getCanvas();
+    if (!canvas || !CanvasRefs.ctx) {
+        log("Cannot resize canvas - not initialized");
+        return;
+    }
 
     try {
-        const container = canvasElement.parentElement;
+        const container = canvas.parentElement;
         if (!container) return;
 
         const rect = container.getBoundingClientRect();
-        canvasElement.width = rect.width;
-        canvasElement.height = rect.height;
+        canvas.width = rect.width;
+        canvas.height = rect.height;
 
         // Reset scaling to force recalculation
         GameState.scaling = null;
@@ -79,7 +108,13 @@ function resizeCanvas() {
         // Redraw if game is active
         if (GameState.gameStarted) {
             renderFrame();
+        } else {
+            // Draw a clean background
+            CanvasRefs.ctx.fillStyle = '#ffffff';
+            CanvasRefs.ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
+
+        log(`Canvas resized to ${canvas.width}x${canvas.height}`);
     } catch (error) {
         console.error("Error resizing canvas:", error);
     }
@@ -87,16 +122,19 @@ function resizeCanvas() {
 
 // Render current frame
 function renderFrame() {
-    const canvasElement = getCanvas();
-    if (!canvasElement || !ctx) return;
+    const canvas = getCanvas();
+    if (!canvas || !CanvasRefs.ctx) {
+        log("Cannot render frame - canvas not initialized");
+        return;
+    }
 
     try {
         // Clear canvas
-        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        CanvasRefs.ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Draw white background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+        CanvasRefs.ctx.fillStyle = '#ffffff';
+        CanvasRefs.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Draw dots in easy mode
         if (GameState.difficulty === 'easy') {
@@ -112,7 +150,7 @@ function renderFrame() {
 
 // Draw dots
 function drawDots() {
-    if (!GameState.drawingData || !GameState.drawingData.dots || !ctx) return;
+    if (!GameState.drawingData || !GameState.drawingData.dots || !CanvasRefs.ctx) return;
 
     try {
         // Calculate scaling if needed
@@ -124,7 +162,8 @@ function drawDots() {
         if (!scaling) return;
 
         // Draw dots
-        const DOT_RADIUS = 5;
+        const DOT_RADIUS = GameState.CONFIG && GameState.CONFIG.DOT_RADIUS ?
+                           GameState.CONFIG.DOT_RADIUS : 5;
 
         GameState.drawingData.dots.forEach((dot, index) => {
             if (!dot) return;
@@ -133,17 +172,17 @@ function drawDots() {
             const y = (dot.y * scaling.scale) + scaling.offsetY;
 
             // Draw dot
-            ctx.fillStyle = '#333';
-            ctx.beginPath();
-            ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
-            ctx.fill();
+            CanvasRefs.ctx.fillStyle = '#333';
+            CanvasRefs.ctx.beginPath();
+            CanvasRefs.ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
+            CanvasRefs.ctx.fill();
 
             // Draw index
-            ctx.fillStyle = '#fff';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font = '8px Arial';
-            ctx.fillText(index.toString(), x, y);
+            CanvasRefs.ctx.fillStyle = '#fff';
+            CanvasRefs.ctx.textAlign = 'center';
+            CanvasRefs.ctx.textBaseline = 'middle';
+            CanvasRefs.ctx.font = '8px Arial';
+            CanvasRefs.ctx.fillText(index.toString(), x, y);
         });
     } catch (error) {
         console.error("Error drawing dots:", error);
@@ -152,7 +191,7 @@ function drawDots() {
 
 // Draw lines
 function drawLines() {
-    if (!GameState.drawingData || !GameState.drawingData.sequence || !ctx) return;
+    if (!GameState.drawingData || !GameState.drawingData.sequence || !CanvasRefs.ctx) return;
 
     try {
         // Calculate scaling if needed
@@ -164,9 +203,9 @@ function drawLines() {
         if (!scaling) return;
 
         // Draw lines
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
+        CanvasRefs.ctx.strokeStyle = '#000';
+        CanvasRefs.ctx.lineWidth = 3;
+        CanvasRefs.ctx.lineCap = 'round';
 
         for (let i = 0; i < GameState.drawingProgress; i++) {
             if (i >= GameState.drawingData.sequence.length) break;
@@ -184,10 +223,10 @@ function drawLines() {
             const toX = (to.x * scaling.scale) + scaling.offsetX;
             const toY = (to.y * scaling.scale) + scaling.offsetY;
 
-            ctx.beginPath();
-            ctx.moveTo(fromX, fromY);
-            ctx.lineTo(toX, toY);
-            ctx.stroke();
+            CanvasRefs.ctx.beginPath();
+            CanvasRefs.ctx.moveTo(fromX, fromY);
+            CanvasRefs.ctx.lineTo(toX, toY);
+            CanvasRefs.ctx.stroke();
         }
     } catch (error) {
         console.error("Error drawing lines:", error);
@@ -196,12 +235,12 @@ function drawLines() {
 
 // Calculate scaling
 function calculateScaling() {
-    const canvasElement = getCanvas();
-    if (!GameState.drawingData || !canvasElement) return;
+    const canvas = getCanvas();
+    if (!GameState.drawingData || !canvas) return;
 
     try {
-        const displayWidth = canvasElement.width;
-        const displayHeight = canvasElement.height;
+        const displayWidth = canvas.width;
+        const displayHeight = canvas.height;
 
         // Calculate scale to fit
         const size = Math.min(displayWidth, displayHeight) * 0.9;
@@ -217,55 +256,77 @@ function calculateScaling() {
             offsetY: offsetY,
             gridSize: 16
         };
+
+        log(`Scaling calculated: scale=${scale}, offset=(${offsetX},${offsetY})`);
     } catch (error) {
         console.error("Error calculating scaling:", error);
     }
 }
 
-// Render partial line for animation
+// Render partial line for animation (simplified version)
 function renderPartialLine(lineIndex, progress) {
-    // Simplified version - just do a full render for now
+    // For now, just do a full render
     renderFrame();
 }
 
 // Check canvas initialization
 function checkCanvasInitialization() {
-    if (!canvas) {
+    if (!CanvasRefs.initialized) {
+        log("Checking canvas initialization");
         init();
     }
 }
 
 // Resize confetti canvas
 function resizeConfettiCanvas() {
-    if (!confettiCanvas) return;
+    if (!CanvasRefs.confettiCanvas) return;
 
     try {
         const gameScreen = document.querySelector('.game-screen');
         if (!gameScreen) return;
 
         const rect = gameScreen.getBoundingClientRect();
-        confettiCanvas.width = rect.width;
-        confettiCanvas.height = rect.height;
+        CanvasRefs.confettiCanvas.width = rect.width;
+        CanvasRefs.confettiCanvas.height = rect.height;
     } catch (error) {
         console.error("Error resizing confetti canvas:", error);
     }
 }
 
-// Reinitialize canvas
+// FIXED: Reinitialize canvas without creating a new local 'canvas' variable
+// This avoids the temporal dead zone issue
 function reinitializeCanvas() {
-    canvas = document.getElementById('gameCanvas');
-    if (!canvas) return false;
+    log("Reinitializing canvas...");
 
-    ctx = canvas.getContext('2d');
-    resizeCanvas();
-    return true;
+    // Get a new reference without creating a new variable that shadows the module-level one
+    CanvasRefs.canvas = document.getElementById('gameCanvas');
+
+    if (!CanvasRefs.canvas) {
+        log("Cannot reinitialize - canvas element not found");
+        return false;
+    }
+
+    try {
+        CanvasRefs.ctx = CanvasRefs.canvas.getContext('2d');
+        resizeCanvas();
+        CanvasRefs.initialized = true;
+        log("Canvas reinitialized successfully");
+        return true;
+    } catch (e) {
+        console.error("Error reinitializing canvas:", e);
+        return false;
+    }
 }
 
 // Clear canvas
 function clearCanvas() {
-    if (!canvas || !ctx) return;
+    if (!CanvasRefs.canvas || !CanvasRefs.ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    try {
+        CanvasRefs.ctx.clearRect(0, 0, CanvasRefs.canvas.width, CanvasRefs.canvas.height);
+    } catch (error) {
+        console.error("Error clearing canvas:", error);
+    }
 }
 
 // Export functions
