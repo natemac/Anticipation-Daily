@@ -1,4 +1,4 @@
-// ui.js - Handles UI elements and their interactions with mobile optimizations
+// ui.js - Handles UI elements and their interactions
 
 import GameState from './state.js';
 import * as Animation from './animation.js';
@@ -11,10 +11,6 @@ import { log } from '../game.js';
 let timerDisplay, beginButton, wrongMessage, backButton, buttonTimer;
 let wordSpacesDiv, hintButton;
 let hintButtonTimeout;
-let isMobileDevice; // Track if we're on a mobile device
-let categoryDisplay; // Track the category display element
-let mobileInfoBar; // Track the mobile info bar element
-let mobileCategoryDisplay; // Track the mobile category display
 
 // Initialize UI module
 function init() {
@@ -24,26 +20,20 @@ function init() {
     wrongMessage = document.getElementById('wrongMessage');
     backButton = document.getElementById('backButton');
     buttonTimer = document.getElementById('buttonTimer');
-    categoryDisplay = document.getElementById('categoryDisplay');
-    mobileInfoBar = document.querySelector('.mobile-info-bar');
-    mobileCategoryDisplay = document.getElementById('mobileCategoryDisplay');
 
     // Set up back button event listener
     if (backButton) {
         backButton.addEventListener('click', handleBackButton);
     }
 
-    // Detect mobile devices
-    isMobileDevice = detectMobileDevice();
-
     // Create UI elements
     createWordSpacesDiv();
     createHintButton();
 
-    // Add orientation class based on current orientation
-    addOrientationClass();
+    // Add audio toggle to settings
+    addAudioToggle();
 
-    log("UI module initialized" + (isMobileDevice ? " (Mobile)" : " (Desktop)"));
+    log("UI module initialized");
 
     return {
         timerDisplay,
@@ -52,31 +42,8 @@ function init() {
         backButton,
         buttonTimer,
         wordSpacesDiv,
-        hintButton,
-        categoryDisplay
+        hintButton
     };
-}
-
-// Detect if we're on a mobile device
-function detectMobileDevice() {
-    // Improved mobile detection that doesn't misidentify desktops
-    const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const hasTouchPoints = navigator.maxTouchPoints > 0;
-    const isSmallScreen = window.innerWidth < 768;
-
-    // Only consider it mobile if it has a mobile user agent AND either touch capability or small screen
-    return isMobileUserAgent && (hasTouchPoints || isSmallScreen);
-}
-
-// Add orientation class to body
-function addOrientationClass() {
-    if (window.innerWidth > window.innerHeight) {
-        document.body.classList.add('landscape');
-        document.body.classList.remove('portrait');
-    } else {
-        document.body.classList.add('portrait');
-        document.body.classList.remove('landscape');
-    }
 }
 
 // Handle back button clicks
@@ -99,6 +66,7 @@ function createWordSpacesDiv() {
     wordSpacesDiv = document.createElement('div');
     wordSpacesDiv.id = 'wordSpacesDiv';
     wordSpacesDiv.style.width = '100%';
+    wordSpacesDiv.style.height = '60px';
     wordSpacesDiv.style.margin = '10px 0';
     wordSpacesDiv.style.textAlign = 'center';
     wordSpacesDiv.style.position = 'relative';
@@ -138,6 +106,16 @@ function createHintButton() {
     hintButton.className = 'hint-button';
     hintButton.textContent = 'Hint?';
     hintButton.style.display = 'none';
+    hintButton.style.backgroundColor = '#FFC107';
+    hintButton.style.color = '#333';
+    hintButton.style.border = 'none';
+    hintButton.style.borderRadius = '8px';
+    hintButton.style.padding = '8px 15px';
+    hintButton.style.margin = '10px 0';
+    hintButton.style.fontWeight = 'bold';
+    hintButton.style.cursor = 'pointer';
+    hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+    hintButton.style.transition = 'background-color 0.3s, transform 0.2s';
 
     // Initially disable the hint button (will enable after cooldown period)
     hintButton.disabled = true;
@@ -156,7 +134,122 @@ function createHintButton() {
     return hintButton;
 }
 
-// Update timer display
+// Add audio toggle to settings
+function addAudioToggle() {
+    // Find appropriate place to add toggle
+    const difficultyContainer = document.querySelector('.difficulty-container');
+    if (!difficultyContainer) return;
+
+    // Check if already exists
+    if (document.querySelector('.audio-container')) return;
+
+    // Create audio toggle container
+    const audioContainer = document.createElement('div');
+    audioContainer.className = 'audio-container';
+    audioContainer.style.display = 'flex';
+    audioContainer.style.flexDirection = 'column';
+    audioContainer.style.alignItems = 'center';
+    audioContainer.style.margin = '10px 0';
+
+    // Create title
+    const audioTitle = document.createElement('div');
+    audioTitle.className = 'audio-title';
+    audioTitle.textContent = 'Sound Effects';
+    audioTitle.style.marginBottom = '8px';
+    audioTitle.style.fontSize = '18px';
+    audioTitle.style.fontWeight = 'bold';
+
+    // Create toggle container
+    const toggleContainer = document.createElement('div');
+    toggleContainer.style.display = 'flex';
+    toggleContainer.style.alignItems = 'center';
+    toggleContainer.style.gap = '10px';
+
+    // Create labels and toggle
+    const offLabel = document.createElement('span');
+    offLabel.id = 'offLabel';
+    offLabel.className = 'difficulty-label';
+    offLabel.textContent = 'Off';
+
+    const onLabel = document.createElement('span');
+    onLabel.id = 'onLabel';
+    onLabel.className = 'difficulty-label';
+    onLabel.textContent = 'On';
+
+    // Create toggle switch
+    const toggleSwitch = document.createElement('label');
+    toggleSwitch.className = 'toggle-switch';
+
+    const toggleInput = document.createElement('input');
+    toggleInput.type = 'checkbox';
+    toggleInput.id = 'audioToggle';
+
+    // Set initial state from localStorage
+    toggleInput.checked = GameState.audioEnabled;
+
+    const slider = document.createElement('span');
+    slider.className = 'slider';
+
+    // Assemble toggle
+    toggleSwitch.appendChild(toggleInput);
+    toggleSwitch.appendChild(slider);
+
+    // Assemble toggle container
+    toggleContainer.appendChild(offLabel);
+    toggleContainer.appendChild(toggleSwitch);
+    toggleContainer.appendChild(onLabel);
+
+    // Assemble audio container
+    audioContainer.appendChild(audioTitle);
+    audioContainer.appendChild(toggleContainer);
+
+    // Add to page after difficulty container
+    difficultyContainer.parentNode.insertBefore(audioContainer, difficultyContainer.nextSibling);
+
+    // Add click handlers for labels
+    offLabel.addEventListener('click', function() {
+        toggleInput.checked = false;
+        toggleInput.dispatchEvent(new Event('change'));
+    });
+
+    onLabel.addEventListener('click', function() {
+        toggleInput.checked = true;
+        toggleInput.dispatchEvent(new Event('change'));
+    });
+
+    // Initial update of label styling
+    updateAudioToggleUI(toggleInput.checked);
+
+    // Add change handler to update UI
+    toggleInput.addEventListener('change', function() {
+        const enabled = this.checked;
+        updateAudioToggleUI(enabled);
+        Audio.updateAudioState(enabled);
+        GameState.toggleAudio(enabled);
+    });
+}
+
+// Update audio toggle UI
+function updateAudioToggleUI(isOn) {
+    const offLabel = document.getElementById('offLabel');
+    const onLabel = document.getElementById('onLabel');
+
+    if (!offLabel || !onLabel) return;
+
+    if (isOn) {
+        offLabel.style.opacity = '0.5';
+        offLabel.style.fontWeight = 'normal';
+        onLabel.style.opacity = '1';
+        onLabel.style.fontWeight = 'bold';
+    } else {
+        onLabel.style.opacity = '0.5';
+        onLabel.style.fontWeight = 'normal';
+        offLabel.style.opacity = '1';
+        offLabel.style.fontWeight = 'bold';
+    }
+}
+
+// Update timer display (always keep black color)
 function updateTimerDisplay() {
     if (!timerDisplay) return;
 
@@ -164,10 +257,8 @@ function updateTimerDisplay() {
     const hundredths = String(GameState.elapsedTimeHundredths).padStart(2, '0');
     timerDisplay.textContent = `${seconds}:${hundredths}`;
 
-    // Always keep timer color black unless on mobile
-    if (!isMobileDevice) {
-        timerDisplay.style.color = '#000';
-    }
+    // Always keep timer color black
+    timerDisplay.style.color = '#000';
 
     // Enable hint button after initial delay if in easy mode
     if (GameState.difficulty === 'easy' && GameState.elapsedTime >= GameState.CONFIG.HINT_COOLDOWN_TIME &&
@@ -182,7 +273,7 @@ function updateTimerDisplay() {
     }
 }
 
-// Start the guess timer
+// Start the guess timer with single color
 function startGuessTimer() {
     if (!buttonTimer || !beginButton) return;
 
@@ -513,7 +604,9 @@ function updateHintCooldown() {
     }
 }
 
-// Enter guess mode
+// Updated sections of ui.js that need to integrate with the new audio system
+
+// Enter guess mode - update to handle music transition
 function enterGuessMode() {
     log("Entering guess mode");
 
@@ -530,11 +623,6 @@ function enterGuessMode() {
 
     // Pause animation and timer
     GameState.guessMode = true;
-
-    // Update mobile info bar class
-    if (mobileInfoBar) {
-        mobileInfoBar.classList.add('guess-mode');
-    }
 
     // Start guessing music
     Audio.updateMusicForGameMode(true);
@@ -558,16 +646,32 @@ function enterGuessMode() {
 
     if (wordSpacesDiv) {
         wordSpacesDiv.style.boxShadow = '0 0 8px rgba(76, 175, 80, 0.6)';
-        // Add pulse animation class
-        wordSpacesDiv.classList.add('pulse-animation');
-        // Remove the class after animation completes
-        setTimeout(() => {
-            wordSpacesDiv.classList.remove('pulse-animation');
-        }, 1000);
     }
 
     // Update the word spaces to show empty slots
     WordHandler.updateWordSpaces();
+
+    // Add pulse animation to the word spaces div to draw attention
+    if (wordSpacesDiv) {
+        wordSpacesDiv.style.animation = 'pulse-attention 1s';
+        setTimeout(() => {
+            wordSpacesDiv.style.animation = '';
+        }, 1000);
+    }
+
+    // Add the animation if it doesn't exist
+    if (!document.getElementById('pulse-attention-style')) {
+        const style = document.createElement('style');
+        style.id = 'pulse-attention-style';
+        style.textContent = `
+            @keyframes pulse-attention {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     // Start the guess timer
     startGuessTimer();
@@ -577,21 +681,16 @@ function enterGuessMode() {
         beginButton.querySelector('span').textContent = 'Guess';
     }
 
-    // Update category display in mobile UI
-    updateMobileCategoryDisplay();
+    // Show virtual keyboard on mobile
+    updateVirtualKeyboard(true);
 }
 
-// Exit guess mode
+// Exit guess mode - update to handle music transition
 function exitGuessMode() {
     log("Exiting guess mode");
 
     // Resume animation and timer
     GameState.guessMode = false;
-
-    // Update mobile info bar class
-    if (mobileInfoBar) {
-        mobileInfoBar.classList.remove('guess-mode');
-    }
 
     // Switch back to drawing music
     Audio.updateMusicForGameMode(false);
@@ -617,14 +716,24 @@ function exitGuessMode() {
             Animation.startDrawingAnimation();
         }
     }
+
+    // Hide virtual keyboard on mobile
+    updateVirtualKeyboard(false);
 }
 
-// Update mobile category display
-function updateMobileCategoryDisplay() {
-    // Update the mobile category text
-    if (mobileCategoryDisplay) {
-        mobileCategoryDisplay.textContent = GameState.currentCategory || '';
-    }
+// Update mobile virtual keyboard visibility
+function updateVirtualKeyboard(show) {
+    const event = new CustomEvent('guessmode-changed', {
+        detail: {
+            active: show
+        }
+    });
+    document.dispatchEvent(event);
+}
+
+// Reposition UI elements after resize
+function repositionElements() {
+    // Nothing to reposition yet
 }
 
 // Show/hide hint button
@@ -687,18 +796,6 @@ function showError(message) {
     }
 }
 
-// Reposition UI elements after resize
-function repositionElements() {
-    // Update orientation class
-    addOrientationClass();
-
-    // Additional repositioning logic can be added here if needed
-    if (mobileInfoBar && GameState.guessMode) {
-        // Ensure the info bar is in guess mode
-        mobileInfoBar.classList.add('guess-mode');
-    }
-}
-
 // Export public functions
 export {
     init,
@@ -709,12 +806,11 @@ export {
     hideMessages,
     enterGuessMode,
     exitGuessMode,
+    updateVirtualKeyboard,
     repositionElements,
     toggleHintButton,
     enableHintButton,
     startHintCooldown,
     showError,
-    updateHintButtonCounter,
-    updateMobileCategoryDisplay,
-    detectMobileDevice
+    updateHintButtonCounter
 };

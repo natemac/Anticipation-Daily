@@ -34,12 +34,8 @@ function startDrawingAnimation() {
 
     GameState.lastFrameTime = 0;
 
-    // Initial render - use safe render function
-    try {
-        Renderer.safeRenderFrame();
-    } catch (e) {
-        console.error("Error in initial render:", e);
-    }
+    // Initial render
+    Renderer.renderFrame();
 
     // Track timing
     let accumulatedTime = 0;
@@ -66,12 +62,7 @@ function startDrawingAnimation() {
             // Draw the next line when enough time has passed
             if (GameState.drawingProgress < totalSequenceLength) {
                 GameState.drawingProgress++;
-
-                try {
-                    Renderer.safeRenderFrame();
-                } catch (e) {
-                    console.error("Error rendering animation frame:", e);
-                }
+                Renderer.renderFrame();
 
                 // Play sound for each new line drawn
                 Audio.playSound('tick');
@@ -135,13 +126,6 @@ function startPointToPointAnimation() {
     // Reset lastFrameTime for new animation
     GameState.lastFrameTime = 0;
 
-    // Ensure canvas is ready - use getCanvas to check
-    const canvas = Renderer.getCanvas();
-    if (!canvas) {
-        log("Cannot start animation - canvas not available");
-        return;
-    }
-
     // Animation function
     function animateLine(timestamp) {
         // Initialize timing on first frame
@@ -177,19 +161,9 @@ function startPointToPointAnimation() {
 
         // Apply scaling to get screen coordinates
         if (!GameState.scaling) {
-            try {
-                Renderer.calculateScaling();
-            } catch (e) {
-                console.error("Error calculating scaling:", e);
-                return;
-            }
+            Renderer.calculateScaling();
         }
         const scaling = GameState.scaling;
-        if (!scaling) {
-            // Retry on next frame if scaling is not ready
-            GameState.animationId = requestAnimationFrame(animateLine);
-            return;
-        }
 
         const fromX = (fromDot.x * scaling.scale) + scaling.offsetX;
         const fromY = (fromDot.y * scaling.scale) + scaling.offsetY;
@@ -223,11 +197,7 @@ function startPointToPointAnimation() {
 
             // If all lines are drawn, finish animation
             if (currentLineIndex >= totalSequenceLength) {
-                try {
-                    Renderer.safeRenderFrame(); // Draw final state
-                } catch (e) {
-                    console.error("Error rendering final frame:", e);
-                }
+                Renderer.renderFrame(); // Draw final state
                 GameState.pendingAnimationStart = false;
                 log("Point-to-point animation complete");
                 return;
@@ -235,12 +205,7 @@ function startPointToPointAnimation() {
         }
 
         // Render current animation state
-        try {
-            Renderer.renderPartialLine(currentLineIndex, lineProgress);
-        } catch (e) {
-            console.error("Error rendering partial line:", e);
-            // Continue animation despite error
-        }
+        Renderer.renderPartialLine(currentLineIndex, lineProgress);
 
         // Continue animation if game is still active and not in guess mode
         if (currentLineIndex < totalSequenceLength &&
@@ -263,19 +228,11 @@ function startConfettiAnimation() {
     const confettiCanvas = document.getElementById('confettiCanvas');
     const confettiCtx = confettiCanvas?.getContext('2d');
 
-    if (!confettiCanvas || !confettiCtx) {
-        log("Cannot start confetti - canvas not available");
-        return;
-    }
+    if (!confettiCanvas || !confettiCtx) return;
 
     // Show and resize canvas
     confettiCanvas.style.display = 'block';
-
-    try {
-        Renderer.resizeConfettiCanvas();
-    } catch (e) {
-        console.error("Error resizing confetti canvas:", e);
-    }
+    Renderer.resizeConfettiCanvas();
 
     // Initialize particles
     GameState.showConfetti = true;

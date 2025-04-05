@@ -1,4 +1,4 @@
-// input.js - Handles keyboard and touch input with mobile improvements
+// input.js - Handles keyboard and touch input
 
 import GameState from './state.js';
 import * as WordHandler from './wordHandler.js';
@@ -10,7 +10,6 @@ import { log } from '../game.js';
 // Module variables
 let beginButton, backButton, canvas;
 let virtualKeyboard;
-let isDeviceMobile; // Renamed variable to avoid conflict
 
 // Initialize the input handling
 function init() {
@@ -19,33 +18,16 @@ function init() {
     backButton = document.getElementById('backButton');
     canvas = document.getElementById('gameCanvas');
 
-    // Detect if we're on a mobile device
-    isDeviceMobile = UI.detectMobileDevice();
-
-    // Add mobile class to game container if on mobile
-    if (isDeviceMobile) {
-        const gameContainer = document.querySelector('.game-container');
-        if (gameContainer) {
-            gameContainer.classList.add('drawing-mode');
-        }
-    }
-
     // Set up input event listeners
     setupEventListeners();
 
     // Initialize touch handling for mobile
     initTouchHandling();
 
-    // Create virtual keyboard if needed
-    if (isDeviceMobile) {
-        // We'll rely on the mobile keyboard created in UI module
-        log("Using mobile keyboard UI");
-    } else {
-        // Create standard virtual keyboard for non-mobile
-        createVirtualKeyboard();
-    }
+    // Create virtual keyboard
+    createVirtualKeyboard();
 
-    log("Input module initialized " + (isDeviceMobile ? "(Mobile)" : "(Desktop)"));
+    log("Input module initialized");
 
     return true;
 }
@@ -62,10 +44,8 @@ function setupEventListeners() {
         backButton.addEventListener('click', handleBackButtonClick);
     }
 
-    // Key press events for direct typing (desktop only)
-    if (!isDeviceMobile) {
-        document.addEventListener('keydown', handleKeyPress);
-    }
+    // Key press events for direct typing
+    document.addEventListener('keydown', handleKeyPress);
 
     // Add touch event to canvas (with passive: false to prevent scrolling)
     if (canvas) {
@@ -75,7 +55,7 @@ function setupEventListeners() {
 
 // Initialize touch handling for mobile
 function initTouchHandling() {
-    if (isDeviceMobile && canvas) {
+    if (isMobileDevice() && canvas) {
         canvas.addEventListener('touchstart', function(e) {
             if (GameState.gameStarted && !GameState.guessMode) {
                 // Enter guess mode on tap if game is in progress
@@ -92,15 +72,6 @@ function handleBeginButtonClick() {
         if (typeof GameLogic.startDrawing === 'function') {
             // Forward to gameLogic.startDrawing()
             GameLogic.startDrawing();
-
-            // If mobile, add drawing mode class
-            if (isDeviceMobile) {
-                const gameContainer = document.querySelector('.game-container');
-                if (gameContainer) {
-                    gameContainer.classList.add('drawing-mode');
-                    gameContainer.classList.remove('guess-mode');
-                }
-            }
         }
     } else {
         UI.enterGuessMode();
@@ -123,16 +94,6 @@ function handleBackButtonClick() {
         // Even if the game hasn't started, we still need to return to the menu
         if (typeof showMainMenu === 'function') {
             showMainMenu();
-        }
-    }
-
-    // Remove mobile-specific classes
-    if (isDeviceMobile) {
-        document.body.classList.remove('mobile-play');
-        const gameContainer = document.querySelector('.game-container');
-        if (gameContainer) {
-            gameContainer.classList.remove('guess-mode');
-            gameContainer.classList.remove('drawing-mode');
         }
     }
 }
@@ -173,10 +134,10 @@ function handleCanvasTouch(e) {
     }
 }
 
-// Create virtual keyboard for non-mobile devices
+// Create virtual keyboard for mobile devices
 function createVirtualKeyboard() {
-    // Only create if it doesn't already exist
-    if (!document.getElementById('virtual-keyboard')) {
+    // Only create if we're on a mobile device and it doesn't already exist
+    if (!document.getElementById('virtual-keyboard') && isMobileDevice()) {
         virtualKeyboard = document.createElement('div');
         virtualKeyboard.id = 'virtual-keyboard';
         virtualKeyboard.style.display = 'none';
@@ -357,9 +318,11 @@ function createKeyboardButton(text, bgColor, textColor, minWidth, flexGrow = fal
     return button;
 }
 
-// Check if current device is mobile - Use UI module's detection
-function checkIsMobileDevice() {
-    return UI.detectMobileDevice();
+// Check if we're on a mobile device
+function isMobileDevice() {
+    return (typeof window.orientation !== 'undefined') ||
+           (navigator.userAgent.indexOf('IEMobile') !== -1) ||
+           (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 }
 
 // Export public functions
@@ -369,5 +332,5 @@ export {
     handleKeyPress,
     handleBeginButtonClick,
     handleBackButtonClick,
-    checkIsMobileDevice // Renamed export to avoid conflict
+    isMobileDevice
 };

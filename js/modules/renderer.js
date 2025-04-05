@@ -1,215 +1,469 @@
-// renderer.js - Fixed module that avoids temporal dead zone issues
+// renderer.js - Handles all canvas drawing and rendering operations
 
 import GameState from './state.js';
 import { log } from '../game.js';
 
-// Create a module-level object to store references instead of using top-level variables
-// This avoids temporal dead zone issues with lexical declarations
-const CanvasRefs = {
-    canvas: null,
-    ctx: null,
-    confettiCanvas: null,
-    confettiCtx: null,
-    initialized: false
-};
+// Module variables
+let canvas, ctx;
+let confettiCanvas, confettiCtx;
 
 // Initialize the renderer
 function init() {
-    log("Initializing renderer module");
-
     // Get canvas element
-    CanvasRefs.canvas = document.getElementById('gameCanvas');
+    canvas = document.getElementById('gameCanvas');
 
-    // Exit if canvas not found
-    if (!CanvasRefs.canvas) {
-        console.error("Canvas element not found during initialization");
-        return false;
-    }
+    // Initialize main canvas
+    initializeGameCanvas();
 
-    // Get context
-    try {
-        CanvasRefs.ctx = CanvasRefs.canvas.getContext('2d');
-    } catch (e) {
-        console.error("Error getting canvas context:", e);
-        return false;
-    }
-
-    // Set up confetti canvas
+    // Initialize confetti canvas
     createConfettiCanvas();
 
-    // Initialize canvas size
-    resizeCanvas();
-
-    // Mark as initialized
-    CanvasRefs.initialized = true;
-
-    log("Renderer initialized successfully");
-    return true;
+    return {
+        canvas,
+        ctx,
+        confettiCanvas,
+        confettiCtx
+    };
 }
 
-// Safely get canvas - avoids creating a new variable
-function getCanvas() {
-    if (!CanvasRefs.canvas) {
-        CanvasRefs.canvas = document.getElementById('gameCanvas');
-        if (CanvasRefs.canvas && !CanvasRefs.ctx) {
-            try {
-                CanvasRefs.ctx = CanvasRefs.canvas.getContext('2d');
-            } catch (e) {
-                console.error("Error getting canvas context:", e);
+// Initialize game canvas with optimized settings
+function initializeGameCanvas() {
+    log("Setting up canvas with improved initialization...");
+
+    // Get a standard 2D context with explicit options for better performance
+    ctx = canvas.getContext('2d', {
+        alpha: false,          // Disable alpha for better performance
+        desynchronized: true,  // Use desynchronized mode for better performance
+        willReadFrequently: false
+    });
+
+    // Ensure the canvas container is visible
+    const container = canvas.parentElement;
+    if (container) {
+        container.style.visibility = 'visible';
+        container.style.opacity = '1';
+    }
+
+    // Set proper dimensions immediately
+    resizeCanvas();
+
+    // Draw initial content to ensure browser initializes canvas properly
+    preRenderCanvas();
+
+    // Add a slight delay before finalizing initialization
+    setTimeout(() => {
+        // Mark canvas as ready
+        GameState.canvasReady = true;
+        log("Canvas fully initialized and ready");
+    }, 100);
+}
+
+// Create confetti canvas for successful completion
+function createConfettiCanvas() {
+    confettiCanvas = document.createElement('canvas');
+    confettiCanvas.id = 'confettiCanvas';
+    confettiCanvas.style.position = 'absolute';
+    confettiCanvas.style.top = '0';
+    confettiCanvas.style.left = '0';
+    confettiCanvas.style.width = '100%';
+    confettiCanvas.style.height = '100%';
+    confettiCanvas.style.pointerEvents = 'none';
+    confettiCanvas.style.zIndex = '100';
+    confettiCanvas.style.display = 'none';
+
+    const gameScreen = document.querySelector('.game-screen');
+    if (gameScreen) {
+        gameScreen.appendChild(confettiCanvas);
+        confettiCtx = confettiCanvas.getContext('2d');
+    }
+}
+
+// Pre-render to ensure the browser has initialized the canvas properly
+function preRenderCanvas() {
+    // Clear with white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw a border
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+    // Draw and immediately clear a temporary element to ensure rendering
+    // This forces the browser to commit the initial render
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(10, 10, 50, 50);
+    setTimeout(() => {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(10, 10, 50, 50);
+    }, 0);
+}
+
+// Resize canvas to match container with retina display support
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    if (!container) return;
+
+    // Get the container's bounding rectangle
+    const rect = container.getBoundingClientRect();
+    const displayWidth = rect.width;
+    const displayHeight = rect.height;
+
+    // Calculate device pixel ratio for high-DPI displays
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
+    // Set actual size in memory (scaled for retina)
+    canvas.width = displayWidth * devicePixelRatio;
+    canvas.height = displayHeight * devicePixelRatio;
+
+    // Scale all drawing operations by the device pixel ratio
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+
+    // Set display size (CSS pixels)
+    canvas.style.width = displayWidth + "px";
+    canvas.style.height = displayHeight + "px";
+
+    log(`Canvas resized: ${displayWidth}x${displayHeight}, ratio: ${devicePixelRatio}`);
+
+    // Reset scaling to force recalculation with new dimensions
+    GameState.scaling = null;
+
+    // Resize confetti canvas if it exists
+    if (confettiCanvas) {
+        confettiCanvas.width = displayWidth * devicePixelRatio;
+        confettiCanvas.height = displayHeight * devicePixelRatio;
+        if (confettiCtx) {
+            confettiCtx.scale(devicePixelRatio, devicePixelRatio);
+        }
+    }
+
+    // If game is active, redraw content
+    if (GameState.gameStarted) {
+        renderFrame();
+    } else {
+        // Just draw a clean background if game isn't active
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, displayWidth, displayHeight);
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, displayWidth, displayHeight);
+    }
+}
+
+// Main render function for game content
+function renderFrame() {
+    if (!canvas || !ctx) return;
+
+    // Get logical size in CSS pixels
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    // Clear the entire canvas
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+    // Set white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+    // In easy mode, draw dots first
+    if (GameState.difficulty === 'easy') {
+        drawDots();
+    }
+
+    // Always draw lines based on current progress
+    drawLines();
+}
+
+// Render frame with a partially drawn line for smooth animation
+function renderPartialLine(lineIndex, progress) {
+    if (!canvas || !ctx || !GameState.drawingData) return;
+
+    // Get logical size in CSS pixels
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    // Clear the entire canvas
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+    // Set white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+    // In easy mode, draw dots first
+    if (GameState.difficulty === 'easy') {
+        drawDots();
+    }
+
+    // Draw completed lines (before the current one)
+    drawCompletedLines(lineIndex);
+
+    // Draw current line with partial progress
+    drawPartialLine(lineIndex, progress);
+}
+
+// Draw completed lines up to but not including the specified index
+function drawCompletedLines(upToIndex) {
+    if (!GameState.drawingData || !GameState.drawingData.sequence) {
+        return;
+    }
+
+    // Calculate scaling if not done yet
+    if (!GameState.scaling) {
+        calculateScaling();
+    }
+
+    const scaling = GameState.scaling;
+    const sequence = GameState.drawingData.sequence;
+    const dots = GameState.drawingData.dots;
+
+    // Draw line shadows for depth (only in easy mode)
+    if (GameState.difficulty === 'easy') {
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        for (let i = 0; i < upToIndex; i++) {
+            if (i >= sequence.length) break;
+
+            const line = sequence[i];
+            if (!line) continue;
+
+            const from = dots[line.from];
+            const to = dots[line.to];
+
+            if (!from || !to) continue;
+
+            // Apply scaling with slight offset for shadow
+            const fromX = (from.x * scaling.scale) + scaling.offsetX + 1;
+            const fromY = (from.y * scaling.scale) + scaling.offsetY + 1;
+            const toX = (to.x * scaling.scale) + scaling.offsetX + 1;
+            const toY = (to.y * scaling.scale) + scaling.offsetY + 1;
+
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+        }
+    }
+
+    // Draw the actual completed lines
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let i = 0; i < upToIndex; i++) {
+        if (i >= sequence.length) break;
+
+        const line = sequence[i];
+        if (!line) continue;
+
+        const from = dots[line.from];
+        const to = dots[line.to];
+
+        if (!from || !to) continue;
+
+        // Apply scaling
+        const fromX = (from.x * scaling.scale) + scaling.offsetX;
+        const fromY = (from.y * scaling.scale) + scaling.offsetY;
+        const toX = (to.x * scaling.scale) + scaling.offsetX;
+        const toY = (to.y * scaling.scale) + scaling.offsetY;
+
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+    }
+}
+
+// Draw a single line with partial progress for animation
+function drawPartialLine(lineIndex, progress) {
+    if (!GameState.drawingData || !GameState.drawingData.sequence ||
+        lineIndex >= GameState.drawingData.sequence.length) {
+        return;
+    }
+
+    // Calculate scaling if not done yet
+    if (!GameState.scaling) {
+        calculateScaling();
+    }
+
+    const scaling = GameState.scaling;
+    const line = GameState.drawingData.sequence[lineIndex];
+    const dots = GameState.drawingData.dots;
+
+    if (!line || !dots) return;
+
+    const from = dots[line.from];
+    const to = dots[line.to];
+
+    if (!from || !to) return;
+
+    // Apply scaling
+    const fromX = (from.x * scaling.scale) + scaling.offsetX;
+    const fromY = (from.y * scaling.scale) + scaling.offsetY;
+    const toX = (to.x * scaling.scale) + scaling.offsetX;
+    const toY = (to.y * scaling.scale) + scaling.offsetY;
+
+    // Calculate partial endpoint using progress value (0-1)
+    const currentX = fromX + (toX - fromX) * progress;
+    const currentY = fromY + (toY - fromY) * progress;
+
+    // Draw shadow for partial line (only in easy mode)
+    if (GameState.difficulty === 'easy') {
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(fromX + 1, fromY + 1);
+        ctx.lineTo(currentX + 1, currentY + 1);
+        ctx.stroke();
+    }
+
+    // Draw partial line
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(currentX, currentY);
+    ctx.stroke();
+}
+
+// Calculate scaling to match builder view
+function calculateScaling() {
+    if (!GameState.drawingData) {
+        return;
+    }
+
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    // Make the drawing fill almost the entire canvas area
+    const canvasPercentage = 0.9; // Use 90% of the canvas area
+
+    // Calculate the maximum size while maintaining aspect ratio
+    const size = Math.min(displayWidth, displayHeight) * canvasPercentage;
+
+    // Ensure we're using a 1:1 aspect ratio as in the builder
+    const scale = size / 560; // Builder uses a 400x400 area
+
+    // Center the drawing in the canvas
+    const offsetX = (displayWidth - size) / 2;
+    const offsetY = (displayHeight - size) / 2;
+
+    GameState.scaling = {
+        scale: scale,
+        offsetX: offsetX,
+        offsetY: offsetY,
+        gridSize: 16 // Fixed 16x16 grid (17x17 points)
+    };
+
+    log(`Scaling calculated: scale=${scale}, offset=(${offsetX},${offsetY})`);
+}
+
+// Draw dots with enhanced visuals
+function drawDots() {
+    if (!GameState.drawingData || !GameState.drawingData.dots) {
+        log("No dot data to draw");
+        return;
+    }
+
+    // Calculate scaling if not done yet
+    if (!GameState.scaling) {
+        calculateScaling();
+    }
+
+    const scaling = GameState.scaling;
+    // Use the dot radius from centralized config
+    const DOT_RADIUS = GameState.CONFIG.DOT_RADIUS;
+
+    GameState.drawingData.dots.forEach((dot, index) => {
+        if (!dot) return;
+
+        // Apply scaling directly from builder coordinates
+        const x = (dot.x * scaling.scale) + scaling.offsetX;
+        const y = (dot.y * scaling.scale) + scaling.offsetY;
+
+        // Draw dot shadow for better visibility
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath();
+        ctx.arc(x + 1, y + 1, DOT_RADIUS + 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw dot
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw dot index
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '8px Arial';
+        ctx.fillText(index.toString(), x, y);
+    });
+}
+
+// Draw lines with enhanced visuals
+function drawLines() {
+    if (!GameState.drawingData || !GameState.drawingData.sequence) {
+        log("No line data to draw");
+        return;
+    }
+
+    // Calculate scaling if not done yet
+    if (!GameState.scaling) {
+        calculateScaling();
+    }
+
+    const scaling = GameState.scaling;
+
+    // Draw line shadows for depth (only in easy mode)
+    if (GameState.difficulty === 'easy') {
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        for (let i = 0; i < GameState.drawingProgress; i++) {
+            if (i < GameState.drawingData.sequence.length) {
+                const line = GameState.drawingData.sequence[i];
+                if (!line) continue;
+
+                const from = GameState.drawingData.dots[line.from];
+                const to = GameState.drawingData.dots[line.to];
+
+                if (!from || !to) continue;
+
+                // Apply scaling with slight offset for shadow
+                const fromX = (from.x * scaling.scale) + scaling.offsetX + 1;
+                const fromY = (from.y * scaling.scale) + scaling.offsetY + 1;
+                const toX = (to.x * scaling.scale) + scaling.offsetX + 1;
+                const toY = (to.y * scaling.scale) + scaling.offsetY + 1;
+
+                ctx.beginPath();
+                ctx.moveTo(fromX, fromY);
+                ctx.lineTo(toX, toY);
+                ctx.stroke();
             }
         }
     }
-    return CanvasRefs.canvas;
-}
 
-// Create confetti canvas
-function createConfettiCanvas() {
-    try {
-        CanvasRefs.confettiCanvas = document.createElement('canvas');
-        CanvasRefs.confettiCanvas.id = 'confettiCanvas';
-        CanvasRefs.confettiCanvas.style.position = 'absolute';
-        CanvasRefs.confettiCanvas.style.top = '0';
-        CanvasRefs.confettiCanvas.style.left = '0';
-        CanvasRefs.confettiCanvas.style.width = '100%';
-        CanvasRefs.confettiCanvas.style.height = '100%';
-        CanvasRefs.confettiCanvas.style.pointerEvents = 'none';
-        CanvasRefs.confettiCanvas.style.zIndex = '100';
-        CanvasRefs.confettiCanvas.style.display = 'none';
+    // Draw the actual lines
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
-        const gameScreen = document.querySelector('.game-screen');
-        if (gameScreen) {
-            gameScreen.appendChild(CanvasRefs.confettiCanvas);
-            CanvasRefs.confettiCtx = CanvasRefs.confettiCanvas.getContext('2d');
-        }
-    } catch (error) {
-        console.error("Error creating confetti canvas:", error);
-    }
-}
-
-// Resize canvas
-function resizeCanvas() {
-    const canvas = getCanvas();
-    if (!canvas || !CanvasRefs.ctx) {
-        log("Cannot resize canvas - not initialized");
-        return;
-    }
-
-    try {
-        const container = canvas.parentElement;
-        if (!container) return;
-
-        const rect = container.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-
-        // Reset scaling to force recalculation
-        GameState.scaling = null;
-
-        // Redraw if game is active
-        if (GameState.gameStarted) {
-            renderFrame();
-        } else {
-            // Draw a clean background
-            CanvasRefs.ctx.fillStyle = '#ffffff';
-            CanvasRefs.ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        log(`Canvas resized to ${canvas.width}x${canvas.height}`);
-    } catch (error) {
-        console.error("Error resizing canvas:", error);
-    }
-}
-
-// Render current frame
-function renderFrame() {
-    const canvas = getCanvas();
-    if (!canvas || !CanvasRefs.ctx) {
-        log("Cannot render frame - canvas not initialized");
-        return;
-    }
-
-    try {
-        // Clear canvas
-        CanvasRefs.ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw white background
-        CanvasRefs.ctx.fillStyle = '#ffffff';
-        CanvasRefs.ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Draw dots in easy mode
-        if (GameState.difficulty === 'easy') {
-            drawDots();
-        }
-
-        // Draw lines
-        drawLines();
-    } catch (error) {
-        console.error("Error rendering frame:", error);
-    }
-}
-
-// Draw dots
-function drawDots() {
-    if (!GameState.drawingData || !GameState.drawingData.dots || !CanvasRefs.ctx) return;
-
-    try {
-        // Calculate scaling if needed
-        if (!GameState.scaling) {
-            calculateScaling();
-        }
-
-        const scaling = GameState.scaling;
-        if (!scaling) return;
-
-        // Draw dots
-        const DOT_RADIUS = GameState.CONFIG && GameState.CONFIG.DOT_RADIUS ?
-                           GameState.CONFIG.DOT_RADIUS : 5;
-
-        GameState.drawingData.dots.forEach((dot, index) => {
-            if (!dot) return;
-
-            const x = (dot.x * scaling.scale) + scaling.offsetX;
-            const y = (dot.y * scaling.scale) + scaling.offsetY;
-
-            // Draw dot
-            CanvasRefs.ctx.fillStyle = '#333';
-            CanvasRefs.ctx.beginPath();
-            CanvasRefs.ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
-            CanvasRefs.ctx.fill();
-
-            // Draw index
-            CanvasRefs.ctx.fillStyle = '#fff';
-            CanvasRefs.ctx.textAlign = 'center';
-            CanvasRefs.ctx.textBaseline = 'middle';
-            CanvasRefs.ctx.font = '8px Arial';
-            CanvasRefs.ctx.fillText(index.toString(), x, y);
-        });
-    } catch (error) {
-        console.error("Error drawing dots:", error);
-    }
-}
-
-// Draw lines
-function drawLines() {
-    if (!GameState.drawingData || !GameState.drawingData.sequence || !CanvasRefs.ctx) return;
-
-    try {
-        // Calculate scaling if needed
-        if (!GameState.scaling) {
-            calculateScaling();
-        }
-
-        const scaling = GameState.scaling;
-        if (!scaling) return;
-
-        // Draw lines
-        CanvasRefs.ctx.strokeStyle = '#000';
-        CanvasRefs.ctx.lineWidth = 3;
-        CanvasRefs.ctx.lineCap = 'round';
-
-        for (let i = 0; i < GameState.drawingProgress; i++) {
-            if (i >= GameState.drawingData.sequence.length) break;
-
+    for (let i = 0; i < GameState.drawingProgress; i++) {
+        if (i < GameState.drawingData.sequence.length) {
             const line = GameState.drawingData.sequence[i];
             if (!line) continue;
 
@@ -218,118 +472,48 @@ function drawLines() {
 
             if (!from || !to) continue;
 
+            // Apply scaling
             const fromX = (from.x * scaling.scale) + scaling.offsetX;
             const fromY = (from.y * scaling.scale) + scaling.offsetY;
             const toX = (to.x * scaling.scale) + scaling.offsetX;
             const toY = (to.y * scaling.scale) + scaling.offsetY;
 
-            CanvasRefs.ctx.beginPath();
-            CanvasRefs.ctx.moveTo(fromX, fromY);
-            CanvasRefs.ctx.lineTo(toX, toY);
-            CanvasRefs.ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
         }
-    } catch (error) {
-        console.error("Error drawing lines:", error);
     }
 }
 
-// Calculate scaling
-function calculateScaling() {
-    const canvas = getCanvas();
-    if (!GameState.drawingData || !canvas) return;
-
-    try {
-        const displayWidth = canvas.width;
-        const displayHeight = canvas.height;
-
-        // Calculate scale to fit
-        const size = Math.min(displayWidth, displayHeight) * 0.9;
-        const scale = size / 560;
-
-        // Center drawing
-        const offsetX = (displayWidth - size) / 2;
-        const offsetY = (displayHeight - size) / 2;
-
-        GameState.scaling = {
-            scale: scale,
-            offsetX: offsetX,
-            offsetY: offsetY,
-            gridSize: 16
-        };
-
-        log(`Scaling calculated: scale=${scale}, offset=(${offsetX},${offsetY})`);
-    } catch (error) {
-        console.error("Error calculating scaling:", error);
-    }
-}
-
-// Render partial line for animation (simplified version)
-function renderPartialLine(lineIndex, progress) {
-    // For now, just do a full render
-    renderFrame();
-}
-
-// Check canvas initialization
+// Check if canvas is properly initialized after page load
 function checkCanvasInitialization() {
-    if (!CanvasRefs.initialized) {
-        log("Checking canvas initialization");
-        init();
-    }
-}
-
-// Resize confetti canvas
-function resizeConfettiCanvas() {
-    if (!CanvasRefs.confettiCanvas) return;
-
-    try {
-        const gameScreen = document.querySelector('.game-screen');
-        if (!gameScreen) return;
-
-        const rect = gameScreen.getBoundingClientRect();
-        CanvasRefs.confettiCanvas.width = rect.width;
-        CanvasRefs.confettiCanvas.height = rect.height;
-    } catch (error) {
-        console.error("Error resizing confetti canvas:", error);
-    }
-}
-
-// FIXED: Reinitialize canvas without creating a new local 'canvas' variable
-// This avoids the temporal dead zone issue
-function reinitializeCanvas() {
-    log("Reinitializing canvas...");
-
-    // Get a new reference without creating a new variable that shadows the module-level one
-    CanvasRefs.canvas = document.getElementById('gameCanvas');
-
-    if (!CanvasRefs.canvas) {
-        log("Cannot reinitialize - canvas element not found");
-        return false;
-    }
-
-    try {
-        CanvasRefs.ctx = CanvasRefs.canvas.getContext('2d');
-        resizeCanvas();
-        CanvasRefs.initialized = true;
-        log("Canvas reinitialized successfully");
-        return true;
-    } catch (e) {
-        console.error("Error reinitializing canvas:", e);
-        return false;
+    if (canvas && !GameState.canvasReady) {
+        log("Reinitializing canvas after full page load");
+        initializeGameCanvas();
     }
 }
 
 // Clear canvas
 function clearCanvas() {
-    if (!CanvasRefs.canvas || !CanvasRefs.ctx) return;
-
-    try {
-        CanvasRefs.ctx.clearRect(0, 0, CanvasRefs.canvas.width, CanvasRefs.canvas.height);
-    } catch (error) {
-        console.error("Error clearing canvas:", error);
+    if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 }
 
-// Export functions
+// Resize confetti canvas
+function resizeConfettiCanvas() {
+    if (!confettiCanvas) return;
+
+    const gameScreen = document.querySelector('.game-screen');
+    if (!gameScreen) return;
+
+    const rect = gameScreen.getBoundingClientRect();
+    confettiCanvas.width = rect.width;
+    confettiCanvas.height = rect.height;
+}
+
+// Export public functions
 export {
     init,
     renderFrame,
@@ -340,7 +524,5 @@ export {
     drawLines,
     calculateScaling,
     checkCanvasInitialization,
-    resizeConfettiCanvas,
-    reinitializeCanvas,
-    getCanvas
+    resizeConfettiCanvas
 };
