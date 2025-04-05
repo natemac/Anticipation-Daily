@@ -145,11 +145,18 @@ function startGameWithData(color, category, data) {
 
     // Ensure canvas is properly sized and clean - with improved initialization
     setTimeout(() => {
-        // First reinitialize the canvas to make sure it exists and is set up
-        Renderer.reinitializeCanvas();
+        // First make sure we're getting a fresh reference to the canvas
+        try {
+            // Always reinitialize canvas to ensure it's ready
+            Renderer.reinitializeCanvas();
 
-        // Then resize it
-        Renderer.resizeCanvas();
+            // Then use safe resize
+            Renderer.safeResizeCanvas();
+
+            log("Canvas initialized and sized for game");
+        } catch (e) {
+            console.error("Error setting up canvas:", e);
+        }
     }, 100);
 }
 
@@ -176,8 +183,12 @@ function startDrawing() {
     if (GameState.animationId) cancelAnimationFrame(GameState.animationId);
 
     // Ensure canvas is properly initialized and sized
-    Renderer.checkCanvasInitialization();
-    Renderer.resizeCanvas();
+    try {
+        Renderer.checkCanvasInitialization();
+        Renderer.safeResizeCanvas();
+    } catch (e) {
+        console.error("Error checking canvas initialization:", e);
+    }
 
     // Start the timer counting up
     startElapsedTimer();
@@ -187,7 +198,11 @@ function startDrawing() {
 
     // Draw initial state
     if (GameState.difficulty === 'easy') {
-        Renderer.drawDots();
+        try {
+            Renderer.drawDots();
+        } catch (e) {
+            console.error("Error drawing dots:", e);
+        }
     }
 
     // Always update word spaces in both easy and hard modes
@@ -195,12 +210,16 @@ function startDrawing() {
 
     // Start animation with a short delay to ensure rendering is ready
     setTimeout(() => {
-        if (GameState.CONFIG.ANIMATION_LINE_BY_LINE) {
-            Animation.startPointToPointAnimation();
-        } else {
-            Animation.startDrawingAnimation();
+        try {
+            if (GameState.CONFIG.ANIMATION_LINE_BY_LINE) {
+                Animation.startPointToPointAnimation();
+            } else {
+                Animation.startDrawingAnimation();
+            }
+        } catch (e) {
+            console.error("Error starting animation:", e);
         }
-    }, 50);
+    }, 100); // Increased from 50ms to 100ms for more safety
 }
 
 // Start the elapsed timer

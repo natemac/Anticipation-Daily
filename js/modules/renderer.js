@@ -1,4 +1,4 @@
-// renderer.js - Handles all canvas drawing and rendering operations
+// renderer.js - Handles all canvas drawing and rendering operations with defensive coding
 
 import GameState from './state.js';
 import { log } from '../game.js';
@@ -6,12 +6,17 @@ import { log } from '../game.js';
 // Module variables - initialize with null to make it clear they haven't been set yet
 let canvas = null, ctx = null;
 let confettiCanvas = null, confettiCtx = null;
+let canvasInitialized = false;
 
 // Initialize the renderer
 function init() {
     try {
+        log("Initializing renderer - defensive implementation");
+
         // Get canvas element
-        canvas = document.getElementById('gameCanvas');
+        if (!canvas) {
+            canvas = document.getElementById('gameCanvas');
+        }
 
         // Safety check - if canvas doesn't exist, log error and exit initialization
         if (!canvas) {
@@ -30,6 +35,8 @@ function init() {
         // Initialize confetti canvas
         createConfettiCanvas();
 
+        canvasInitialized = true;
+
         return {
             canvas,
             ctx,
@@ -47,58 +54,102 @@ function init() {
     }
 }
 
+// Safe canvas getter - always checks and tries to get canvas if not already set
+function getCanvas() {
+    if (!canvas) {
+        canvas = document.getElementById('gameCanvas');
+        if (canvas) {
+            log("Canvas element found and set");
+        } else {
+            log("Canvas element not found");
+        }
+    }
+    return canvas;
+}
+
 // Initialize game canvas with optimized settings
 function initializeGameCanvas() {
-    log("Setting up canvas with improved initialization...");
+    log("Setting up canvas with improved defensive initialization...");
 
     try {
+        // Ensure canvas is available
+        const canvasElement = getCanvas();
+        if (!canvasElement) {
+            log("Cannot initialize game canvas - element not found");
+            return false;
+        }
+
         // Get a standard 2D context with explicit options for better performance
-        ctx = canvas.getContext('2d', {
-            alpha: false,          // Disable alpha for better performance
-            desynchronized: true,  // Use desynchronized mode for better performance
-            willReadFrequently: false
-        });
+        try {
+            ctx = canvasElement.getContext('2d', {
+                alpha: false,          // Disable alpha for better performance
+                desynchronized: true,  // Use desynchronized mode for better performance
+                willReadFrequently: false
+            });
+        } catch (e) {
+            console.error("Error getting 2D context:", e);
+            return false;
+        }
+
+        if (!ctx) {
+            log("Could not get 2D context for canvas");
+            return false;
+        }
 
         // Ensure the canvas container is visible
-        const container = canvas.parentElement;
+        const container = canvasElement.parentElement;
         if (container) {
             container.style.visibility = 'visible';
             container.style.opacity = '1';
         }
 
         // Set proper dimensions immediately
-        resizeCanvas();
+        try {
+            safeResizeCanvas();
+        } catch (e) {
+            console.error("Error during initial canvas resize:", e);
+        }
 
         // Draw initial content to ensure browser initializes canvas properly
-        preRenderCanvas();
+        try {
+            preRenderCanvas();
+        } catch (e) {
+            console.error("Error during pre-rendering:", e);
+        }
 
         // Add a slight delay before finalizing initialization
         setTimeout(() => {
             // Mark canvas as ready
             GameState.canvasReady = true;
+            canvasInitialized = true;
             log("Canvas fully initialized and ready");
         }, 100);
+
+        return true;
     } catch (e) {
         console.error("Error initializing canvas:", e);
+        return false;
     }
 }
 
 // Create confetti canvas for successful completion
 function createConfettiCanvas() {
     try {
-        confettiCanvas = document.createElement('canvas');
-        confettiCanvas.id = 'confettiCanvas';
-        confettiCanvas.style.position = 'absolute';
-        confettiCanvas.style.top = '0';
-        confettiCanvas.style.left = '0';
-        confettiCanvas.style.width = '100%';
-        confettiCanvas.style.height = '100%';
-        confettiCanvas.style.pointerEvents = 'none';
-        confettiCanvas.style.zIndex = '100';
-        confettiCanvas.style.display = 'none';
+        if (!confettiCanvas) {
+            confettiCanvas = document.createElement('canvas');
+            confettiCanvas.id = 'confettiCanvas';
+            confettiCanvas.style.position = 'absolute';
+            confettiCanvas.style.top = '0';
+            confettiCanvas.style.left = '0';
+            confettiCanvas.style.width = '100%';
+            confettiCanvas.style.height = '100%';
+            confettiCanvas.style.pointerEvents = 'none';
+            confettiCanvas.style.zIndex = '100';
+            confettiCanvas.style.display = 'none';
+        }
 
         const gameScreen = document.querySelector('.game-screen');
-        if (gameScreen) {
+        if (gameScreen && !gameScreen.contains(confettiCanvas)) {
             gameScreen.appendChild(confettiCanvas);
             confettiCtx = confettiCanvas.getContext('2d');
         }
@@ -109,7 +160,7 @@ function createConfettiCanvas() {
 
 // Pre-render to ensure the browser has initialized the canvas properly
 function preRenderCanvas() {
-    if (!ctx) return;
+    if (!ctx || !canvas) return;
 
     try {
         // Clear with white background
@@ -136,16 +187,32 @@ function preRenderCanvas() {
     }
 }
 
-// Resize canvas to match container with retina display support
-function resizeCanvas() {
+// Safe resize canvas - handles case where canvas isn't ready yet
+function safeResizeCanvas() {
     // Check if canvas reference exists before trying to use it
-    if (!canvas || !ctx) {
-        console.log("Canvas not initialized yet, skipping resize");
+    const canvasElement = getCanvas();
+    if (!canvasElement) {
+        console.log("Canvas not available yet, skipping resize");
+        return;
+    }
+
+    // Check if context is available
+    if (!ctx) {
+        try {
+            ctx = canvasElement.getContext('2d');
+        } catch (e) {
+            console.error("Error getting 2D context during resize:", e);
+            return;
+        }
+    }
+
+    if (!ctx) {
+        console.log("Canvas context not available yet, skipping resize");
         return;
     }
 
     try {
-        const container = canvas.parentElement;
+        const container = canvasElement.parentElement;
         if (!container) return;
 
         // Get the container's bounding rectangle
@@ -157,15 +224,15 @@ function resizeCanvas() {
         const devicePixelRatio = window.devicePixelRatio || 1;
 
         // Set actual size in memory (scaled for retina)
-        canvas.width = displayWidth * devicePixelRatio;
-        canvas.height = displayHeight * devicePixelRatio;
+        canvasElement.width = displayWidth * devicePixelRatio;
+        canvasElement.height = displayHeight * devicePixelRatio;
 
         // Scale all drawing operations by the device pixel ratio
         ctx.scale(devicePixelRatio, devicePixelRatio);
 
         // Set display size (CSS pixels)
-        canvas.style.width = displayWidth + "px";
-        canvas.style.height = displayHeight + "px";
+        canvasElement.style.width = displayWidth + "px";
+        canvasElement.style.height = displayHeight + "px";
 
         log(`Canvas resized: ${displayWidth}x${displayHeight}, ratio: ${devicePixelRatio}`);
 
@@ -197,14 +264,19 @@ function resizeCanvas() {
     }
 }
 
-// Main render function for game content
-function renderFrame() {
-    if (!canvas || !ctx) return;
+// Safe render frame - ensures canvas is initialized before rendering
+function safeRenderFrame() {
+    // Get canvas and check if available
+    const canvasElement = getCanvas();
+    if (!canvasElement || !ctx) {
+        log("Canvas or context not available for rendering, skipping render");
+        return;
+    }
 
     try {
         // Get logical size in CSS pixels
-        const displayWidth = canvas.clientWidth;
-        const displayHeight = canvas.clientHeight;
+        const displayWidth = canvasElement.clientWidth;
+        const displayHeight = canvasElement.clientHeight;
 
         // Clear the entire canvas
         ctx.clearRect(0, 0, displayWidth, displayHeight);
@@ -227,12 +299,17 @@ function renderFrame() {
 
 // Render frame with a partially drawn line for smooth animation
 function renderPartialLine(lineIndex, progress) {
-    if (!canvas || !ctx || !GameState.drawingData) return;
+    // Check if canvas and context are available
+    const canvasElement = getCanvas();
+    if (!canvasElement || !ctx || !GameState.drawingData) {
+        log("Canvas or context not available for partial line rendering");
+        return;
+    }
 
     try {
         // Get logical size in CSS pixels
-        const displayWidth = canvas.clientWidth;
-        const displayHeight = canvas.clientHeight;
+        const displayWidth = canvasElement.clientWidth;
+        const displayHeight = canvasElement.clientHeight;
 
         // Clear the entire canvas
         ctx.clearRect(0, 0, displayWidth, displayHeight);
@@ -340,8 +417,9 @@ function drawCompletedLines(upToIndex) {
 
 // Draw a single line with partial progress for animation
 function drawPartialLine(lineIndex, progress) {
+    const canvasElement = getCanvas();
     if (!GameState.drawingData || !GameState.drawingData.sequence ||
-        lineIndex >= GameState.drawingData.sequence.length || !ctx) {
+        lineIndex >= GameState.drawingData.sequence.length || !ctx || !canvasElement) {
         return;
     }
 
@@ -404,13 +482,14 @@ function drawPartialLine(lineIndex, progress) {
 
 // Calculate scaling to match builder view
 function calculateScaling() {
-    if (!GameState.drawingData || !canvas) {
+    const canvasElement = getCanvas();
+    if (!GameState.drawingData || !canvasElement) {
         return;
     }
 
     try {
-        const displayWidth = canvas.clientWidth;
-        const displayHeight = canvas.clientHeight;
+        const displayWidth = canvasElement.clientWidth;
+        const displayHeight = canvasElement.clientHeight;
 
         // Make the drawing fill almost the entire canvas area
         const canvasPercentage = 0.9; // Use 90% of the canvas area
@@ -440,8 +519,9 @@ function calculateScaling() {
 
 // Draw dots with enhanced visuals
 function drawDots() {
-    if (!GameState.drawingData || !GameState.drawingData.dots || !ctx) {
-        log("No dot data to draw");
+    const canvasElement = getCanvas();
+    if (!GameState.drawingData || !GameState.drawingData.dots || !ctx || !canvasElement) {
+        log("No dot data to draw or canvas/context not available");
         return;
     }
 
@@ -490,8 +570,9 @@ function drawDots() {
 
 // Draw lines with enhanced visuals
 function drawLines() {
-    if (!GameState.drawingData || !GameState.drawingData.sequence || !ctx) {
-        log("No line data to draw");
+    const canvasElement = getCanvas();
+    if (!GameState.drawingData || !GameState.drawingData.sequence || !ctx || !canvasElement) {
+        log("No line data to draw or canvas/context not available");
         return;
     }
 
@@ -580,9 +661,10 @@ function checkCanvasInitialization() {
 
 // Clear canvas
 function clearCanvas() {
-    if (ctx) {
+    const canvasElement = getCanvas();
+    if (ctx && canvasElement) {
         try {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         } catch (error) {
             console.error("Error in clearCanvas:", error);
         }
@@ -623,17 +705,20 @@ function reinitializeCanvas() {
     return true;
 }
 
-// Export public functions
+// Export public functions - provide both regular and safe versions
 export {
     init,
-    renderFrame,
+    renderFrame: safeRenderFrame, // Use the safe version by default
+    safeRenderFrame,
     renderPartialLine,
-    resizeCanvas,
+    resizeCanvas: safeResizeCanvas, // Use the safe version by default
+    safeResizeCanvas,
     clearCanvas,
     drawDots,
     drawLines,
     calculateScaling,
     checkCanvasInitialization,
     resizeConfettiCanvas,
-    reinitializeCanvas
+    reinitializeCanvas,
+    getCanvas // Export the safe canvas getter
 };
