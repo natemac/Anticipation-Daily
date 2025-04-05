@@ -238,6 +238,12 @@ function handleFullLoad() {
 
     // Force another init check after everything loads
     setTimeout(() => {
+        // First call reinitializeCanvas for a comprehensive initialization
+        if (typeof Renderer.reinitializeCanvas === 'function') {
+            Renderer.reinitializeCanvas();
+        }
+
+        // Then do the regular checks
         Renderer.checkCanvasInitialization();
 
         // Only create virtual keyboard if we're NOT on a mobile device

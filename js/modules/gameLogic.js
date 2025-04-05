@@ -143,8 +143,12 @@ function startGameWithData(color, category, data) {
     GameState.correctLetters = [];
     GameState.currentInput = '';
 
-    // Ensure canvas is properly sized and clean
+    // Ensure canvas is properly sized and clean - with improved initialization
     setTimeout(() => {
+        // First reinitialize the canvas to make sure it exists and is set up
+        Renderer.reinitializeCanvas();
+
+        // Then resize it
         Renderer.resizeCanvas();
     }, 100);
 }
@@ -171,7 +175,8 @@ function startDrawing() {
     if (GameState.guessTimer) clearInterval(GameState.guessTimer);
     if (GameState.animationId) cancelAnimationFrame(GameState.animationId);
 
-    // Ensure canvas is properly sized
+    // Ensure canvas is properly initialized and sized
+    Renderer.checkCanvasInitialization();
     Renderer.resizeCanvas();
 
     // Start the timer counting up

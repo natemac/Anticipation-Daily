@@ -484,11 +484,18 @@ function showGameScreen() {
 
     // Force a redraw after the game screen becomes visible
     setTimeout(() => {
-        if (typeof canvas !== 'undefined' && canvas) {
-            log("Forcing canvas redraw after screen transition");
-            // Trigger proper rendering through the Renderer module
-            if (typeof renderFrame === 'function') {
-                renderFrame();
+        // Ensure canvas is initialized and ready
+        if (typeof Renderer !== 'undefined' && Renderer) {
+            log("Reinitializing canvas after screen transition");
+
+            // First reinitialize the canvas to ensure it exists
+            if (typeof Renderer.reinitializeCanvas === 'function') {
+                Renderer.reinitializeCanvas();
+            }
+
+            // Then trigger proper rendering
+            if (typeof Renderer.renderFrame === 'function') {
+                Renderer.renderFrame();
             }
         }
     }, 100);
