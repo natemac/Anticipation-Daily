@@ -159,6 +159,13 @@ The project uses a modular ES modules architecture for better organization and m
 
 ## Recent Enhancements and Fixes
 
+### Improved Game Header System
+- **Dynamic Game Header**: Added a new header that replaces the title during gameplay
+- **Category Display**: Shows the current category name in the header when playing
+- **Integrated Timer**: Relocated the timer to the header for a cleaner interface
+- **Smooth Transitions**: Properly toggles between title and header when switching screens
+- **Responsive Design**: Header adjusts properly on different screen sizes
+
 ### Builder Improvements
 - **Modular Architecture**: Refactored builder.js into a modular system with separate responsibilities
 - **Improved Touch Interface**: Fixed button visibility and behavior in different modes

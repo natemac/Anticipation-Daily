@@ -56,7 +56,7 @@
 .main-screen {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 10px; /* Reduced from 20px for better mobile fit */
     width: 100%;
 }
 
@@ -183,23 +183,23 @@
     justify-content: space-around;
     align-items: flex-start;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 10px; /* Reduced from 20px */
     width: 100%;
-    margin: 0;
+    margin: 0; /* Removed margin completely */
 }
 
 /* Adjust individual control containers */
 .difficulty-container, .audio-container {
     flex: 1;
     min-width: 200px;
-    padding: 8px;
+    padding: 8px; /* Reduced from 15px */
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
 }
 
 .difficulty-title, .audio-title {
-    margin-bottom: 8px;
-    font-size: 16px;
+    margin-bottom: 8px; /* Reduced from 15px */
+    font-size: 16px; /* Reduced from 20px */
     font-weight: bold;
     text-align: center;
 }
@@ -225,7 +225,7 @@
     width: 60px;
     min-width: 60px;
     height: 30px;
-    margin: 0 5px;
+    margin: 0 5px; /* Reduced from 10px */
 }
 
 .toggle-switch input {
@@ -268,6 +268,11 @@ input:checked + .slider {
     background-color: #2196F3;
 }
 
+/* Animation for slider transition */
+.slider, .slider:before {
+    transition: all 0.4s ease;
+}
+
 /* Ensure the slider button position is correct in both states */
 input:checked + .slider:before {
     transform: translateX(30px);
@@ -286,8 +291,8 @@ input:focus + .slider {
 .builder-button {
     display: block;
     width: 100%;
-    padding: 12px;
-    margin: 5px 0 10px 0;
+    padding: 12px; /* Reduced from 15px 20px */
+    margin: 5px 0 10px 0; /* Reduced from 10px 0 20px 0 */
     font-size: 18px;
     font-weight: bold;
     text-align: center;
@@ -302,7 +307,7 @@ input:focus + .slider {
 
 /* Game screen with proper positioning for header */
 .game-screen {
-    display: none;
+    display: none; /* It's hidden initially. We'll show it on "Begin" */
     flex-direction: column;
     align-items: center;
     width: 100%;
@@ -316,9 +321,9 @@ input:focus + .slider {
     margin: 0 0 20px 0;
     position: relative;
     border-radius: 8px;
-    overflow: visible;
-    transform: translateZ(0);
-    z-index: 1;
+    overflow: visible; /* Change from hidden to visible */
+    transform: translateZ(0); /* Re-add hardware acceleration */
+    z-index: 1; /* Add a base z-index */
 }
 
 #gameCanvas {
@@ -328,8 +333,8 @@ input:focus + .slider {
     border-radius: 8px;
     background-color: white;
     display: block;
-    position: relative;
-    z-index: 5;
+    position: relative; /* Make sure it participates in stacking context */
+    z-index: 5; /* Make sure canvas is above other elements */
 }
 
 #gameCanvas.incorrect {
@@ -370,29 +375,31 @@ input:focus + .slider {
     font-size: 20px;
     font-weight: bold;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    overflow: hidden; /* Important for the timer overlay */
 }
 
 /* Timer overlay for the button */
 #buttonTimer {
     position: absolute;
     top: 0;
-    right: 0;
+    right: 0; /* Start from right side */
     height: 100%;
-    width: 0%;
-    background-color: #cccccc;
-    opacity: 0;
-    z-index: 1;
+    width: 0%; /* Start at 0% width */
+    background-color: #cccccc; /* Gray overlay */
+    opacity: 0; /* Hidden by default */
+    z-index: 1; /* Behind the text */
     transition: opacity 0.3s;
-    pointer-events: none;
+    pointer-events: none; /* Don't block clicks */
 }
 
+/* Make sure the button text sits on top of the timer */
 #beginButton span {
     position: relative;
     z-index: 2;
-    pointer-events: none;
+    pointer-events: none; /* Ensures clicks go to the button */
 }
 
+/* Active timer state */
 #buttonTimer.active {
     opacity: 1;
 }
@@ -564,11 +571,11 @@ input:focus + .slider {
 /* Extra adjustments for very small screens */
 @media (max-width: 360px) {
     .color-grid {
-        gap: 5px;
+        gap: 5px; /* Even tighter on very small screens */
     }
 
     .difficulty-label {
-        font-size: 14px;
+        font-size: 14px; /* Smaller font for tiny screens */
     }
 
     .controls-container {
