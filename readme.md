@@ -13,7 +13,8 @@ The project consists of the following files:
 - `builder.html` - The tool for creating custom puzzles
 - `css/`
   - `common.css` - Shared styles between game and builder
-  - `game.css` - Styles specific to the main game
+  - `game-core.css` - Core layout and structure styles for the game
+  - `game-ui.css` - Interface elements and controls for the game
   - `builder.css` - Styles specific to the builder tool
 - `js/`
   - `common.js` - Shared functionality between game and builder
@@ -158,6 +159,19 @@ The project uses a modular ES modules architecture for better organization and m
    - Manages data import functionality
 
 ## Recent Enhancements and Fixes
+
+### Improved CSS Organization
+- **Split CSS Structure**: Separated game styles into two files for better organization
+  - `game-core.css`: Core layout and structure styles
+  - `game-ui.css`: Interface elements and interactive controls
+- **Enhanced Maintainability**: Better separation of concerns for easier updates
+- **Improved Performance**: Faster loading of critical layout styles
+
+### Enhanced Mobile UI
+- **Improved Touch Controls**: Modified difficulty and sound controls to remain side-by-side on all devices
+- **iOS Compatibility**: Added specific fixes for iPhone/Safari to prevent control stacking
+- **Better Category Display**: Enlarged category names and removed descriptive subtexts for cleaner UI
+- **Responsive Scaling**: Added more breakpoints for consistent display across device sizes
 
 ### Improved Game Header System
 - **Dynamic Game Header**: Added a new header that replaces the title during gameplay
