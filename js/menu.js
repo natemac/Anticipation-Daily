@@ -263,6 +263,10 @@ function updatePuzzleCompletion(color, time, guesses = 0, isHardMode = false, is
 
     // Update result overlay with enhanced styling
     const resultOverlay = document.getElementById(`${color}-result`);
+    if (!resultOverlay) {
+        console.error(`Could not find result overlay for ${color}`);
+        return;
+    }
 
     // Add CSS for the stamp effect if not already added
     addCompletionStyles();
@@ -299,7 +303,37 @@ function updatePuzzleCompletion(color, time, guesses = 0, isHardMode = false, is
         </div>
     `;
 
+    // Make sure the overlay is positioned properly
+    resultOverlay.style.position = 'absolute';
+    resultOverlay.style.top = '0';
+    resultOverlay.style.left = '0';
+    resultOverlay.style.right = '0';
+    resultOverlay.style.bottom = '0';
+    resultOverlay.style.display = 'flex';
+    resultOverlay.style.flexDirection = 'column';
+    resultOverlay.style.justifyContent = 'center';
+    resultOverlay.style.alignItems = 'center';
+    resultOverlay.style.zIndex = '10';
+    resultOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    resultOverlay.style.borderRadius = '8px';
+    resultOverlay.style.opacity = '1';
+    resultOverlay.style.pointerEvents = 'auto';
+
+    // Make sure the class is also added for CSS transitions
     resultOverlay.classList.add('visible');
+
+    // Fix any potential styling issues with the completion stats
+    const statsElement = resultOverlay.querySelector('.completion-stats');
+    if (statsElement) {
+        statsElement.style.background = 'rgba(0, 0, 0, 0.6)';
+        statsElement.style.color = 'white';
+        statsElement.style.padding = '10px 15px';
+        statsElement.style.borderRadius = '8px';
+        statsElement.style.marginTop = '10px';
+        statsElement.style.textAlign = 'center';
+        statsElement.style.width = 'auto';
+        statsElement.style.display = 'block';
+    }
 
     // Show share button if all categories completed
     if (menuState.completedCategories === 4) {
@@ -327,6 +361,7 @@ function addCompletionStyles() {
                 background-color: rgba(255,255,255,0.9);
                 margin-bottom: 15px;
                 position: relative;
+                z-index: 15;
             }
 
             /* Default stamp (red) */
@@ -388,15 +423,47 @@ function addCompletionStyles() {
                 background-color: rgba(0,0,0,0.5);
                 padding: 8px 15px;
                 border-radius: 10px;
+                z-index: 15;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
             }
 
             .stat-line {
                 margin: 5px 0;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
             }
 
             .stat-achievement {
                 color: #ffd700;
                 font-weight: bold;
+                display: block !important;
+            }
+
+            .result-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.7);
+                border-radius: 8px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 10;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s;
+            }
+
+            .result-overlay.visible {
+                opacity: 1;
+                pointer-events: auto;
+                display: flex !important;
             }
 
             @keyframes stampBounce {
@@ -413,6 +480,35 @@ function addCompletionStyles() {
             @keyframes stampGlowGold {
                 0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 15px rgba(0, 200, 83, 0.3); }
                 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 25px rgba(0, 200, 83, 0.6); }
+            }
+
+            /* Fix for menu showing completed categories */
+            .color-square .result-overlay p {
+                display: block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                color: white;
+                font-size: 16px;
+                text-align: center;
+                margin: 5px 0;
+            }
+
+            /* Force results to be visible */
+            #yellow-result, #green-result, #blue-result, #red-result {
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+            }
+
+            /* Ensure padding for stats */
+            .color-square .completion-stats {
+                margin-top: 10px;
+                padding: 10px 15px;
+                width: auto;
+                min-width: 150px;
+                text-align: center;
+                background: rgba(0,0,0,0.6);
             }
         `;
         document.head.appendChild(styleElem);
@@ -496,6 +592,26 @@ function showMainMenu() {
         canvasContainer.style.transform = 'scale(1)';
     }
 
+    // Ensure all completed overlays are visible
+    Object.keys(menuState.puzzles).forEach(color => {
+        if (menuState.puzzles[color].completed) {
+            const resultOverlay = document.getElementById(`${color}-result`);
+            if (resultOverlay) {
+                resultOverlay.classList.add('visible');
+                resultOverlay.style.display = 'flex';
+                resultOverlay.style.opacity = '1';
+
+                // Make sure the completion stats are visible
+                const statsElement = resultOverlay.querySelector('.completion-stats');
+                if (statsElement) {
+                    statsElement.style.display = 'block';
+                    statsElement.style.visibility = 'visible';
+                    statsElement.style.opacity = '1';
+                }
+            }
+        }
+    });
+
     // Show main screen
     mainScreen.style.display = 'flex';
     gameScreen.style.display = 'none';
@@ -543,6 +659,22 @@ function showGameScreen() {
     }, 100);
 }
 
+// Force update all completed puzzles (use to fix display issues)
+function refreshCompletedPuzzles() {
+    Object.keys(menuState.puzzles).forEach(color => {
+        if (menuState.puzzles[color].completed) {
+            const puzzle = menuState.puzzles[color];
+            updatePuzzleCompletion(
+                color,
+                puzzle.time,
+                puzzle.guesses,
+                puzzle.hardMode,
+                puzzle.earlyCompletion
+            );
+        }
+    });
+}
+
 // Initialize the menu when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initMenu);
 
@@ -552,5 +684,6 @@ export {
     showGameScreen,
     updatePuzzleCompletion,
     updateGameTitle,
-    shareResults
+    shareResults,
+    refreshCompletedPuzzles
 };
