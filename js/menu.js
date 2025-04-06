@@ -237,6 +237,9 @@ function updateGameTitle(category = null) {
         gameTitleElement.style.display = 'none';
         gameHeaderElement.style.display = 'flex';
         categoryDisplayElement.textContent = `Category: ${category}`;
+
+        // Log for debugging
+        console.log("Switching to game header with category:", category);
     } else {
         // Otherwise show the default title and hide game header
         gameTitleElement.style.display = 'block';
@@ -478,16 +481,35 @@ function showMainMenu() {
     gameScreen.style.display = 'none';
     document.body.style.backgroundColor = '#f5f5f5';
 
-    // Reset title to default when returning to menu
-    updateGameTitle();
+    // Show title and hide game header when returning to menu
+    const gameTitleElement = document.querySelector('.game-title');
+    const gameHeaderElement = document.getElementById('gameHeader');
+
+    if (gameTitleElement && gameHeaderElement) {
+        gameTitleElement.style.display = 'block';
+        gameHeaderElement.style.display = 'none';
+        gameTitleElement.textContent = 'Daily Anticipation';
+    }
 }
 
 function showGameScreen() {
     mainScreen.style.display = 'none';
     gameScreen.style.display = 'flex';
 
-    // Update title with current category
-    updateGameTitle(GameState.currentCategory);
+    // Get references to title and header elements
+    const gameTitleElement = document.querySelector('.game-title');
+    const gameHeaderElement = document.getElementById('gameHeader');
+    const categoryDisplayElement = document.getElementById('categoryDisplay');
+
+    // Hide the title and show the game header with category
+    if (gameTitleElement && gameHeaderElement && categoryDisplayElement && GameState.currentCategory) {
+        gameTitleElement.style.display = 'none';
+        gameHeaderElement.style.display = 'flex';
+        categoryDisplayElement.textContent = `Category: ${GameState.currentCategory}`;
+
+        // Log for debugging
+        console.log("Switching to game header with category:", GameState.currentCategory);
+    }
 
     // Force a redraw after the game screen becomes visible
     setTimeout(() => {

@@ -83,14 +83,17 @@ function startGameWithData(color, category, data) {
     // Stop any previous music
     Audio.stopAllMusic();
 
+    // Update the game title to show the current category
+    log("Setting category display: " + GameState.currentCategory);
+
+    // Call updateGameTitle explicitly
+    if (typeof updateGameTitle === 'function') {
+        updateGameTitle(GameState.currentCategory);
+    }
+
     // Switch to game screen
     if (typeof showGameScreen === 'function') {
         showGameScreen();
-    }
-
-    // Update the game title to show the current category
-    if (typeof updateGameTitle === 'function') {
-        updateGameTitle(GameState.currentCategory);
     }
 
     // Set background color based on category

@@ -12,6 +12,15 @@
     font-weight: bold;
 }
 
+/* Game container with proper structure */
+.game-container {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 /* Game header with category and timer */
 .game-header {
     display: flex;
@@ -24,6 +33,8 @@
     border-radius: 8px;
     font-weight: bold;
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 5;
 }
 
 .category-display {
@@ -32,10 +43,14 @@
     flex-grow: 1;
 }
 
-.game-container {
-    max-width: 600px;
-    margin: 0 auto;
-    width: 100%;
+/* Timer Display - updated for use in game header */
+.timer-display {
+    text-align: right;
+    font-size: 18px;
+    font-family: monospace;
+    padding: 0;
+    margin-bottom: 0;
+    background-color: transparent;
 }
 
 .main-screen {
@@ -290,22 +305,14 @@ input:focus + .slider {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
+/* Game screen with proper positioning for header */
 .game-screen {
     display: none; /* It's hidden initially. We'll show it on "Begin" */
     flex-direction: column;
     align-items: center;
     width: 100%;
     height: 100%;
-}
-
-/* Timer Display - updated for use in game header */
-.timer-display {
-    text-align: right;
-    font-size: 18px;
-    font-family: monospace;
-    padding: 0;
-    margin-bottom: 0;
-    background-color: transparent;
+    position: relative;
 }
 
 .canvas-container {
