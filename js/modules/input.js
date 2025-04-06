@@ -20,7 +20,7 @@ function init() {
     backButton = document.getElementById('backButton');
     canvas = document.getElementById('gameCanvas');
     canvasContainer = document.querySelector('.canvas-container');
-    
+
     // Store original canvas dimensions for later restoration
     if (canvasContainer) {
         canvasOriginalDimensions.width = canvasContainer.offsetWidth;
@@ -36,9 +36,38 @@ function init() {
     // Create virtual keyboard
     createVirtualKeyboard();
 
+    // Prevent scrolling on the entire document
+    preventDocumentScrolling();
+
     log("Input module initialized");
 
     return true;
+}
+
+// Prevent scrolling on the entire document
+function preventDocumentScrolling() {
+    // Prevent default touch behavior to enhance app-like feel
+    document.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+    }, { passive: false });
+
+    // Prevent scrolling with CSS
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+
+    // Prevent double-tap to zoom
+    document.addEventListener('touchend', function(e) {
+        const now = Date.now();
+        const DOUBLE_TAP_DELAY = 300;
+
+        if (window.lastTap && (now - window.lastTap) < DOUBLE_TAP_DELAY) {
+            e.preventDefault();
+        }
+
+        window.lastTap = now;
+    }, { passive: false });
 }
 
 // Set up all input event listeners
@@ -93,6 +122,9 @@ function handleBackButtonClick() {
     if (typeof Audio.stopAllMusic === 'function') {
         Audio.stopAllMusic();
     }
+
+    // Always hide keyboard when going back to menu
+    hideKeyboard();
 
     // If the game has started, use the proper endGame function
     if (GameState.gameStarted) {
@@ -158,7 +190,7 @@ function createVirtualKeyboard() {
         keyboardContainer.style.display = 'none';
         keyboardContainer.style.transition = 'transform 0.3s ease-out';
         keyboardContainer.style.transform = 'translateY(100%)';
-        
+
         // Create the keyboard itself
         virtualKeyboard = document.createElement('div');
         virtualKeyboard.id = 'virtual-keyboard';
@@ -167,7 +199,7 @@ function createVirtualKeyboard() {
         virtualKeyboard.style.boxShadow = '0 -5px 15px rgba(0,0,0,0.2)';
         virtualKeyboard.style.borderTopLeftRadius = '15px';
         virtualKeyboard.style.borderTopRightRadius = '15px';
-        
+
         // Add drag handle for better UX
         const handle = document.createElement('div');
         handle.style.width = '40px';
@@ -276,7 +308,7 @@ function createVirtualKeyboard() {
 // Add glow effect based on current category color
 function addCategoryGlow(keyElement) {
     if (!GameState.currentColor) return;
-    
+
     // Get color based on category
     let shadowColor;
     switch(GameState.currentColor) {
@@ -295,7 +327,7 @@ function addCategoryGlow(keyElement) {
         default:
             shadowColor = 'rgba(33, 150, 243, 0.6)';
     }
-    
+
     keyElement.style.boxShadow = `0 0 10px ${shadowColor}`;
 }
 
@@ -305,37 +337,31 @@ function showKeyboard() {
 
     // First make it visible but keep it off-screen
     keyboardContainer.style.display = 'block';
-    
+
     // Force a reflow to ensure the transition works
     void keyboardContainer.offsetWidth;
-    
+
     // Slide it up
     keyboardContainer.style.transform = 'translateY(0)';
-    
+
     // Adjust the canvas and word spaces
     adjustLayoutForKeyboard(true);
-    
-    // Hide physical controls that are replaced by the keyboard
-    hidePhysicalControls();
 }
 
 // Hide the keyboard with animation
 function hideKeyboard() {
     if (!keyboardContainer) return;
-    
+
     // Slide it down
     keyboardContainer.style.transform = 'translateY(100%)';
-    
+
     // After animation completes, hide it
     setTimeout(() => {
         keyboardContainer.style.display = 'none';
     }, 300);
-    
+
     // Reset canvas and word spaces
     adjustLayoutForKeyboard(false);
-    
-    // Show physical controls again
-    showPhysicalControls();
 }
 
 // Adjust layout to make room for keyboard
@@ -344,97 +370,59 @@ function adjustLayoutForKeyboard(showingKeyboard) {
     if (!canvasContainer) {
         canvasContainer = document.querySelector('.canvas-container');
     }
-    
+
     if (!wordSpacesDiv) {
         wordSpacesDiv = document.getElementById('wordSpacesDiv');
     }
-    
+
     const gameControls = document.querySelector('.game-controls');
-    
+
     if (!canvasContainer || !wordSpacesDiv || !gameControls) return;
-    
+
     if (showingKeyboard) {
         // Add keyboard-visible class to game screen for CSS adjustments
         const gameScreen = document.querySelector('.game-screen');
         if (gameScreen) {
             gameScreen.classList.add('keyboard-visible');
         }
-        
-        // Shrink canvas while maintaining aspect ratio
+
+        // Shrink canvas while maintaining aspect ratio and keeping it centered
         canvasContainer.style.transition = 'all 0.3s ease';
         canvasContainer.style.width = '80%';
-        canvasContainer.style.margin = '0 auto';
-        
-        // Move elements up to make room for keyboard
+        canvasContainer.style.margin = '0 auto 5px auto';
+
+        // Keep the Guess button visible, but adjust spacing at the bottom
         gameControls.style.marginBottom = '240px'; // Enough space for keyboard
-        
+
         // Apply bounce-up animation to word spaces
         wordSpacesDiv.style.animation = 'word-bounce-up 0.4s ease-out forwards';
-        
+
         // Make sure the animation style exists
         addKeyboardAnimationStyles();
-        
+
     } else {
         // Remove keyboard-visible class
         const gameScreen = document.querySelector('.game-screen');
         if (gameScreen) {
             gameScreen.classList.remove('keyboard-visible');
         }
-        
+
         // Restore canvas size
         canvasContainer.style.width = '100%';
         canvasContainer.style.margin = '0 0 20px 0';
-        
+
         // Reset margins
         gameControls.style.marginBottom = '0';
-        
+
         // Apply bounce-down animation to word spaces
         wordSpacesDiv.style.animation = 'word-bounce-down 0.3s ease-in forwards';
-    }
-}
-
-// Hide physical controls when virtual keyboard is showing
-function hidePhysicalControls() {
-    // Hide guess button (begin button)
-    if (beginButton) {
-        beginButton.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-        beginButton.style.opacity = '0';
-        beginButton.style.transform = 'translateY(20px)';
-        beginButton.style.pointerEvents = 'none';
-    }
-    
-    // Hide hint button
-    const hintButton = document.querySelector('.hint-button');
-    if (hintButton) {
-        hintButton.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-        hintButton.style.opacity = '0';
-        hintButton.style.transform = 'translateY(20px)';
-        hintButton.style.pointerEvents = 'none';
-    }
-}
-
-// Show physical controls when virtual keyboard is hidden
-function showPhysicalControls() {
-    // Show guess button (begin button)
-    if (beginButton) {
-        beginButton.style.opacity = '1';
-        beginButton.style.transform = 'translateY(0)';
-        beginButton.style.pointerEvents = 'auto';
-    }
-    
-    // Show hint button
-    const hintButton = document.querySelector('.hint-button');
-    if (hintButton) {
-        hintButton.style.opacity = '1';
-        hintButton.style.transform = 'translateY(0)';
-        hintButton.style.pointerEvents = 'auto';
     }
 }
 
 // Add animation styles for keyboard-related effects
 function addKeyboardAnimationStyles() {
     if (document.getElementById('keyboard-animation-styles')) return;
-    
+
     const styleElement = document.createElement('style');
     styleElement.id = 'keyboard-animation-styles';
     styleElement.textContent = `
@@ -444,23 +432,30 @@ function addKeyboardAnimationStyles() {
             70% { transform: translateY(-10px); }
             100% { transform: translateY(-12px); }
         }
-        
+
         @keyframes word-bounce-down {
             0% { transform: translateY(-12px); }
             100% { transform: translateY(0); }
         }
-        
+
         .keyboard-visible .canvas-container {
             transform: scale(0.9);
             margin-bottom: 5px !important;
         }
-        
+
         #wordSpacesDiv {
             z-index: 5;
             position: relative;
         }
+
+        /* Keep Guess button and timer visible */
+        .keyboard-visible #beginButton {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+        }
     `;
-    
+
     document.head.appendChild(styleElement);
 }
 
@@ -469,6 +464,18 @@ function isMobileDevice() {
     return (typeof window.orientation !== 'undefined') ||
            (navigator.userAgent.indexOf('IEMobile') !== -1) ||
            (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+}
+
+// Force hide the keyboard - use this when returning to menu or completing a game
+function forceHideKeyboard() {
+    if (!keyboardContainer) return;
+
+    // Immediately hide without animation
+    keyboardContainer.style.display = 'none';
+    keyboardContainer.style.transform = 'translateY(100%)';
+
+    // Reset layout
+    adjustLayoutForKeyboard(false);
 }
 
 // Export public functions
@@ -480,5 +487,6 @@ export {
     handleBackButtonClick,
     isMobileDevice,
     showKeyboard,
-    hideKeyboard
+    hideKeyboard,
+    forceHideKeyboard
 };

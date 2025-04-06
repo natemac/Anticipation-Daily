@@ -1,11 +1,11 @@
 // menu.js - Main menu and game initialization functionality
-// Updated to work with the modular architecture
+// Updated to work with the modular architecture and handle keyboard visibility
 
-// Import modules
 import GameState from './modules/state.js';
 import * as GameLogic from './modules/gameLogic.js';
 import * as UI from './modules/ui.js';
 import * as Audio from './modules/audio.js';
+import * as Input from './modules/input.js';
 
 // Menu state object
 const menuState = {
@@ -477,6 +477,26 @@ function fallbackShare(text) {
 
 // Switch between main menu and game screens
 function showMainMenu() {
+    // Always force hide keyboard when returning to menu
+    if (typeof Input.forceHideKeyboard === 'function') {
+        Input.forceHideKeyboard();
+    }
+
+    // Make sure we reset the game screen state
+    const gameScreen = document.querySelector('.game-screen');
+    if (gameScreen) {
+        gameScreen.classList.remove('keyboard-visible');
+    }
+
+    // Restore canvas size
+    const canvasContainer = document.querySelector('.canvas-container');
+    if (canvasContainer) {
+        canvasContainer.style.width = '100%';
+        canvasContainer.style.margin = '0 0 20px 0';
+        canvasContainer.style.transform = 'scale(1)';
+    }
+
+    // Show main screen
     mainScreen.style.display = 'flex';
     gameScreen.style.display = 'none';
     document.body.style.backgroundColor = '#f5f5f5';

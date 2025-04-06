@@ -4,6 +4,7 @@ import GameState from './state.js';
 import * as Animation from './animation.js';
 import * as Audio from './audio.js';
 import * as UI from './ui.js';
+import * as Input from './input.js';
 import { log } from '../game.js';
 
 // Module variables
@@ -357,6 +358,11 @@ function handleWordCompletion() {
     // Stop the guess timer
     UI.stopGuessTimer();
 
+    // Force hide the keyboard immediately
+    if (typeof Input.forceHideKeyboard === 'function') {
+        Input.forceHideKeyboard();
+    }
+
     // Success feedback
     if (wordSpacesDiv) {
         wordSpacesDiv.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.8)';
@@ -391,6 +397,11 @@ function getLetterElement(index) {
 
 // End the game and update status
 function endGame(success) {
+    // Make sure keyboard is hidden before going back to menu
+    if (typeof Input.forceHideKeyboard === 'function') {
+        Input.forceHideKeyboard();
+    }
+
     // Update menu state if successful
     if (success) {
         const time = GameState.elapsedTime + (GameState.elapsedTimeHundredths / 100);
@@ -422,6 +433,7 @@ function endGame(success) {
     // Reset game state
     GameState.gameStarted = false;
     GameState.timerActive = false;
+    GameState.guessMode = false; // Ensure guess mode is turned off
     GameState.correctLetters = []; // Clear stored correct letters
 
     // Stop timers and animations
