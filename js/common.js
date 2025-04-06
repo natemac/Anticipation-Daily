@@ -34,3 +34,45 @@ function updateTimerBar(timerBar, current, total) {
         timerBar.style.backgroundColor = '#F44336'; // Red
     }
 }
+
+// Prevent default touch behavior to enhance app-like feel
+document.addEventListener('DOMContentLoaded', function() {
+    // Prevent pull-to-refresh and other touch gestures
+    document.addEventListener('touchmove', function(e) {
+        // Allow scrolling in scrollable containers
+        if (!e.target.closest('.app-content') && !e.target.closest('.scrollable-container')) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    // Prevent double-tap to zoom
+    document.addEventListener('touchend', function(e) {
+        const now = Date.now();
+        const DOUBLE_TAP_DELAY = 300;
+
+        if (lastTap && (now - lastTap) < DOUBLE_TAP_DELAY) {
+            e.preventDefault();
+        }
+
+        lastTap = now;
+    }, { passive: false });
+
+    // Disable zoom on input fields (iOS-specific)
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+        viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    }
+
+    // Add touch-action: none to specific game elements
+    const touchElements = document.querySelectorAll('.grid-canvas, .canvas-container, .color-square');
+    touchElements.forEach(elem => {
+        if (elem) {
+            elem.style.touchAction = 'none';
+        }
+    });
+
+    // Initialize lastTap for double-tap detection
+    let lastTap = 0;
+
+    console.log('Touch handling enhancements initialized for app-like experience');
+});

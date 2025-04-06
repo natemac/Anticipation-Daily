@@ -2,61 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Anticipation Builder</title>
     <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/builder.css">
 </head>
 <body>
-    <div class="builder-title">Anticipation Builder</div>
+    <div class="app-content">
+        <div class="builder-title">Anticipation Builder</div>
 
-    <div class="builder-container">
-        <div class="mode-controls">
-            <button id="sketchBtn" class="primary-btn">Sketch</button>
-            <button id="editBtn" class="tertiary-btn">Edit</button>
-            <button id="recordBtn" class="tertiary-btn">Record</button>
-            <button id="previewBtn" class="tertiary-btn">Preview</button>
-        </div>
+        <div class="builder-container">
+            <div class="mode-controls">
+                <button id="sketchBtn" class="primary-btn">Sketch</button>
+                <button id="editBtn" class="tertiary-btn">Edit</button>
+                <button id="recordBtn" class="tertiary-btn">Record</button>
+                <button id="previewBtn" class="tertiary-btn">Preview</button>
+            </div>
 
-        <div class="grid-container">
-            <canvas id="gridCanvas" class="grid-canvas"></canvas>
-            <div class="recording-indicator">RECORDING</div>
-            <div class="position-display" id="positionDisplay">Grid: 0,0</div>
-            <div class="touch-indicator" id="touchIndicator"></div>
-        </div>
+            <div class="grid-container">
+                <canvas id="gridCanvas" class="grid-canvas"></canvas>
+                <div class="recording-indicator">RECORDING</div>
+                <div class="position-display" id="positionDisplay">Grid: 0,0</div>
+                <div class="touch-indicator" id="touchIndicator"></div>
+            </div>
 
-        <!-- Touch Controls -->
-        <div class="touch-controls">
-            <button id="setPointBtn" class="touch-btn">Set Point</button>
-            <button id="cancelPointBtn" class="touch-btn">Cancel Point</button>
-        </div>
+            <!-- Touch Controls -->
+            <div class="touch-controls">
+                <button id="setPointBtn" class="touch-btn">Set Point</button>
+                <button id="cancelPointBtn" class="touch-btn">Cancel Point</button>
+            </div>
 
-        <div class="form-row">
-            <input type="text" id="itemName" placeholder="Enter the name of the item" maxlength="30">
-        </div>
+            <div class="form-row">
+                <input type="text" id="itemName" placeholder="Enter the name of the item" maxlength="30">
+            </div>
 
-        <div class="form-row">
-            <input type="text" id="categoryName" placeholder="Enter a category name" maxlength="20">
-        </div>
+            <div class="form-row">
+                <input type="text" id="categoryName" placeholder="Enter a category name" maxlength="20">
+            </div>
 
-        <div class="button-row">
-            <button id="exportBtn" class="primary-btn">Export Drawing Data</button>
-            <div style="display: flex; gap: 10px;">
-                <button id="submitBtn" class="tertiary-btn" disabled title="Feature coming soon">Submit for Review</button>
-                <button id="shareBtn" class="tertiary-btn" disabled title="Feature coming soon">Share</button>
+            <div class="button-row">
+                <button id="exportBtn" class="primary-btn">Export Drawing Data</button>
+                <div style="display: flex; gap: 10px;">
+                    <button id="submitBtn" class="tertiary-btn" disabled title="Feature coming soon">Submit for Review</button>
+                    <button id="shareBtn" class="tertiary-btn" disabled title="Feature coming soon">Share</button>
+                </div>
+            </div>
+
+            <div class="share-code" id="shareCode">
+                <input type="text" id="shareLink" readonly>
+                <button class="tertiary-btn" id="copyBtn">Copy</button>
+            </div>
+
+            <div class="button-row" style="margin-top: 20px;">
+                <a href="index.html" class="back-to-game-btn">Back to Game</a>
             </div>
         </div>
-
-        <div class="share-code" id="shareCode">
-            <input type="text" id="shareLink" readonly>
-            <button class="tertiary-btn" id="copyBtn">Copy</button>
-        </div>
     </div>
 
-    <div class="button-row" style="margin-top: 20px;">
-        <a href="index.html" class="back-to-game-btn">Back to Game</a>
-    </div>
-    
     <!-- Preview Modal -->
     <div class="overlay" id="previewOverlay">
         <div class="modal">
