@@ -8,6 +8,29 @@
     <link rel="stylesheet" href="css/builder.css">
 </head>
 <body>
+  <script>
+      // Set a CSS class on the body based on orientation
+      function updateOrientationClass() {
+          if (window.innerWidth > window.innerHeight) {
+              document.body.classList.add('landscape');
+              document.body.classList.remove('portrait');
+          } else {
+              document.body.classList.add('portrait');
+              document.body.classList.remove('landscape');
+          }
+      }
+
+      // Add listener for orientation change
+      window.addEventListener('orientationchange', function() {
+          setTimeout(updateOrientationClass, 100);
+      });
+
+      // Add listener for resize (which happens on orientation change)
+      window.addEventListener('resize', updateOrientationClass);
+
+      // Set initial orientation class
+      updateOrientationClass();
+  </script>
     <div class="app-content">
         <div class="builder-title">Anticipation Builder</div>
 

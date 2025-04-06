@@ -9,6 +9,22 @@
     <link rel="stylesheet" href="css/game-ui.css">
 </head>
 <body>
+  <div class="rotation-overlay">
+      <button class="close-rotation-message">✕</button>
+      <svg class="rotation-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <!-- Phone outline -->
+          <rect x="35" y="10" width="30" height="50" rx="5" ry="5" stroke="#666" stroke-width="2" fill="white" />
+          <!-- Screen -->
+          <rect x="38" y="15" width="24" height="40" rx="2" ry="2" fill="#f0f0f0" />
+          <!-- Home button -->
+          <circle cx="50" cy="55" r="3" fill="#ccc" />
+          <!-- Rotation arrow -->
+          <path d="M75,35 A30,30 0 0,1 50,65" stroke="#666" stroke-width="3" fill="none" stroke-dasharray="5,3" />
+          <polygon points="50,65 45,55 55,55" fill="#666" />
+      </svg>
+      <div class="rotation-message">Oh no! We can't fit everything on your screen.</div>
+      <div class="rotation-instruction">Please rotate your device.</div>
+  </div>
     <div class="app-content">
         <div class="game-container">
             <div class="game-title">Daily Anticipation</div>

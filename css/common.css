@@ -129,157 +129,92 @@ button {
         padding: 8px 15px;
         font-size: 14px;
     }
-
+    
     .app-content {
         padding: 10px;
     }
 }
 
-/* Landscape orientation adjustments */
+/* Rotation message overlay */
+.rotation-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    z-index: 10000;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.rotation-icon {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 30px;
+    animation: rotate-animation 2s infinite ease-in-out;
+}
+
+.rotation-message {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.rotation-instruction {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+@keyframes rotate-animation {
+    0% { transform: rotate(0deg); }
+    20% { transform: rotate(0deg); }
+    60% { transform: rotate(90deg); }
+    100% { transform: rotate(90deg); }
+}
+
+/* Show overlay only in landscape mode */
 @media (orientation: landscape) {
-    /* Re-enable scrolling for landscape mode */
-    html, body {
-        position: relative;
-        overflow: auto;
-        height: auto;
-    }
-
-    /* Adjust app-content for landscape */
-    .app-content {
-        position: relative;
-        height: auto;
-        min-height: 100%;
-        padding: 15px;
-    }
-
-    /* General container adjustments */
-    .game-container, .builder-container {
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    /* Game specific landscape adjustments */
-    .color-grid {
+    .rotation-overlay {
         display: flex;
-        flex-wrap: nowrap;
-        flex-direction: row;
-        height: 150px;
-        width: 100%;
-        aspect-ratio: auto;
     }
-
-    .color-square {
-        height: 100%;
-        flex: 1;
-    }
-
-    /* Adjust title size */
-    .game-title, .builder-title {
-        font-size: 24px;
-        margin: 10px 0;
-    }
-
-    /* Make the canvas container smaller in landscape */
-    .canvas-container {
-        width: 60%;
-        margin: 0 auto;
-    }
-
-    /* Adjust control containers to be horizontal */
-    .controls-container {
-        flex-direction: row !important;
-        justify-content: center;
-        margin: 10px 0;
-    }
-
-    /* Smaller buttons in landscape */
-    .builder-button, .share-button, .back-to-game-btn {
-        max-width: 400px;
-        margin: 5px auto;
-    }
-
-    /* Game screen specific adjustments */
-    .game-screen {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .game-screen .canvas-container {
-        margin-right: 20px;
-    }
-
-    .game-screen .game-controls {
-        width: 30%;
-        min-width: 200px;
-        align-self: center;
-    }
-
-    /* Word spaces adjustments */
-    #wordSpacesDiv {
-        width: 100%;
-        order: -1;
-        margin-bottom: 10px;
-    }
-
-    /* Grid container for builder */
-    .grid-container {
-        width: 60%;
-        margin: 0 auto;
-    }
-
-    /* Adjust back button positioning */
-    .back-button {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-    }
-}
-
-/* Specific adjustments for very wide screens */
-@media (orientation: landscape) and (min-width: 1024px) {
-    .color-grid {
-        height: 180px;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .canvas-container, .grid-container {
-        width: 50%;
-    }
-}
-
-/* Specific adjustments for small landscape screens (like older phones) */
-@media (orientation: landscape) and (max-height: 450px) {
+    
+    /* Show app content in portrait only */
     .app-content {
-        padding: 10px;
+        display: none;
     }
+}
 
-    .color-grid {
-        height: 120px;
+/* Add a close button */
+.close-rotation-message {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 50%;
+}
+
+.close-rotation-message:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Tablet devices and desktops should not show the rotation message */
+@media (min-width: 768px) {
+    .rotation-overlay {
+        display: none !important;
     }
-
-    .game-title, .builder-title {
-        font-size: 20px;
-        margin: 5px 0;
-    }
-
-    /* Reduce padding to save space */
-    .game-container, .builder-container {
-        padding: 10px;
-    }
-
-    /* Make controls more compact */
-    .controls-container {
-        gap: 5px;
-    }
-
-    /* Smaller forms and buttons */
-    .form-row {
-        margin-bottom: 8px;
-    }
-
-    .form-row input {
-        padding: 6px;
+    
+    .app-content {
+        display: block !important;
     }
 }
