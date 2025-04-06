@@ -10,7 +10,7 @@ import { log } from '../game.js';
 
 // Module variables
 let timerDisplay, beginButton, wrongMessage, backButton, buttonTimer;
-let wordSpacesDiv, hintButton;
+let wordSpacesDiv, hintButton, buttonContainer;
 let hintButtonTimeout;
 
 // Initialize UI module
@@ -29,6 +29,7 @@ function init() {
 
     // Create UI elements
     createWordSpacesDiv();
+    createButtonContainer();
     createHintButton();
 
     // Add audio toggle to settings
@@ -43,7 +44,8 @@ function init() {
         backButton,
         buttonTimer,
         wordSpacesDiv,
-        hintButton
+        hintButton,
+        buttonContainer
     };
 }
 
@@ -68,7 +70,7 @@ function createWordSpacesDiv() {
     wordSpacesDiv.id = 'wordSpacesDiv';
     wordSpacesDiv.style.width = '100%';
     wordSpacesDiv.style.minHeight = '60px';
-    wordSpacesDiv.style.margin = '10px 0';
+    wordSpacesDiv.style.margin = '15px 0'; // Even padding
     wordSpacesDiv.style.textAlign = 'center';
     wordSpacesDiv.style.position = 'relative';
     wordSpacesDiv.style.backgroundColor = 'white';
@@ -94,6 +96,42 @@ function createWordSpacesDiv() {
     return wordSpacesDiv;
 }
 
+// Create button container for side-by-side layout
+function createButtonContainer() {
+    // Check if already exists
+    if (document.getElementById('gameButtonContainer')) {
+        buttonContainer = document.getElementById('gameButtonContainer');
+        return buttonContainer;
+    }
+
+    // Create container for buttons
+    buttonContainer = document.createElement('div');
+    buttonContainer.id = 'gameButtonContainer';
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.width = '100%';
+    buttonContainer.style.justifyContent = 'space-between';
+    buttonContainer.style.gap = '10px';
+    buttonContainer.style.margin = '15px 0'; // Even padding
+
+    // Find the game controls div
+    const gameControlsDiv = document.querySelector('.game-controls');
+
+    if (gameControlsDiv) {
+        // Move the beginButton into our container once the DOM is fully loaded
+        setTimeout(() => {
+            const beginButton = document.getElementById('beginButton');
+            if (beginButton && beginButton.parentNode === gameControlsDiv) {
+                beginButton.style.margin = '0';
+                beginButton.style.flex = '1';
+                buttonContainer.appendChild(beginButton);
+                gameControlsDiv.appendChild(buttonContainer);
+            }
+        }, 0);
+    }
+
+    return buttonContainer;
+}
+
 // Create hint button
 function createHintButton() {
     // Check if already exists
@@ -111,12 +149,13 @@ function createHintButton() {
     hintButton.style.color = '#333';
     hintButton.style.border = 'none';
     hintButton.style.borderRadius = '8px';
-    hintButton.style.padding = '8px 15px';
-    hintButton.style.margin = '10px 0';
+    hintButton.style.padding = '12px 15px'; // Match beginButton
+    hintButton.style.margin = '0'; // Adjusted for side-by-side layout
     hintButton.style.fontWeight = 'bold';
     hintButton.style.cursor = 'pointer';
     hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
     hintButton.style.transition = 'background-color 0.3s, transform 0.2s, opacity 0.3s';
+    hintButton.style.flex = '1'; // Equal width in flex container
 
     // Initially disable the hint button (will enable after cooldown period)
     hintButton.disabled = true;
@@ -126,10 +165,15 @@ function createHintButton() {
     // Add event listener
     hintButton.addEventListener('click', useHint);
 
-    // Add to game controls
-    const gameControlsDiv = document.querySelector('.game-controls');
-    if (gameControlsDiv) {
-        gameControlsDiv.appendChild(hintButton);
+    // Add to button container instead of game controls
+    if (buttonContainer) {
+        buttonContainer.appendChild(hintButton);
+    } else {
+        // Fallback to old behavior
+        const gameControlsDiv = document.querySelector('.game-controls');
+        if (gameControlsDiv) {
+            gameControlsDiv.appendChild(hintButton);
+        }
     }
 
     return hintButton;
@@ -749,6 +793,11 @@ function toggleHintButton(show) {
 
     // Update display based on show parameter
     hintButton.style.display = show ? 'block' : 'none';
+
+    // Also show/hide the button container for consistent space
+    if (buttonContainer) {
+        buttonContainer.style.display = show ? 'flex' : 'block';
+    }
 
     // Reset hint button state
     if (show) {
