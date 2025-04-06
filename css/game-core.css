@@ -1,0 +1,200 @@
+/* game-core.css - Core layout and structure styles */
+
+:root {
+    --yellow-color: #FFD700;
+    --green-color: #4CAF50;
+    --blue-color: #2196F3;
+    --red-color: #F44336;
+}
+
+.game-title {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+/* Game container with proper structure */
+.game-container {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Game header with category and timer */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 5;
+}
+
+.category-display {
+    text-align: left;
+    font-size: 18px;
+    flex-grow: 1;
+}
+
+/* Timer Display - updated for use in game header */
+.timer-display {
+    text-align: right;
+    font-size: 18px;
+    font-family: monospace;
+    padding: 0;
+    margin-bottom: 0;
+    background-color: transparent;
+}
+
+.main-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.color-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    aspect-ratio: 1/1;
+    width: 100%;
+}
+
+/* Updated color square styling */
+.color-square {
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%);
+    overflow: hidden;
+}
+
+/* Enlarge category name */
+.color-square h3 {
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    font-size: 24px; /* Increased from 18px */
+    text-align: center;
+    margin: 0; /* Remove margin since we're removing the description */
+    padding: 10px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* Hide the category description paragraph */
+.color-square p {
+    display: none; /* Hide instead of removing to maintain compatibility */
+}
+
+/* Add hover effect */
+.color-square:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Add active effect when pressed */
+.color-square:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.yellow {
+    background-color: var(--yellow-color);
+}
+
+.green {
+    background-color: var(--green-color);
+}
+
+.blue {
+    background-color: var(--blue-color);
+}
+
+.red {
+    background-color: var(--red-color);
+}
+
+/* Game screen with proper positioning for header */
+.game-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.canvas-container {
+    width: 100%;
+    aspect-ratio: 1/1;
+    margin: 0 0 20px 0;
+    position: relative;
+    border-radius: 8px;
+    overflow: visible;
+    transform: translateZ(0);
+    z-index: 1;
+}
+
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background-color: white;
+    display: block;
+    position: relative;
+    z-index: 5;
+}
+
+#gameCanvas.incorrect {
+    background-color: rgba(255, 0, 0, 0.2);
+}
+
+/* Core responsive layout */
+@media (max-width: 600px) {
+    .color-square h3 {
+        font-size: 20px;
+    }
+    
+    .game-title {
+        font-size: 24px;
+    }
+
+    .game-header {
+        padding: 8px 10px;
+        margin-bottom: 10px;
+    }
+
+    .category-display, .timer-display {
+        font-size: 16px;
+    }
+}
+
+/* Extra adjustments for very small screens */
+@media (max-width: 380px) {
+    .color-grid {
+        gap: 5px;
+    }
+    
+    .color-square h3 {
+        font-size: 18px;
+    }
+}
