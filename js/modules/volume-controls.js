@@ -112,7 +112,7 @@ function addVolumeButton() {
     volumeButton.id = 'volumeSettingsButton';
     volumeButton.textContent = '🔊 Settings';
     volumeButton.className = 'tertiary-btn';
-    volumeButton.style.padding = '8px 15px';
+    volumeButton.style.padding = '5px 5px';
     volumeButton.style.fontSize = '14px';
 
     // Add click handler
