@@ -112,6 +112,7 @@ function createButtonContainer() {
     buttonContainer.style.justifyContent = 'space-between';
     buttonContainer.style.gap = '10px';
     buttonContainer.style.margin = '15px 0'; // Even padding
+    buttonContainer.style.flexDirection = 'row'; // Ensure left-to-right layout
 
     // Find the game controls div
     const gameControlsDiv = document.querySelector('.game-controls');
@@ -156,6 +157,7 @@ function createHintButton() {
     hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
     hintButton.style.transition = 'background-color 0.3s, transform 0.2s, opacity 0.3s';
     hintButton.style.flex = '1'; // Takes up 1/3 of the container when beginButton has flex: 2
+    hintButton.style.order = '2'; // Explicitly set to second position (right)
 
     // Initially disable the hint button (will enable after cooldown period)
     hintButton.disabled = true;
@@ -167,7 +169,17 @@ function createHintButton() {
 
     // Add to button container instead of game controls
     if (buttonContainer) {
-        buttonContainer.appendChild(hintButton);
+        // Make sure to append in the correct order for left-to-right layout
+        // The buttonContainer may already have the beginButton as first child
+        if (buttonContainer.children.length === 0) {
+            // Container is empty - we'll wait for the beginButton to be added first
+            setTimeout(() => {
+                buttonContainer.appendChild(hintButton); // Add hint button second
+            }, 10);
+        } else {
+            // Container already has beginButton - add hint button after it
+            buttonContainer.appendChild(hintButton);
+        }
     } else {
         // Fallback to old behavior
         const gameControlsDiv = document.querySelector('.game-controls');
