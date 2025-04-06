@@ -69,6 +69,7 @@
     width: 100%;
 }
 
+/* Updated color square styling */
 .color-square {
     border-radius: 8px;
     display: flex;
@@ -78,23 +79,39 @@
     cursor: pointer;
     padding: 15px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
     background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%);
     overflow: hidden;
 }
 
+/* Enlarge category name */
 .color-square h3 {
     color: white;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    font-size: 18px;
-    margin-bottom: 8px;
+    font-size: 24px; /* Increased from 18px */
+    text-align: center;
+    margin: 0; /* Remove margin since we're removing the description */
+    padding: 10px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
 }
 
+/* Hide the category description paragraph */
 .color-square p {
-    color: white;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    font-size: 14px;
+    display: none; /* Hide instead of removing to maintain compatibility */
+}
+
+/* Add hover effect */
+.color-square:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Add active effect when pressed */
+.color-square:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .yellow {
@@ -177,24 +194,29 @@
     100% { transform: scale(1) rotate(-15deg); opacity: 0.9; }
 }
 
-/* Controls container for side-by-side layout */
+/* Controls container for side-by-side layout - enhanced for iPhone */
 .controls-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: nowrap; /* Prevent wrapping to keep controls side by side */
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: stretch !important;
+    flex-wrap: nowrap !important; /* Prevent wrapping to keep controls side by side */
     gap: 8px;
     width: 100%;
-    margin: 0;
+    margin: 0 auto;
+    max-width: 600px;
 }
 
-/* Adjust individual control containers */
+/* Adjust individual control containers - enhanced for iPhone */
 .difficulty-container, .audio-container {
-    flex: 1;
-    width: 50%; /* Force equal width */
+    flex: 1 0 45% !important; /* Force flex basis */
+    max-width: 48% !important; /* Prevent from growing too much */
+    min-width: 0 !important; /* Allow shrinking if needed */
     padding: 6px;
+    margin: 0 !important;
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
+    overflow: hidden; /* Prevent content overflow */
 }
 
 .difficulty-title, .audio-title {
@@ -202,13 +224,15 @@
     font-size: 14px;
     font-weight: bold;
     text-align: center;
+    white-space: nowrap;
 }
 
 .slider-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
+    min-width: 0;
 }
 
 .difficulty-label {
@@ -217,6 +241,7 @@
     transition: opacity 0.3s, font-weight 0.3s;
     user-select: none;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .toggle-switch {
@@ -503,16 +528,22 @@ input:focus + .slider {
 
 /* Responsive layout adjustments */
 @media (max-width: 600px) {
+    .color-square h3 {
+        font-size: 20px;
+    }
+
     .controls-container {
-        /* Keep side-by-side layout */
-        flex-direction: row;
-        justify-content: space-between;
+        /* Ensure side-by-side layout on Safari/iOS */
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         gap: 5px;
     }
 
     .difficulty-container, .audio-container {
-        /* Keep half width to maintain side-by-side */
-        width: 50%;
+        /* Force half-width on Safari/iOS */
+        flex: 1 0 45% !important;
+        min-width: 0 !important;
+        max-width: 48% !important;
     }
 
     .difficulty-title, .audio-title {
@@ -536,14 +567,6 @@ input:focus + .slider {
         font-size: 16px;
     }
 
-    .color-square h3 {
-        font-size: 16px;
-    }
-
-    .color-square p {
-        font-size: 12px;
-    }
-
     #beginButton {
         padding: 12px 0;
         font-size: 18px;
@@ -565,10 +588,14 @@ input:focus + .slider {
     }
 }
 
-/* Extra adjustments for very small screens */
-@media (max-width: 360px) {
+/* Extra adjustments for very small screens and iOS devices */
+@media (max-width: 380px) {
     .color-grid {
         gap: 5px;
+    }
+
+    .color-square h3 {
+        font-size: 18px;
     }
 
     .difficulty-title, .audio-title {
@@ -580,25 +607,40 @@ input:focus + .slider {
     }
 
     .toggle-switch {
-        width: 40px;
-        min-width: 40px;
-        height: 22px;
+        width: 36px;
+        min-width: 36px;
+        height: 20px;
     }
 
     .slider:before {
-        height: 16px;
-        width: 16px;
+        height: 14px;
+        width: 14px;
     }
 
     input:checked + .slider:before {
-        transform: translateX(18px);
+        transform: translateX(16px);
     }
 
     .controls-container {
-        gap: 5px;
+        gap: 3px;
     }
 
     .completion-stamp {
         font-size: 22px;
+    }
+}
+
+/* Safari/iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+    .controls-container {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .difficulty-container, .audio-container {
+        flex: 1 0 45% !important;
+        width: 48% !important;
+        max-width: 48% !important;
     }
 }
