@@ -400,6 +400,102 @@ function highlightHintLetter(letterElement) {
     }
 }
 
+// Add a new keyboard-related animation to a word space element
+function animateWordSpaceForKeyboard(show) {
+    const wordSpacesDiv = document.getElementById('wordSpacesDiv');
+    if (!wordSpacesDiv) return;
+    
+    // Define animation based on direction
+    const animation = show ? 'word-bounce-up 0.4s ease-out forwards' : 'word-bounce-down 0.3s ease-in forwards';
+    wordSpacesDiv.style.animation = animation;
+    
+    // Ensure animation styles exist
+    addKeyboardAnimationStyles();
+}
+
+// Add keyboard animation styles
+function addKeyboardAnimationStyles() {
+    if (document.getElementById('keyboard-animation-styles')) return;
+    
+    const styleElement = document.createElement('style');
+    styleElement.id = 'keyboard-animation-styles';
+    styleElement.textContent = `
+        @keyframes word-bounce-up {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+            70% { transform: translateY(-10px); }
+            100% { transform: translateY(-12px); }
+        }
+        
+        @keyframes word-bounce-down {
+            0% { transform: translateY(-12px); }
+            100% { transform: translateY(0); }
+        }
+        
+        @keyframes canvas-shrink {
+            0% { transform: scale(1); }
+            100% { transform: scale(0.9); }
+        }
+        
+        @keyframes canvas-expand {
+            0% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes key-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+    `;
+    
+    document.head.appendChild(styleElement);
+}
+
+// Animate a keyboard key press with category-specific effects
+function animateKeyPress(keyElement) {
+    if (!keyElement) return;
+    
+    // Get color based on current category
+    let glowColor;
+    switch(GameState.currentColor) {
+        case 'yellow':
+            glowColor = 'rgba(255, 215, 0, 0.6)';
+            break;
+        case 'green':
+            glowColor = 'rgba(76, 175, 80, 0.6)';
+            break;
+        case 'blue':
+            glowColor = 'rgba(33, 150, 243, 0.6)';
+            break;
+        case 'red':
+            glowColor = 'rgba(244, 67, 54, 0.6)';
+            break;
+        default:
+            glowColor = 'rgba(33, 150, 243, 0.6)';
+    }
+    
+    // Apply pop animation
+    keyElement.style.animation = 'key-pop 0.2s ease-out';
+    keyElement.style.boxShadow = `0 0 10px ${glowColor}`;
+    
+    // Clear animation and shadow after it completes
+    setTimeout(() => {
+        keyElement.style.animation = '';
+        keyElement.style.boxShadow = '';
+    }, 200);
+}
+
+// Update canvas for keyboard display
+function animateCanvasForKeyboard(show) {
+    const canvasContainer = document.querySelector('.canvas-container');
+    if (!canvasContainer) return;
+    
+    // Apply shrink/expand animation
+    const animation = show ? 'canvas-shrink 0.3s ease-out forwards' : 'canvas-expand 0.3s ease-in forwards';
+    canvasContainer.style.animation = animation;
+}
+
 // Export public functions
 export {
     init,
@@ -409,5 +505,9 @@ export {
     animateConfetti,
     cancelAnimations,
     pulseElement,
-    highlightHintLetter
+    highlightHintLetter,
+    animateWordSpaceForKeyboard,
+    animateKeyPress,
+    animateCanvasForKeyboard,
+    addKeyboardAnimationStyles
 };

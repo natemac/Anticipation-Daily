@@ -5,6 +5,7 @@ import * as Animation from './animation.js';
 import * as Audio from './audio.js';
 import * as WordHandler from './wordHandler.js';
 import * as GameLogic from './gameLogic.js';
+import * as Input from './input.js';
 import { log } from '../game.js';
 
 // Module variables
@@ -66,7 +67,7 @@ function createWordSpacesDiv() {
     wordSpacesDiv = document.createElement('div');
     wordSpacesDiv.id = 'wordSpacesDiv';
     wordSpacesDiv.style.width = '100%';
-    wordSpacesDiv.style.height = '60px';
+    wordSpacesDiv.style.minHeight = '60px';
     wordSpacesDiv.style.margin = '10px 0';
     wordSpacesDiv.style.textAlign = 'center';
     wordSpacesDiv.style.position = 'relative';
@@ -115,7 +116,7 @@ function createHintButton() {
     hintButton.style.fontWeight = 'bold';
     hintButton.style.cursor = 'pointer';
     hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-    hintButton.style.transition = 'background-color 0.3s, transform 0.2s';
+    hintButton.style.transition = 'background-color 0.3s, transform 0.2s, opacity 0.3s';
 
     // Initially disable the hint button (will enable after cooldown period)
     hintButton.disabled = true;
@@ -606,7 +607,7 @@ function updateHintCooldown() {
 
 // Updated sections of ui.js that need to integrate with the new audio system
 
-// Enter guess mode - update to handle music transition
+// Enter guess mode - update to handle music transition and keyboard display
 function enterGuessMode() {
     log("Entering guess mode");
 
@@ -681,11 +682,11 @@ function enterGuessMode() {
         beginButton.querySelector('span').textContent = 'Guess';
     }
 
-    // Show virtual keyboard on mobile
+    // Show virtual keyboard on mobile and adjust layout
     updateVirtualKeyboard(true);
 }
 
-// Exit guess mode - update to handle music transition
+// Exit guess mode - update to handle music transition and keyboard removal
 function exitGuessMode() {
     log("Exiting guess mode");
 
@@ -717,7 +718,7 @@ function exitGuessMode() {
         }
     }
 
-    // Hide virtual keyboard on mobile
+    // Hide virtual keyboard on mobile and restore layout
     updateVirtualKeyboard(false);
 }
 
