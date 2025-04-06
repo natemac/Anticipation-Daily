@@ -12,6 +12,26 @@
     font-weight: bold;
 }
 
+/* Game header with category and timer */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.category-display {
+    text-align: left;
+    font-size: 18px;
+    flex-grow: 1;
+}
+
 .game-container {
     max-width: 600px;
     margin: 0 auto;
@@ -278,17 +298,14 @@ input:focus + .slider {
     height: 100%;
 }
 
-/* Timer Display */
+/* Timer Display - updated for use in game header */
 .timer-display {
-    width: 100%;
-    text-align: center;
-    font-size: 28px;
-    font-weight: bold;
+    text-align: right;
+    font-size: 18px;
     font-family: monospace;
-    padding: 10px 0;
-    margin-bottom: 10px;
-    background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    padding: 0;
+    margin-bottom: 0;
+    background-color: transparent;
 }
 
 .canvas-container {
@@ -501,6 +518,15 @@ input:focus + .slider {
         font-size: 24px;
     }
 
+    .game-header {
+        padding: 8px 10px;
+        margin-bottom: 10px;
+    }
+
+    .category-display, .timer-display {
+        font-size: 16px;
+    }
+
     .color-square h3 {
         font-size: 16px;
     }
@@ -512,10 +538,6 @@ input:focus + .slider {
     .difficulty-label {
         font-size: 18px;
         padding: 5px;
-    }
-
-    .timer-display {
-        font-size: 24px;
     }
 
     #beginButton {

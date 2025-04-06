@@ -8,9 +8,13 @@
     <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
-    <div class="game-title">Daily Anticipation</div>
-
     <div class="game-container">
+        <div class="game-title">Daily Anticipation</div>
+        <div class="game-header" id="gameHeader" style="display: none;">
+            <div class="category-display" id="categoryDisplay">Category: </div>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+        </div>
+
         <div class="main-screen">
             <div class="color-grid">
                 <div class="color-square yellow" data-color="yellow" data-category="Travel">
@@ -79,9 +83,6 @@
         </div>
 
         <div class="game-screen">
-            <!-- New timer display that counts up -->
-            <div class="timer-display" id="timerDisplay">00:00</div>
-
             <div class="canvas-container">
                 <canvas id="gameCanvas"></canvas>
             </div>

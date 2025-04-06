@@ -227,13 +227,20 @@ async function loadCategoryData() {
 // Update game title based on current state
 function updateGameTitle(category = null) {
     const gameTitleElement = document.querySelector('.game-title');
-    if (!gameTitleElement) return;
+    const gameHeaderElement = document.getElementById('gameHeader');
+    const categoryDisplayElement = document.getElementById('categoryDisplay');
+
+    if (!gameTitleElement || !gameHeaderElement || !categoryDisplayElement) return;
 
     if (category && GameState.gameStarted) {
-        // If in game and category is provided, show the category name
-        gameTitleElement.textContent = category;
+        // If in game and category is provided, switch to game header layout
+        gameTitleElement.style.display = 'none';
+        gameHeaderElement.style.display = 'flex';
+        categoryDisplayElement.textContent = `Category: ${category}`;
     } else {
-        // Otherwise show the default title
+        // Otherwise show the default title and hide game header
+        gameTitleElement.style.display = 'block';
+        gameHeaderElement.style.display = 'none';
         gameTitleElement.textContent = 'Daily Anticipation';
     }
 }
