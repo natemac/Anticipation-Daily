@@ -129,7 +129,7 @@ button {
         padding: 8px 15px;
         font-size: 14px;
     }
-    
+
     .app-content {
         padding: 10px;
     }
@@ -171,10 +171,10 @@ button {
 }
 
 @keyframes rotate-animation {
-    0% { transform: rotate(0deg); }
-    20% { transform: rotate(0deg); }
-    60% { transform: rotate(90deg); }
-    100% { transform: rotate(90deg); }
+    0% { transform: rotate(90deg); }
+    20% { transform: rotate(90deg); }
+    60% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
 }
 
 /* Show overlay only in landscape mode */
@@ -182,7 +182,7 @@ button {
     .rotation-overlay {
         display: flex;
     }
-    
+
     /* Show app content in portrait only */
     .app-content {
         display: none;
@@ -213,7 +213,7 @@ button {
     .rotation-overlay {
         display: none !important;
     }
-    
+
     .app-content {
         display: block !important;
     }
