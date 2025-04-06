@@ -3,14 +3,14 @@
 This project recreates the classic Nintendo game "Anticipation" as a modern web application, consisting of two main components:
 
 1. **Anticipation Game** (`index.html`) - A daily puzzle game similar to Wordle
-2. **Anticipation Builder** (`anticipation-builder.html`) - A tool for creating custom puzzles
+2. **Anticipation Builder** (`builder.html`) - A tool for creating custom puzzles
 
 ## Project Structure
 
 The project consists of the following files:
 
 - `index.html` - The main game players interact with
-- `anticipation-builder.html` - The tool for creating custom puzzles
+- `builder.html` - The tool for creating custom puzzles
 - `css/`
   - `common.css` - Shared styles between game and builder
   - `game.css` - Styles specific to the main game
