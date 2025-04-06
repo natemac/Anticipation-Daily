@@ -110,7 +110,7 @@ function addVolumeButton() {
     // Create volume button
     const volumeButton = document.createElement('button');
     volumeButton.id = 'volumeSettingsButton';
-    volumeButton.textContent = '🔊 Volume Settings';
+    volumeButton.textContent = '🔊 Settings';
     volumeButton.className = 'tertiary-btn';
     volumeButton.style.padding = '8px 15px';
     volumeButton.style.fontSize = '14px';
