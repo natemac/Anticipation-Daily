@@ -155,7 +155,7 @@ function createHintButton() {
     hintButton.style.cursor = 'pointer';
     hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
     hintButton.style.transition = 'background-color 0.3s, transform 0.2s, opacity 0.3s';
-    hintButton.style.flex = '1'; // Equal width in flex container
+    hintButton.style.flex = '1'; // Takes up 1/3 of the container when beginButton has flex: 2
 
     // Initially disable the hint button (will enable after cooldown period)
     hintButton.disabled = true;
@@ -797,6 +797,12 @@ function toggleHintButton(show) {
     // Also show/hide the button container for consistent space
     if (buttonContainer) {
         buttonContainer.style.display = show ? 'flex' : 'block';
+
+        // Make sure the beginButton takes up 2/3 of the space when the hint button is showing
+        const beginButton = document.getElementById('beginButton');
+        if (beginButton) {
+            beginButton.style.flex = show ? '2' : '1';
+        }
     }
 
     // Reset hint button state
