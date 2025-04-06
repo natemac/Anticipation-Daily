@@ -12,10 +12,10 @@
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
-    margin: 0 auto; /* Center the container */
+    margin: 0 auto;
 }
 
-/* Touch indicator (red circle for touch position) */
+/* Touch indicator */
 .touch-indicator {
     position: absolute;
     width: 20px;
@@ -27,7 +27,7 @@
     transform: translate(-50%, -50%);
     display: none;
     z-index: 10;
-    transition: left 0.1s, top 0.1s; /* Add smooth transition for snapping */
+    transition: left 0.1s, top 0.1s;
 }
 
 /* Touch controls */
@@ -82,11 +82,11 @@
     position: relative;
     aspect-ratio: 1/1;
     width: 100%;
-    margin: 0 auto 20px auto; /* Center the grid */
+    margin: 0 auto 20px auto;
     border: 1px solid #ccc;
     touch-action: none;
     background-color: white;
-    max-width: 600px; /* Limit width on larger screens */
+    max-width: 600px;
 }
 
 .grid-canvas {
