@@ -35,17 +35,55 @@ function updateTimerBar(timerBar, current, total) {
     }
 }
 
-// Prevent default touch behavior to enhance app-like feel
+// Enhanced touch handling with orientation support
 document.addEventListener('DOMContentLoaded', function() {
-    // Prevent pull-to-refresh and other touch gestures
+    // Track current orientation
+    let isLandscape = window.innerWidth > window.innerHeight;
+
+    // Function to update touch behavior based on orientation
+    function updateTouchBehavior() {
+        isLandscape = window.innerWidth > window.innerHeight;
+
+        // Log orientation change for debugging
+        console.log('Orientation changed. Landscape: ' + isLandscape);
+
+        // Reset body overflow based on orientation
+        if (isLandscape) {
+            document.body.style.overflow = 'auto';
+            document.documentElement.style.overflow = 'auto';
+        } else {
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        }
+    }
+
+    // Listen for orientation changes and resize events
+    window.addEventListener('orientationchange', function() {
+        // Small delay to ensure dimensions have updated
+        setTimeout(updateTouchBehavior, 100);
+    });
+
+    window.addEventListener('resize', function() {
+        // Check if orientation actually changed
+        const newIsLandscape = window.innerWidth > window.innerHeight;
+        if (newIsLandscape !== isLandscape) {
+            updateTouchBehavior();
+        }
+    });
+
+    // Prevent default touch behavior in portrait mode only
     document.addEventListener('touchmove', function(e) {
-        // Allow scrolling in scrollable containers
-        if (!e.target.closest('.app-content') && !e.target.closest('.scrollable-container')) {
-            e.preventDefault();
+        if (!isLandscape) {
+            // Allow scrolling in scrollable containers
+            if (!e.target.closest('.app-content') &&
+                !e.target.closest('.scrollable-container')) {
+                e.preventDefault();
+            }
         }
     }, { passive: false });
 
     // Prevent double-tap to zoom
+    let lastTap = 0;
     document.addEventListener('touchend', function(e) {
         const now = Date.now();
         const DOUBLE_TAP_DELAY = 300;
@@ -57,22 +95,65 @@ document.addEventListener('DOMContentLoaded', function() {
         lastTap = now;
     }, { passive: false });
 
-    // Disable zoom on input fields (iOS-specific)
-    const viewportMeta = document.querySelector('meta[name="viewport"]');
-    if (viewportMeta) {
-        viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    // Set initial state
+    updateTouchBehavior();
+
+    // Add orientation message for users
+    if (isLandscape) {
+        const orientationMsg = document.createElement('div');
+        orientationMsg.className = 'orientation-message';
+        orientationMsg.innerHTML = 'For best experience, rotate your device to portrait mode';
+        orientationMsg.style.textAlign = 'center';
+        orientationMsg.style.padding = '5px';
+        orientationMsg.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        orientationMsg.style.color = 'white';
+        orientationMsg.style.position = 'fixed';
+        orientationMsg.style.bottom = '0';
+        orientationMsg.style.left = '0';
+        orientationMsg.style.right = '0';
+        orientationMsg.style.zIndex = '9999';
+        orientationMsg.style.fontSize = '14px';
+        orientationMsg.style.fontWeight = 'bold';
+
+        document.body.appendChild(orientationMsg);
+
+        // Hide after 5 seconds
+        setTimeout(() => {
+            orientationMsg.style.opacity = '0';
+            orientationMsg.style.transition = 'opacity 0.5s';
+
+            // Remove from DOM after fade out
+            setTimeout(() => {
+                if (orientationMsg.parentNode) {
+                    orientationMsg.parentNode.removeChild(orientationMsg);
+                }
+            }, 600);
+        }, 5000);
     }
 
-    // Add touch-action: none to specific game elements
-    const touchElements = document.querySelectorAll('.grid-canvas, .canvas-container, .color-square');
-    touchElements.forEach(elem => {
-        if (elem) {
-            elem.style.touchAction = 'none';
-        }
-    });
+    console.log('Touch handling with orientation support initialized');
+});
 
-    // Initialize lastTap for double-tap detection
-    let lastTap = 0;
+// Set a CSS class on the body based on orientation
+function updateOrientationClass() {
+    if (window.innerWidth > window.innerHeight) {
+        document.body.classList.add('landscape');
+        document.body.classList.remove('portrait');
+    } else {
+        document.body.classList.add('portrait');
+        document.body.classList.remove('landscape');
+    }
+}
 
-    console.log('Touch handling enhancements initialized for app-like experience');
+// Add listener for orientation change
+window.addEventListener('orientationchange', function() {
+    setTimeout(updateOrientationClass, 100);
+});
+
+// Add listener for resize (which happens on orientation change)
+window.addEventListener('resize', updateOrientationClass);
+
+// Set initial orientation class
+document.addEventListener('DOMContentLoaded', function() {
+    updateOrientationClass();
 });
