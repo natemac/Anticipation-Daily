@@ -93,7 +93,25 @@ export function enterGuessMode() {
     // Show virtual keyboard on mobile and adjust layout
     if (typeof Input.showKeyboard === 'function') {
         Input.showKeyboard();
+
+        // Force focus on input field with a slight delay to ensure keyboard appears
+        setTimeout(() => {
+            const guessInput = document.getElementById('guessInput');
+            if (guessInput) {
+                guessInput.style.display = 'block';
+                guessInput.focus();
+                console.log("Forcing focus on guess input");
+            }
+        }, 300);
     }
+
+    // Also make sure clicking on word spaces activates keyboard
+    setTimeout(() => {
+        if (wordSpacesDiv) {
+            // Trigger a click on the word spaces div to focus the input
+            wordSpacesDiv.click();
+        }
+    }, 500);
 }
 
 // Exit guess mode - updated to handle keyboard handling

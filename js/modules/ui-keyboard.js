@@ -45,42 +45,19 @@ export function enhanceGuessInput() {
     guessInput.style.height = '1px';
     guessInput.style.width = '1px';
 
-    // Set up event listeners for input
-    guessInput.addEventListener('input', function(e) {
-        if (!GameState.guessMode) return;
+    // Remove previous event listeners to avoid duplication
+    // This is a simple approach: clone and replace the input element
+    const parent = guessInput.parentNode;
+    if (parent) {
+        const newInput = guessInput.cloneNode(true);
+        parent.replaceChild(newInput, guessInput);
+        guessInput = newInput;
+    }
 
-        // Get the last character typed
-        const lastChar = this.value.slice(-1);
+    // No need to add input event listeners here - we'll rely on the ones in input.js
+    // This module will only focus on keyboard visibility and layout adjustments
 
-        // Clear input for next character
-        this.value = '';
-
-        // Process the character if it's a letter
-        if (/[a-zA-Z]/.test(lastChar)) {
-            WordHandler.processLetter(lastChar);
-        }
-    });
-
-    // Handle special keys
-    guessInput.addEventListener('keydown', function(e) {
-        if (!GameState.guessMode) return;
-
-        if (e.key === 'Backspace') {
-            // Remove the last character
-            if (GameState.currentInput.length > 0) {
-                GameState.currentInput = GameState.currentInput.slice(0, -1);
-                WordHandler.updateWordSpaces();
-            }
-            e.preventDefault();
-        } else if (e.key === 'Enter') {
-            // Submit full word
-            if (GameState.guessMode && GameState.currentInput.length > 0) {
-                WordHandler.processFullWord();
-            }
-            e.preventDefault();
-        }
-    });
-
+    console.log("Enhanced guess input without duplicate event listeners");
     return guessInput;
 }
 
@@ -154,6 +131,7 @@ export function showKeyboard() {
     // Focus the input field to trigger the native keyboard
     setTimeout(() => {
         guessInput.focus();
+        console.log("Keyboard show requested");
     }, 100);
 }
 

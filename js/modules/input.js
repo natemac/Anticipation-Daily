@@ -13,6 +13,9 @@ let virtualKeyboard, keyboardContainer;
 let canvasContainer, wordSpacesDiv;
 let canvasOriginalDimensions = { width: 0, height: 0 };
 
+// Track if keyboard events are already setup
+let keyboardEventsInitialized = false;
+
 // Initialize the input handling
 function init() {
     // Get DOM elements
@@ -38,6 +41,9 @@ function init() {
 
     // Prevent scrolling on the entire document
     preventDocumentScrolling();
+
+    // Fix keyboard listeners to prevent duplication
+    fixKeyboardListeners();
 
     log("Input module initialized");
 
@@ -70,9 +76,6 @@ function preventDocumentScrolling() {
     }, { passive: false });
 }
 
-// Track if keyboard events are already setup
-let keyboardEventsInitialized = false;
-
 // Set up all input event listeners
 function setupEventListeners() {
     // Begin/Guess button
@@ -99,6 +102,24 @@ function setupEventListeners() {
         canvas.removeEventListener('touchstart', handleCanvasTouch);
         canvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
     }
+}
+
+// Fix keyboard listeners to prevent duplication
+function fixKeyboardListeners() {
+    console.log("Fixing keyboard listeners...");
+
+    // First, remove all keydown listeners
+    const oldElement = document.body;
+    const newElement = oldElement.cloneNode(true);
+    oldElement.parentNode.replaceChild(newElement, oldElement);
+
+    // Then reattach the listener once
+    document.addEventListener('keydown', handleKeyPress);
+
+    // Set the flag to true
+    keyboardEventsInitialized = true;
+
+    console.log("Keyboard listeners fixed.");
 }
 
 // Initialize touch handling for mobile
@@ -223,6 +244,14 @@ function enhanceGuessInput() {
     guessInput.style.height = '1px';
     guessInput.style.width = '1px';
 
+    // Remove previous event listeners by cloning the node
+    const parent = guessInput.parentNode;
+    if (parent) {
+        const newInput = guessInput.cloneNode(true);
+        parent.replaceChild(newInput, guessInput);
+        guessInput = newInput;
+    }
+
     // Set up event listeners for input
     guessInput.addEventListener('input', function(e) {
         if (!GameState.guessMode) return;
@@ -277,6 +306,7 @@ function showKeyboard() {
     // Focus the input field to trigger the native keyboard
     setTimeout(() => {
         guessInput.focus();
+        console.log("Focused guessInput to show keyboard");
     }, 100);
 }
 
@@ -444,7 +474,7 @@ function createVirtualKeyboard() {
     return true;
 }
 
-// Re-export these functions
+// Export public functions
 export {
     init,
     enhanceGuessInput,
@@ -458,5 +488,6 @@ export {
     hideKeyboard,
     forceHideKeyboard,
     updateKeyboardLayout,
-    addKeyboardStyles
+    addKeyboardStyles,
+    fixKeyboardListeners
 };
