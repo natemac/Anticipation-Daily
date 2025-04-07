@@ -193,4 +193,3 @@ export function updateHintCooldown() {
                 if (hintsLeft > 0 && GameState.difficulty === 'easy' && GameState.gameStarted) {
                     enableHintButton();
                 }
-            
