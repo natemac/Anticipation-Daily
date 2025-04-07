@@ -4,9 +4,10 @@ import GameState from './state.js';
 import * as Renderer from './renderer.js';
 import * as Animation from './animation.js';
 import * as Audio from './audio.js';
-import * as UI from './ui.js';
+import * as UI from './ui/index.js';
 import * as WordHandler from './wordHandler.js';
 import { log } from '../game.js';
+import { updateGameTitle, showGameScreen } from '../menu.js';
 
 // Module variables
 let elapsedTimerInterval;
@@ -87,14 +88,10 @@ function startGameWithData(color, category, data) {
     log("Setting category display: " + GameState.currentCategory);
 
     // Call updateGameTitle explicitly
-    if (typeof updateGameTitle === 'function') {
-        updateGameTitle(GameState.currentCategory);
-    }
+    updateGameTitle(GameState.currentCategory);
 
     // Switch to game screen
-    if (typeof showGameScreen === 'function') {
-        showGameScreen();
-    }
+    showGameScreen();
 
     // Set background color based on category
     document.body.style.backgroundColor = `var(--${color}-color)`;

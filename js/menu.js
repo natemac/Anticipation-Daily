@@ -3,7 +3,7 @@
 
 import GameState from './modules/state.js';
 import * as GameLogic from './modules/gameLogic.js';
-import * as UI from './modules/ui.js';
+import * as UI from './modules/ui/index.js';
 import * as Audio from './modules/audio.js';
 import * as Input from './modules/input.js';
 

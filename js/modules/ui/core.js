@@ -3,6 +3,7 @@
 import GameState from '../state.js';
 import * as GameLogic from '../gameLogic.js';
 import { log } from '../../game.js';
+import * as GameInterface from './gameInterface.js';
 
 // Module variables
 let timerDisplay, beginButton, wrongMessage, backButton, buttonTimer;
@@ -24,7 +25,7 @@ function init() {
 
     // Create UI elements
     createWordSpacesDiv();
-    createHintButton();
+    hintButton = GameInterface.createHintButton();
 
     log("UI core module initialized");
 

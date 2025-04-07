@@ -21,7 +21,7 @@ function createHintButton() {
     hintButton.id = 'hintButton';
     hintButton.className = 'hint-button';
     hintButton.textContent = 'Hint?';
-    hintButton.style.display = 'none';
+    hintButton.style.display = 'block';
     hintButton.style.backgroundColor = '#FFC107';
     hintButton.style.color = '#333';
     hintButton.style.border = 'none';

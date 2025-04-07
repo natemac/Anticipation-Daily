@@ -3,7 +3,7 @@
 import GameState from './state.js';
 import * as Animation from './animation.js';
 import * as Audio from './audio.js';
-import * as UI from './ui.js';
+import * as UI from './ui/index.js';
 import { log } from '../game.js';
 
 // Module variables
