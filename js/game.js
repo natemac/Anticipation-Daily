@@ -6,7 +6,7 @@ import GameState from './modules/state.js';
 import * as Renderer from './modules/renderer.js';
 import * as InputHandler from './modules/input.js';
 import * as Animation from './modules/animation.js';
-import * as UI from './modules/ui.js';
+import * as UI from './modules/ui/index.js';
 import * as WordHandler from './modules/wordHandler.js';
 import * as Audio from './modules/audio.js';
 import * as GameLogic from './modules/gameLogic.js';
@@ -24,7 +24,7 @@ window.resizeCanvas = Renderer.resizeCanvas;
 window.clearCanvas = Renderer.clearCanvas;
 
 // Simple logging function for debugging
-function log(message) {
+export function log(message) {
     console.log(`[AnticipationGame] ${message}`);
 }
 
@@ -73,7 +73,6 @@ function handleFullLoad() {
     // Force another init check after everything loads
     setTimeout(() => {
         Renderer.checkCanvasInitialization();
-        InputHandler.createVirtualKeyboard();
     }, 300);
 }
 
@@ -93,8 +92,3 @@ function handleVisibilityChange() {
 
 // Initialize the game when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initGame);
-
-// Export public functions for external access
-export {
-    log
-};
