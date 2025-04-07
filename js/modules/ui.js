@@ -106,16 +106,6 @@ function createHintButton() {
     hintButton.className = 'hint-button';
     hintButton.textContent = 'Hint?';
     hintButton.style.display = 'none';
-    hintButton.style.backgroundColor = '#FFC107';
-    hintButton.style.color = '#333';
-    hintButton.style.border = 'none';
-    hintButton.style.borderRadius = '8px';
-    hintButton.style.padding = '8px 15px';
-    hintButton.style.margin = '10px 0';
-    hintButton.style.fontWeight = 'bold';
-    hintButton.style.cursor = 'pointer';
-    hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-    hintButton.style.transition = 'background-color 0.3s, transform 0.2s';
 
     // Initially disable the hint button (will enable after cooldown period)
     hintButton.disabled = true;
