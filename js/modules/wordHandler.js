@@ -360,7 +360,7 @@ function handleWordCompletion() {
     // Success feedback
     if (wordSpacesDiv) {
         wordSpacesDiv.style.boxShadow = '0 0 12px rgba(76, 175, 80, 0.8)';
-        wordSpacesDiv.style.transform = 'scale(1.05)';
+        wordSpacesDiv.style.transform = 'scale(0.95)';
     }
 
     // Play completion sound
