@@ -53,6 +53,58 @@ The project consists of the following files:
     - `tick.mp3` - Subtle sound for UI interactions
     - `guess.mp3` - Sound effect when entering guess mode
 
+## Core Features
+
+### Game Mechanics
+
+#### Animation System
+- Line-by-line drawing animation using Canvas
+- Point-to-point animation with consistent speed
+- Animation timing based on difficulty level
+- Progress tracking for resuming animations
+
+#### Guessing System
+- Letter-by-letter validation
+- Partial word recognition
+- Visual feedback for correct/incorrect guesses
+- Time-based scoring
+
+#### Game Progression
+- Four daily categories (yellow, green, blue, red)
+- Persistent completion status
+- Score tracking (time and guesses)
+- Difficulty modes (easy/hard)
+
+### User Interface
+
+#### Main Menu
+- Color grid with four category squares
+- Difficulty toggle (easy/hard)
+- Audio toggle
+- Share results button
+- Builder access button
+
+#### Game Screen
+- Canvas for drawing animation
+- Timer display
+- Begin/Guess button
+- Input field for guesses
+- Word spaces display
+- Back button
+
+#### Builder Interface
+- Grid-based drawing system
+- Mode controls (Sketch, Edit, Record, Preview)
+- Name and category inputs
+- Export and share functionality
+- Preview modal
+
+### Audio System
+- Category-specific background music
+- Sound effects for interactions
+- Volume controls
+- Persistence of audio settings
+
 ## Modular Architecture
 
 The project uses a modular ES modules architecture for better organization and maintainability:
@@ -301,20 +353,3 @@ const CONFIG = {
 ```
 
 You can adjust these parameters to fine-tune the game's behavior.
-
-## Future Improvements
-
-Potential future enhancements could include:
-
-- Server backend for storing custom drawings
-- Daily puzzle rotation system
-- User accounts and progress tracking
-- Additional categories and themes
-- Multiplayer mode for collaborative drawing/guessing
-- More achievement types
-- Additional customization options
-- More music tracks and sound effects
-
-## Credits
-
-This project is inspired by the classic Nintendo game "Anticipation" released in 1988.
