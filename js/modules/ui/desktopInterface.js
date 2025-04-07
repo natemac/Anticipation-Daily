@@ -24,7 +24,7 @@ function setupKeyboardListeners() {
 
 // Handle key down events
 function handleKeyDown(event) {
-    if (!GameState.gameStarted || !GameState.inGuessMode) return;
+    if (!GameState.gameStarted || !GameState.guessMode) return;
 
     // Handle letter keys
     if (/^[a-zA-Z]$/.test(event.key)) {
@@ -34,19 +34,22 @@ function handleKeyDown(event) {
         Audio.playSound('tick');
 
         // Update word progress
-        WordHandler.handleLetterInput(event.key.toUpperCase());
+        WordHandler.processLetter(event.key.toUpperCase());
     }
     
     // Handle backspace
     else if (event.key === 'Backspace') {
         log("Backspace pressed");
-        WordHandler.handleBackspace();
+        if (GameState.currentInput.length > 0) {
+            GameState.currentInput = GameState.currentInput.slice(0, -1);
+            WordHandler.updateWordSpaces();
+        }
     }
     
     // Handle enter
     else if (event.key === 'Enter') {
         log("Enter pressed");
-        WordHandler.handleEnter();
+        WordHandler.processFullWord();
     }
     
     // Handle escape
@@ -63,7 +66,19 @@ function enterGuessMode() {
     log("Entering guess mode (desktop)");
     
     // Update game state
-    GameState.inGuessMode = true;
+    GameState.guessMode = true;
+    
+    // Show the guess input field
+    const guessInput = document.getElementById('guessInput');
+    if (guessInput) {
+        guessInput.style.display = 'block';
+        guessInput.focus();
+    }
+    
+    // Start the guess timer
+    if (typeof startGuessTimer === 'function') {
+        startGuessTimer();
+    }
     
     // Play sound effect
     Audio.playSound('guess');
@@ -76,7 +91,18 @@ function exitGuessMode() {
     log("Exiting guess mode (desktop)");
     
     // Update game state
-    GameState.inGuessMode = false;
+    GameState.guessMode = false;
+    
+    // Hide the guess input field
+    const guessInput = document.getElementById('guessInput');
+    if (guessInput) {
+        guessInput.style.display = 'none';
+    }
+    
+    // Stop the guess timer
+    if (typeof stopGuessTimer === 'function') {
+        stopGuessTimer();
+    }
 }
 
 // Check if device is desktop

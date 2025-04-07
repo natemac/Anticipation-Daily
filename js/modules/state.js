@@ -52,14 +52,15 @@ const GameState = {
     CONFIG: CONFIG,
 
     // Game configuration (applied from CONFIG)
-    difficulty: 'easy',
+    difficulty: 'normal',
     pixelsPerSecond: CONFIG.PIXELS_PER_SECOND,
     minimumLineTime: CONFIG.MINIMUM_LINE_TIME,
 
     // Current game data
-    currentColor: null,
-    currentCategory: null,
-    drawingData: null,
+    currentColor: '',
+    currentCategory: '',
+    currentWord: '',
+    currentInput: '',
 
     // Animation state
     drawingProgress: 0,
@@ -73,12 +74,11 @@ const GameState = {
     elapsedTime: 0,
     elapsedTimeHundredths: 0,
 
-    // Guess state
+    // Game mode
     guessMode: false,
     gameStarted: false,
-    currentInput: '',
-    correctLetters: [],    // Store correct letters between attempts
-    guessAttempts: 0,      // Track number of guess attempts
+    gamePaused: false,
+    gameOver: false,
 
     // Guess timer properties
     guessTimeRemaining: CONFIG.GUESS_TIME_LIMIT,
@@ -94,6 +94,8 @@ const GameState = {
     confettiParticles: [],
 
     // Hint system
+    hintsRemaining: 3,
+    hintCooldown: 30, // seconds
     hintsUsed: 0,
     hintsAvailable: CONFIG.HINTS_AVAILABLE,
     hintButtonActive: false,     // Tracks if hint button is enabled
@@ -114,13 +116,17 @@ const GameState = {
     // Touch handling for mobile
     touchActive: false,
 
+    // UI state
+    isDrawing: false,
+    isAnimating: false,
+
     // Initialize the game state
     init() {
         // Get difficulty setting from localStorage
         if (localStorage.getItem('difficultyMode') === 'hard') {
             this.difficulty = 'hard';
         } else {
-            this.difficulty = 'easy';
+            this.difficulty = 'normal';
         }
 
         // Get audio setting from localStorage
@@ -150,11 +156,14 @@ const GameState = {
     resetForNewGame() {
         this.drawingProgress = 0;
         this.gameStarted = false;
+        this.gamePaused = false;
+        this.gameOver = false;
         this.timerActive = false;
         this.elapsedTime = 0;
         this.elapsedTimeHundredths = 0;
         this.guessMode = false;
         this.currentInput = '';
+        this.currentWord = '';
         this.correctLetters = [];
         this.guessTimeRemaining = CONFIG.GUESS_TIME_LIMIT;
         this.guessTimerActive = false;
@@ -166,6 +175,9 @@ const GameState = {
         this.hintButtonActive = false;
         this.hintButtonCooldown = false;
         this.hintCooldownRemaining = 0;
+        this.hintsRemaining = 3;
+        this.isDrawing = false;
+        this.isAnimating = false;
 
         // Reset audio state but maintain volume settings
         this.currentMusicTrack = null;
@@ -218,6 +230,42 @@ const GameState = {
         if (CONFIG.DEBUG_MODE) {
             console.log(`[DEBUG] ${message}`);
         }
+    },
+
+    // Reset game state
+    reset() {
+        this.gameStarted = false;
+        this.gamePaused = false;
+        this.gameOver = false;
+        this.currentColor = '';
+        this.currentCategory = '';
+        this.currentWord = '';
+        this.currentInput = '';
+        this.elapsedTime = 0;
+        this.guessTimeRemaining = CONFIG.GUESS_TIME_LIMIT;
+        this.guessTimerActive = false;
+        this.pendingAnimationStart = false;
+        this.scaling = null;
+        this.hintsUsed = 0;
+        this.showConfetti = false;
+        this.guessAttempts = 0; // Reset guess attempts counter
+        this.hintButtonActive = false;
+        this.hintButtonCooldown = false;
+        this.hintCooldownRemaining = 0;
+        this.hintsRemaining = 3;
+        this.isDrawing = false;
+        this.isAnimating = false;
+
+        // Reset audio state but maintain volume settings
+        this.currentMusicTrack = null;
+        this.drawingMusicTime = 0;
+
+        // Clear any existing timers
+        if (this.elapsedTimer) clearInterval(this.elapsedTimer);
+        if (this.guessTimer) clearInterval(this.guessTimer);
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+
+        return this;
     }
 };
 
