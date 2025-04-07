@@ -70,23 +70,33 @@ function preventDocumentScrolling() {
     }, { passive: false });
 }
 
+// Track if keyboard events are already setup
+let keyboardEventsInitialized = false;
+
 // Set up all input event listeners
 function setupEventListeners() {
     // Begin/Guess button
     if (beginButton) {
+        // Remove existing handlers first to prevent duplicates
+        beginButton.removeEventListener('click', handleBeginButtonClick);
         beginButton.addEventListener('click', handleBeginButtonClick);
     }
 
     // Back button
     if (backButton) {
+        backButton.removeEventListener('click', handleBackButtonClick);
         backButton.addEventListener('click', handleBackButtonClick);
     }
 
-    // Key press events for direct typing
-    document.addEventListener('keydown', handleKeyPress);
+    // Key press events for direct typing - only add once
+    if (!keyboardEventsInitialized) {
+        document.addEventListener('keydown', handleKeyPress);
+        keyboardEventsInitialized = true;
+    }
 
     // Add touch event to canvas (with passive: false to prevent scrolling)
     if (canvas) {
+        canvas.removeEventListener('touchstart', handleCanvasTouch);
         canvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
     }
 }
@@ -144,6 +154,9 @@ function handleKeyPress(e) {
     // Only process keypresses when in guess mode
     if (!GameState.guessMode) return;
 
+    // Add console.log to debug
+    console.log(`Key pressed: ${e.key}`);
+
     // Handle different key types
     if (e.key === 'Backspace') {
         // Remove the last character
@@ -151,11 +164,13 @@ function handleKeyPress(e) {
             GameState.currentInput = GameState.currentInput.slice(0, -1);
             WordHandler.updateWordSpaces();
         }
+        e.preventDefault(); // Prevent default backspace behavior
     } else if (e.key === 'Enter') {
         // Submit full word
         if (GameState.guessMode && GameState.currentInput.length > 0) {
             WordHandler.processFullWord();
         }
+        e.preventDefault(); // Prevent default enter behavior
     } else if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
         // Process letter input
         WordHandler.processLetter(e.key);
@@ -422,11 +437,20 @@ function isMobileDevice() {
     );
 }
 
-// Export public functions
+// Function to create virtual keyboard (to fix the error)
+function createVirtualKeyboard() {
+    console.log("Virtual keyboard initialization requested");
+    // This is a placeholder - implement actual virtual keyboard logic if needed
+    return true;
+}
+
+// Re-export these functions
 export {
     init,
     enhanceGuessInput,
+    setupEventListeners,
     handleKeyPress,
+    createVirtualKeyboard,
     handleBeginButtonClick,
     handleBackButtonClick,
     isMobileDevice,
