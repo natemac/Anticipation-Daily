@@ -193,3 +193,19 @@ export function updateHintCooldown() {
                 if (hintsLeft > 0 && GameState.difficulty === 'easy' && GameState.gameStarted) {
                     enableHintButton();
                 }
+            } else {
+                // Unlimited hints
+                hintButton.textContent = "Hint?";
+
+                // Always re-enable in easy mode
+                if (GameState.difficulty === 'easy' && GameState.gameStarted) {
+                    enableHintButton();
+                }
+            }
+        } else {
+            // Update cooldown text
+            const seconds = Math.ceil(GameState.hintCooldownRemaining);
+            hintButton.textContent = `Wait ${seconds}s`;
+        }
+    }
+}
