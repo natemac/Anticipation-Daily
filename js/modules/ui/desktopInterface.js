@@ -26,6 +26,14 @@ function setupKeyboardListeners() {
 function handleKeyDown(event) {
     if (!GameState.gameStarted || !GameState.guessMode) return;
 
+    // Prevent default behavior for game-related keys
+    if (/^[a-zA-Z]$/.test(event.key) || 
+        event.key === 'Backspace' || 
+        event.key === 'Enter' || 
+        event.key === 'Escape') {
+        event.preventDefault();
+    }
+
     // Handle letter keys
     if (/^[a-zA-Z]$/.test(event.key)) {
         log(`Keyboard key pressed: ${event.key.toUpperCase()}`);
@@ -68,13 +76,6 @@ function enterGuessMode() {
     // Update game state
     GameState.guessMode = true;
     
-    // Show the guess input field
-    const guessInput = document.getElementById('guessInput');
-    if (guessInput) {
-        guessInput.style.display = 'block';
-        guessInput.focus();
-    }
-    
     // Start the guess timer
     if (typeof startGuessTimer === 'function') {
         startGuessTimer();
@@ -92,12 +93,6 @@ function exitGuessMode() {
     
     // Update game state
     GameState.guessMode = false;
-    
-    // Hide the guess input field
-    const guessInput = document.getElementById('guessInput');
-    if (guessInput) {
-        guessInput.style.display = 'none';
-    }
     
     // Stop the guess timer
     if (typeof stopGuessTimer === 'function') {

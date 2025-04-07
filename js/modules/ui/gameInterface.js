@@ -21,16 +21,21 @@ function createHintButton() {
     hintButton = document.createElement('button');
     hintButton.id = 'hintButton';
     hintButton.className = 'hint-button';
-    hintButton.textContent = 'Hint';
+    hintButton.textContent = 'Hint?';
     hintButton.style.display = 'block';
-    hintButton.style.backgroundColor = '#4CAF50';
-    hintButton.style.color = 'white';
-    hintButton.style.padding = '10px 20px';
+    hintButton.style.backgroundColor = '#FFC107';
+    hintButton.style.color = '#333';
+    hintButton.style.padding = '8px 15px';
     hintButton.style.border = 'none';
-    hintButton.style.borderRadius = '5px';
+    hintButton.style.borderRadius = '8px';
     hintButton.style.cursor = 'pointer';
-    hintButton.style.margin = '10px';
+    hintButton.style.margin = '10px 0';
+    hintButton.style.fontWeight = 'bold';
+    hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+    hintButton.style.transition = 'background-color 0.3s, transform 0.2s';
     hintButton.disabled = true;
+    hintButton.style.opacity = "0.5";
+    hintButton.style.cursor = "not-allowed";
 
     // Add event listener
     hintButton.addEventListener('click', useHint);
@@ -49,9 +54,8 @@ function updateTimerDisplay() {
     const timerDisplay = document.getElementById('timerDisplay');
     if (!timerDisplay) return;
 
-    const minutes = Math.floor(GameState.elapsedTime / 60);
-    const seconds = GameState.elapsedTime % 60;
-    timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    const seconds = GameState.elapsedTime;
+    timerDisplay.textContent = `${seconds}s`;
 }
 
 // Start guess timer
@@ -95,22 +99,14 @@ function enableHintButton() {
     hintButton.disabled = false;
     hintButton.style.opacity = "1";
     hintButton.style.cursor = "pointer";
-    hintButton.textContent = 'Hint';
+    hintButton.textContent = 'Hint?';
 }
 
 // Use hint
 function useHint() {
-    if (GameState.hintsRemaining <= 0) return;
+    if (!hintButton || hintButton.disabled) return;
 
-    GameState.hintsRemaining--;
-    Audio.playSound('hint');
-    log(`Hint used. ${GameState.hintsRemaining} hints remaining.`);
-
-    // Update hint button state
-    const hintButton = document.getElementById('hintButton');
-    if (hintButton) {
-        hintButton.disabled = GameState.hintsRemaining <= 0;
-    }
+    log("Using hint");
 
     // Find the first empty or incorrect letter space
     const letterSpaces = document.querySelectorAll('.letter-space');
@@ -130,6 +126,9 @@ function useHint() {
     const space = letterSpaces[hintIndex];
     space.textContent = GameState.currentWord[hintIndex];
     space.classList.add('correct');
+
+    // Play sound effect
+    Audio.playSound('correct');
 
     // Update word handler
     WordHandler.updateWordProgress();
