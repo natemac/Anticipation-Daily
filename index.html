@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Anticipation</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/game-core.css">
+    <link rel="stylesheet" href="css/game-ui.css">
+</head>
+<body>
+  <div class="rotation-overlay">
+      <button class="close-rotation-message">✕</button>
+      <svg class="rotation-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <!-- Phone outline -->
+          <rect x="35" y="10" width="30" height="50" rx="5" ry="5" stroke="#666" stroke-width="2" fill="white" />
+          <!-- Screen -->
+          <rect x="38" y="15" width="24" height="40" rx="2" ry="2" fill="#f0f0f0" />
+          <!-- Home button -->
+          <circle cx="50" cy="55" r="3" fill="#ccc" />
+          <!-- Rotation arrow -->
+          <path d="M75,35 A30,30 0 0,1 50,65" stroke="#666" stroke-width="3" fill="none" stroke-dasharray="5,3" />
+          <polygon points="50,65 45,55 55,55" fill="#666" />
+      </svg>
+      <div class="rotation-message">Oh no! We can't fit everything on your screen.</div>
+      <div class="rotation-instruction">Please rotate your device.</div>
+  </div>
+    <div class="app-content">
+        <div class="game-container">
+            <div class="game-title">Daily Anticipation</div>
+            <div class="game-header" id="gameHeader" style="display: none;">
+                <div class="category-display" id="categoryDisplay">Category: </div>
+                <div class="timer-display" id="timerDisplay">00:00</div>
+            </div>
+
+            <div class="main-screen">
+                <div class="color-grid">
+                    <div class="color-square yellow" data-color="yellow" data-category=" ">
+                        <h3> </h3>
+                        <div class="result-overlay" id="yellow-result">
+                            <p class="guess-count">Guesses: 0</p>
+                            <p class="time-count">Time: 0s</p>
+                        </div>
+                    </div>
+                    <div class="color-square green" data-color="green" data-category=" ">
+                        <h3> </h3>
+                        <div class="result-overlay" id="green-result">
+                            <p class="guess-count">Guesses: 0</p>
+                            <p class="time-count">Time: 0s</p>
+                        </div>
+                    </div>
+                    <div class="color-square blue" data-color="blue" data-category=" ">
+                        <h3> </h3>
+                        <div class="result-overlay" id="blue-result">
+                            <p class="guess-count">Guesses: 0</p>
+                            <p class="time-count">Time: 0s</p>
+                        </div>
+                    </div>
+                    <div class="color-square red" data-color="red" data-category=" ">
+                        <h3> </h3>
+                        <div class="result-overlay" id="red-result">
+                            <p class="guess-count">Guesses: 0</p>
+                            <p class="time-count">Time: 0s</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls-container">
+                    <div class="difficulty-container">
+                        <h3 class="difficulty-title">Difficulty Mode</h3>
+                        <div class="slider-container">
+                            <span class="difficulty-label" id="easyLabel">Easy</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="difficultyToggle">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="difficulty-label" id="hardLabel">Hard</span>
+                        </div>
+                    </div>
+
+                    <div class="audio-container">
+                        <h3 class="audio-title">Sound Effects</h3>
+                        <div class="slider-container">
+                            <span class="difficulty-label" id="offLabel">Off</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="audioToggle">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="difficulty-label" id="onLabel">On</span>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="builder.html" class="builder-button">Create and Share your own Drawings</a>
+
+                <button class="share-button" id="shareButton">Share Results</button>
+            </div>
+
+            <div class="game-screen">
+                <div class="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+
+                <div class="game-controls">
+                    <button id="beginButton">
+                        <div id="buttonTimer"></div>
+                        <span>Begin</span>
+                    </button>
+                    <input type="text" id="guessInput" placeholder="Type your guess here...">
+                </div>
+                <button class="back-button" id="backButton">← Back</button>
+                <div class="wrong-message" id="wrongMessage">WRONG!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load non-module scripts -->
+    <script src="js/common.js"></script>
+
+    <!-- Load ES modules -->
+    <script type="module" src="js/modules/state.js"></script>
+    <script type="module" src="js/modules/renderer.js"></script>
+    <script type="module" src="js/modules/input.js"></script>
+    <script type="module" src="js/modules/animation.js"></script>
+    <script type="module" src="js/modules/ui.js"></script>
+    <script type="module" src="js/modules/wordHandler.js"></script>
+    <script type="module" src="js/modules/audio.js"></script>
+    <script type="module" src="js/modules/gameLogic.js"></script>
+    <script type="module" src="js/menu.js"></script>
+    <script type="module" src="js/game.js"></script>
+    <script type="module" src="js/init.js"></script>
+    <script>
+        // Set a CSS class on the body based on orientation
+        function updateOrientationClass() {
+            if (window.innerWidth > window.innerHeight) {
+                document.body.classList.add('landscape');
+                document.body.classList.remove('portrait');
+            } else {
+                document.body.classList.add('portrait');
+                document.body.classList.remove('landscape');
+            }
+        }
+
+        // Add listener for orientation change
+        window.addEventListener('orientationchange', function() {
+            setTimeout(updateOrientationClass, 100);
+        });
+
+        // Add listener for resize (which happens on orientation change)
+        window.addEventListener('resize', updateOrientationClass);
+
+        // Set initial orientation class
+        updateOrientationClass();
+    </script>
+</body>
+</html>
