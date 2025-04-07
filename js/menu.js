@@ -296,7 +296,7 @@ function updatePuzzleCompletion(color, time, guesses = 0, isHardMode = false, is
         <div class="completion-stats">
             <p class="stat-line">Time: ${time.toFixed(2)}s</p>
             ${isFirstGuess ?
-              '<p class="stat-line stat-achievement">Got it in one ☝️</p>' :
+              '<p class="stat-line stat-achievement">Got it in ☝️</p>' :
               `<p class="stat-line">Guesses: ${guesses}</p>`}
             ${isEarlyCompletion ? '<p class="stat-line stat-achievement">Early completion! ⚡</p>' : ''}
             ${isHardMode ? '<p class="stat-line stat-achievement">Hard mode! 🏆</p>' : ''}

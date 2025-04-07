@@ -218,6 +218,7 @@ function createVirtualKeyboard() {
             virtualKeyboard.appendChild(rowDiv);
         });
 
+        /* // Removed action row (delete, space, enter)
         // Add additional buttons row (delete, space, enter)
         const actionRow = document.createElement('div');
         actionRow.style.display = 'flex';
@@ -253,7 +254,9 @@ function createVirtualKeyboard() {
         actionRow.appendChild(deleteButton);
         actionRow.appendChild(spaceButton);
         actionRow.appendChild(enterButton);
+
         virtualKeyboard.appendChild(actionRow);
+        */
 
         // Add dismiss handle for better UX
         const dismissHandle = document.createElement('div');
