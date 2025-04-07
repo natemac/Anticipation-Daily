@@ -35,6 +35,9 @@ function init() {
     // Add audio toggle to settings
     addAudioToggle();
 
+    // Initialize mobile keyboard adaptations
+    initMobileKeyboard();
+
     log("UI module initialized");
 
     return {
@@ -123,7 +126,8 @@ function createButtonContainer() {
             const beginButton = document.getElementById('beginButton');
             if (beginButton && beginButton.parentNode === gameControlsDiv) {
                 beginButton.style.margin = '0';
-                beginButton.style.flex = '1';
+                beginButton.style.flex = '2'; // Takes up 2/3 of the space
+                beginButton.style.order = '1'; // Explicitly set to first position (left)
                 buttonContainer.appendChild(beginButton);
                 gameControlsDiv.appendChild(buttonContainer);
             }
@@ -661,9 +665,7 @@ function updateHintCooldown() {
     }
 }
 
-// Updated sections of ui.js that need to integrate with the new audio system
-
-// Enter guess mode - update to handle music transition and keyboard display
+// Enter guess mode - updated to handle keyboard display
 function enterGuessMode() {
     log("Entering guess mode");
 
@@ -708,6 +710,9 @@ function enterGuessMode() {
     // Update the word spaces to show empty slots
     WordHandler.updateWordSpaces();
 
+    // Make word spaces clickable
+    makeWordSpacesInteractive();
+
     // Add pulse animation to the word spaces div to draw attention
     if (wordSpacesDiv) {
         wordSpacesDiv.style.animation = 'pulse-attention 1s';
@@ -738,11 +743,16 @@ function enterGuessMode() {
         beginButton.querySelector('span').textContent = 'Guess';
     }
 
+    // Adjust layout for keyboard
+    Input.updateKeyboardLayout(true);
+
     // Show virtual keyboard on mobile and adjust layout
-    updateVirtualKeyboard(true);
+    if (typeof Input.showKeyboard === 'function') {
+        Input.showKeyboard();
+    }
 }
 
-// Exit guess mode - update to handle music transition and keyboard removal
+// Exit guess mode - updated to handle keyboard handling
 function exitGuessMode() {
     log("Exiting guess mode");
 
@@ -775,22 +785,191 @@ function exitGuessMode() {
     }
 
     // Hide virtual keyboard on mobile and restore layout
-    updateVirtualKeyboard(false);
+    if (typeof Input.hideKeyboard === 'function') {
+        Input.hideKeyboard();
+    }
+
+    // Also reset layout directly
+    Input.updateKeyboardLayout(false);
 }
 
-// Update mobile virtual keyboard visibility
-function updateVirtualKeyboard(show) {
-    const event = new CustomEvent('guessmode-changed', {
-        detail: {
-            active: show
+// Make the word spaces area interactive (clickable)
+function makeWordSpacesInteractive() {
+    if (!wordSpacesDiv) return;
+
+    // Add cursor style
+    wordSpacesDiv.style.cursor = 'text';
+
+    // Remove existing click listener if any
+    wordSpacesDiv.removeEventListener('click', handleWordSpacesClick);
+
+    // Add click event to focus input
+    wordSpacesDiv.addEventListener('click', handleWordSpacesClick);
+}
+
+// Handle click on word spaces
+function handleWordSpacesClick() {
+    if (!GameState.guessMode) return;
+
+    // Focus the guess input to bring up keyboard
+    const guessInput = document.getElementById('guessInput');
+    if (guessInput) {
+        guessInput.focus();
+    }
+}
+
+// Initialize mobile keyboard support
+function initMobileKeyboard() {
+    // Create/enhance the input field
+    enhanceGuessInput();
+
+    // Add keyboard styles
+    addKeyboardStyles();
+}
+
+// Enhance the guessInput field for mobile
+function enhanceGuessInput() {
+    // Get or create the guessInput
+    let guessInput = document.getElementById('guessInput');
+
+    if (!guessInput) {
+        // Create a new input field
+        guessInput = document.createElement('input');
+        guessInput.id = 'guessInput';
+        guessInput.type = 'text';
+        guessInput.autocomplete = 'off';
+        guessInput.autocorrect = 'off';
+        guessInput.autocapitalize = 'none';
+        guessInput.spellcheck = false;
+
+        // Add to game controls
+        const gameControls = document.querySelector('.game-controls');
+        if (gameControls) {
+            gameControls.appendChild(guessInput);
+        }
+    }
+
+    // Set up the input with proper styling
+    guessInput.style.padding = '0';
+    guessInput.style.margin = '0';
+    guessInput.style.border = 'none';
+    guessInput.style.outline = 'none';
+    guessInput.style.opacity = '0';
+    guessInput.style.position = 'absolute';
+    guessInput.style.left = '-1000px'; // Position off-screen
+    guessInput.style.height = '1px';
+    guessInput.style.width = '1px';
+
+    // Set up event listeners for input
+    guessInput.addEventListener('input', function(e) {
+        if (!GameState.guessMode) return;
+
+        // Get the last character typed
+        const lastChar = this.value.slice(-1);
+
+        // Clear input for next character
+        this.value = '';
+
+        // Process the character if it's a letter
+        if (/[a-zA-Z]/.test(lastChar)) {
+            WordHandler.processLetter(lastChar);
         }
     });
-    document.dispatchEvent(event);
+
+    // Handle special keys
+    guessInput.addEventListener('keydown', function(e) {
+        if (!GameState.guessMode) return;
+
+        if (e.key === 'Backspace') {
+            // Remove the last character
+            if (GameState.currentInput.length > 0) {
+                GameState.currentInput = GameState.currentInput.slice(0, -1);
+                WordHandler.updateWordSpaces();
+            }
+            e.preventDefault();
+        } else if (e.key === 'Enter') {
+            // Submit full word
+            if (GameState.guessMode && GameState.currentInput.length > 0) {
+                WordHandler.processFullWord();
+            }
+            e.preventDefault();
+        }
+    });
+
+    return guessInput;
+}
+
+// Add keyboard styles
+function addKeyboardStyles() {
+    if (document.getElementById('keyboard-style-element')) return;
+
+    const styleElement = document.createElement('style');
+    styleElement.id = 'keyboard-style-element';
+    styleElement.textContent = `
+        /* Base keyboard adjustments */
+        .keyboard-visible .canvas-container {
+            width: 80% !important;
+            margin: 5px auto !important;
+            transform: scale(0.9) !important;
+        }
+
+        .keyboard-visible #wordSpacesDiv {
+            margin: 5px auto !important;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6) !important;
+        }
+
+        .keyboard-visible #gameButtonContainer,
+        .keyboard-visible .game-controls {
+            margin-bottom: 0px !important;
+        }
+
+        /* iOS specific styles */
+        @supports (-webkit-touch-callout: none) {
+            .keyboard-visible .canvas-container {
+                width: 80% !important;
+                transform: scale(0.85) !important;
+                margin-top: 0 !important;
+            }
+
+            .keyboard-visible #wordSpacesDiv {
+                transform: scale(1.05);
+                margin: 8px auto !important;
+            }
+        }
+
+        /* Handle smaller screens */
+        @media (max-height: 700px) {
+            .keyboard-visible .canvas-container {
+                width: 70% !important;
+                transform: scale(0.8) !important;
+            }
+
+            .keyboard-visible #wordSpacesDiv {
+                transform: scale(0.95);
+                margin: 8px auto !important;
+            }
+        }
+    `;
+
+    document.head.appendChild(styleElement);
+}
+
+// Function to detect if device is mobile
+function isMobileDevice() {
+    return (
+        ('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (navigator.msMaxTouchPoints > 0) ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    );
 }
 
 // Reposition UI elements after resize
 function repositionElements() {
-    // Nothing to reposition yet
+    // Reapply keyboard layout adjustments if in guess mode
+    if (GameState.guessMode) {
+        Input.updateKeyboardLayout(true);
+    }
 }
 
 // Show/hide hint button
@@ -874,11 +1053,13 @@ export {
     hideMessages,
     enterGuessMode,
     exitGuessMode,
-    updateVirtualKeyboard,
     repositionElements,
     toggleHintButton,
     enableHintButton,
     startHintCooldown,
     showError,
-    updateHintButtonCounter
+    updateHintButtonCounter,
+    makeWordSpacesInteractive,
+    handleWordSpacesClick,
+    isMobileDevice
 };
