@@ -214,14 +214,15 @@ input:focus + .slider {
 .game-controls {
     width: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: stretch;
     gap: 10px;
 }
 
 #beginButton {
     position: relative;
     padding: 15px 0;
-    width: 100%;
+    flex: 2;
     background-color: #4CAF50;
     color: white;
     border: none;
@@ -302,16 +303,16 @@ input:focus + .slider {
 /* Hint button */
 .hint-button {
     display: none;
+    flex: 1;
     background-color: #FFC107;
     color: #333;
     border: none;
     border-radius: 8px;
     padding: 8px 15px;
-    margin: 10px 0;
     font-weight: bold;
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: background-color 0.3s, transform 0.2s;
+    transition: background-color 0.3s, transform 0.2s, opacity 0.3s;
 }
 
 .hint-button:hover {
