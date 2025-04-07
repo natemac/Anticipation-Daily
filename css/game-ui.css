@@ -1,26 +1,5 @@
 /* game-ui.css - Interface elements, controls, and interactive components */
 
-/* Global scrolling prevention */
-html, body {
-    overscroll-behavior: none;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-    -webkit-overflow-scrolling: none;
-}
-
-.app-content {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
 /* Result overlay and completion UI */
 .result-overlay {
     position: absolute;
@@ -237,7 +216,6 @@ input:focus + .slider {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transition: margin-bottom 0.3s ease-out;
 }
 
 #beginButton {
@@ -253,8 +231,6 @@ input:focus + .slider {
     font-weight: bold;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    z-index: 6; /* Ensure it appears above other elements */
 }
 
 /* Timer overlay for the button */
@@ -335,8 +311,7 @@ input:focus + .slider {
     font-weight: bold;
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: background-color 0.3s, transform 0.2s, opacity 0.3s, box-shadow 0.3s;
-    z-index: 6; /* Match with the beginButton */
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 .hint-button:hover {
@@ -386,125 +361,6 @@ input:focus + .slider {
     100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.7); }
 }
 
-/* Virtual Keyboard Styles */
-#virtual-keyboard-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
-}
-
-#virtual-keyboard {
-    background-color: #f5f5f5;
-    padding: 15px 10px;
-    border-top-left-radius: 15px;
-    border-top-right-radius: 15px;
-}
-
-/* Keyboard row styling */
-#virtual-keyboard > div > div {
-    display: flex;
-    justify-content: center;
-    margin: 8px 0;
-    gap: 6px;
-}
-
-/* Key styling */
-#virtual-keyboard button {
-    flex: 1;
-    aspect-ratio: 1/1;
-    padding: 0;
-    font-size: 22px;
-    border: none;
-    border-radius: 8px;
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    transition: all 0.2s ease;
-    font-weight: bold;
-    color: #333;
-    text-align: center;
-    cursor: pointer;
-}
-
-#virtual-keyboard button:active {
-    background-color: #e0e0e0;
-    transform: translateY(2px);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-/* Handle for keyboard */
-#virtual-keyboard > div:first-child {
-    width: 40px;
-    height: 5px;
-    background-color: #ccc;
-    border-radius: 3px;
-    margin: 0 auto 15px auto;
-}
-
-/* Keyboard transitions */
-.canvas-container {
-    transition: width 0.3s ease, margin 0.3s ease, transform 0.3s ease;
-}
-
-#wordSpacesDiv {
-    transition: transform 0.3s ease, margin 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* Animation keyframes */
-@keyframes word-bounce-up {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
-    70% { transform: translateY(-10px); }
-    100% { transform: translateY(-12px); }
-}
-
-@keyframes word-bounce-down {
-    0% { transform: translateY(-12px); }
-    100% { transform: translateY(0); }
-}
-
-/* Improved keyboard visible state styling */
-.keyboard-visible .canvas-container {
-    width: 80% !important;
-    margin: 0 auto 5px auto !important;
-    transform: scale(0.9);
-}
-
-.keyboard-visible #wordSpacesDiv {
-    margin-bottom: 15px;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
-}
-
-/* Critical: Keep Guess button visible with timer */
-.keyboard-visible #beginButton {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-    pointer-events: auto !important;
-    display: block !important;
-}
-
-/* Category-specific key styles - Yellow */
-.yellow-category #virtual-keyboard button:active {
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-}
-
-/* Category-specific key styles - Green */
-.green-category #virtual-keyboard button:active {
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
-}
-
-/* Category-specific key styles - Blue */
-.blue-category #virtual-keyboard button:active {
-    box-shadow: 0 0 10px rgba(33, 150, 243, 0.6);
-}
-
-/* Category-specific key styles - Red */
-.red-category #virtual-keyboard button:active {
-    box-shadow: 0 0 10px rgba(244, 67, 54, 0.6);
-}
-
 /* UI responsive adjustments */
 @media (max-width: 600px) {
     .controls-container {
@@ -520,11 +376,11 @@ input:focus + .slider {
         min-width: 0 !important;
         max-width: 48% !important;
     }
-
+    
     .difficulty-title, .audio-title {
         font-size: 13px;
     }
-
+    
     .difficulty-label {
         font-size: 12px;
     }
@@ -548,15 +404,6 @@ input:focus + .slider {
         font-size: 16px;
         padding: 5px 10px;
     }
-
-    /* Keyboard adjustments for small screens */
-    #virtual-keyboard button {
-        font-size: 18px;
-    }
-
-    .keyboard-visible .canvas-container {
-        width: 90% !important;
-    }
 }
 
 /* Extra adjustments for very small screens and iOS devices */
@@ -564,42 +411,32 @@ input:focus + .slider {
     .difficulty-title, .audio-title {
         font-size: 11px;
     }
-
+    
     .difficulty-label {
         font-size: 11px;
     }
-
+    
     .toggle-switch {
         width: 36px;
         min-width: 36px;
         height: 20px;
     }
-
+    
     .slider:before {
         height: 14px;
         width: 14px;
     }
-
+    
     input:checked + .slider:before {
         transform: translateX(16px);
     }
-
+    
     .controls-container {
         gap: 3px;
     }
 
     .completion-stamp {
         font-size: 22px;
-    }
-
-    /* Even smaller keyboard for tiny screens */
-    #virtual-keyboard button {
-        font-size: 16px;
-    }
-
-    .keyboard-visible .canvas-container {
-        width: 95% !important;
-        transform: scale(0.85);
     }
 }
 
@@ -610,28 +447,10 @@ input:focus + .slider {
         flex-direction: row !important;
         flex-wrap: nowrap !important;
     }
-
+    
     .difficulty-container, .audio-container {
         flex: 1 0 45% !important;
         width: 48% !important;
         max-width: 48% !important;
-    }
-
-    /* Fix for iOS keyboard positioning */
-    #virtual-keyboard-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-    }
-
-    /* Prevent scrolling */
-    html, body {
-        position: fixed;
-        overflow: hidden;
-        width: 100%;
-        height: 100%;
-        touch-action: none;
     }
 }

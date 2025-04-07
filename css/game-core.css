@@ -103,71 +103,10 @@
     padding: 10px;
     font-weight: bold;
     letter-spacing: 0.5px;
-    z-index: 5;
-}
-
-/* Result overlay */
-.result-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 8px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-    z-index: 10;
-}
-
-.result-overlay.visible {
-    opacity: 1;
-    pointer-events: auto;
-    display: flex !important;
-}
-
-/* Ensure p tags in result overlay are visible */
-.result-overlay p {
-    display: block !important;
-    color: white;
-    margin: 5px 0;
-    font-size: 16px;
-    font-weight: bold;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-/* Fix for completion-specific classes */
-.color-square .completion-stamp {
-    margin-bottom: 15px;
-    z-index: 15;
-    display: block;
-}
-
-.color-square .completion-stats {
-    z-index: 15;
-    background-color: rgba(0,0,0,0.6);
-    padding: 10px 15px;
-    border-radius: 10px;
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-.color-square .stat-line {
-    margin: 5px 0;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
 }
 
 /* Hide the category description paragraph */
-.color-square p:not(.stat-line):not(.guess-count):not(.time-count):not(.stat-achievement) {
+.color-square p {
     display: none; /* Hide instead of removing to maintain compatibility */
 }
 
@@ -262,17 +201,6 @@
     .game-container {
         padding-bottom: 10px;
     }
-
-    /* Smaller stats for mobile */
-    .completion-stats {
-        font-size: 16px;
-        padding: 8px 12px;
-    }
-
-    .completion-stamp {
-        font-size: 32px;
-        padding: 6px 10px;
-    }
 }
 
 /* Extra adjustments for very small screens */
@@ -287,23 +215,5 @@
 
     .game-title {
         margin-bottom: 10px;
-    }
-
-    /* Even smaller stats for very small screens */
-    .completion-stats {
-        font-size: 14px;
-        padding: 5px 10px;
-        min-width: 120px;
-    }
-
-    .completion-stamp {
-        font-size: 26px;
-        padding: 5px 8px;
-        border-width: 4px;
-    }
-
-    .hard-badge {
-        font-size: 10px;
-        padding: 2px 4px;
     }
 }

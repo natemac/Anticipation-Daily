@@ -9,12 +9,7 @@ import { log } from '../game.js';
 
 // Module variables
 let beginButton, backButton, canvas;
-let virtualKeyboard, keyboardContainer;
-let canvasContainer, wordSpacesDiv;
-let canvasOriginalDimensions = { width: 0, height: 0 };
-
-// Track if keyboard events are already setup
-let keyboardEventsInitialized = false;
+let virtualKeyboard;
 
 // Initialize the input handling
 function init() {
@@ -22,13 +17,6 @@ function init() {
     beginButton = document.getElementById('beginButton');
     backButton = document.getElementById('backButton');
     canvas = document.getElementById('gameCanvas');
-    canvasContainer = document.querySelector('.canvas-container');
-
-    // Store original canvas dimensions for later restoration
-    if (canvasContainer) {
-        canvasOriginalDimensions.width = canvasContainer.offsetWidth;
-        canvasOriginalDimensions.height = canvasContainer.offsetHeight;
-    }
 
     // Set up input event listeners
     setupEventListeners();
@@ -36,90 +24,33 @@ function init() {
     // Initialize touch handling for mobile
     initTouchHandling();
 
-    // Create invisible input field and prepare for keyboard
-    enhanceGuessInput();
-
-    // Prevent scrolling on the entire document
-    preventDocumentScrolling();
-
-    // Fix keyboard listeners to prevent duplication
-    fixKeyboardListeners();
+    // Create virtual keyboard
+    createVirtualKeyboard();
 
     log("Input module initialized");
 
     return true;
 }
 
-// Prevent scrolling on the entire document
-function preventDocumentScrolling() {
-    // Prevent default touch behavior to enhance app-like feel
-    document.addEventListener('touchmove', function(e) {
-        e.preventDefault();
-    }, { passive: false });
-
-    // Prevent scrolling with CSS
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
-
-    // Prevent double-tap to zoom
-    document.addEventListener('touchend', function(e) {
-        const now = Date.now();
-        const DOUBLE_TAP_DELAY = 300;
-
-        if (window.lastTap && (now - window.lastTap) < DOUBLE_TAP_DELAY) {
-            e.preventDefault();
-        }
-
-        window.lastTap = now;
-    }, { passive: false });
-}
-
 // Set up all input event listeners
 function setupEventListeners() {
     // Begin/Guess button
     if (beginButton) {
-        // Remove existing handlers first to prevent duplicates
-        beginButton.removeEventListener('click', handleBeginButtonClick);
         beginButton.addEventListener('click', handleBeginButtonClick);
     }
 
     // Back button
     if (backButton) {
-        backButton.removeEventListener('click', handleBackButtonClick);
         backButton.addEventListener('click', handleBackButtonClick);
     }
 
-    // Key press events for direct typing - only add once
-    if (!keyboardEventsInitialized) {
-        document.addEventListener('keydown', handleKeyPress);
-        keyboardEventsInitialized = true;
-    }
+    // Key press events for direct typing
+    document.addEventListener('keydown', handleKeyPress);
 
     // Add touch event to canvas (with passive: false to prevent scrolling)
     if (canvas) {
-        canvas.removeEventListener('touchstart', handleCanvasTouch);
         canvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
     }
-}
-
-// Fix keyboard listeners to prevent duplication
-function fixKeyboardListeners() {
-    console.log("Fixing keyboard listeners...");
-
-    // First, remove all keydown listeners
-    const oldElement = document.body;
-    const newElement = oldElement.cloneNode(true);
-    oldElement.parentNode.replaceChild(newElement, oldElement);
-
-    // Then reattach the listener once
-    document.addEventListener('keydown', handleKeyPress);
-
-    // Set the flag to true
-    keyboardEventsInitialized = true;
-
-    console.log("Keyboard listeners fixed.");
 }
 
 // Initialize touch handling for mobile
@@ -154,9 +85,6 @@ function handleBackButtonClick() {
         Audio.stopAllMusic();
     }
 
-    // Always hide keyboard when going back to menu
-    hideKeyboard();
-
     // If the game has started, use the proper endGame function
     if (GameState.gameStarted) {
         if (typeof GameLogic.endGame === 'function') {
@@ -175,9 +103,6 @@ function handleKeyPress(e) {
     // Only process keypresses when in guess mode
     if (!GameState.guessMode) return;
 
-    // Add console.log to debug
-    console.log(`Key pressed: ${e.key}`);
-
     // Handle different key types
     if (e.key === 'Backspace') {
         // Remove the last character
@@ -185,13 +110,11 @@ function handleKeyPress(e) {
             GameState.currentInput = GameState.currentInput.slice(0, -1);
             WordHandler.updateWordSpaces();
         }
-        e.preventDefault(); // Prevent default backspace behavior
     } else if (e.key === 'Enter') {
         // Submit full word
         if (GameState.guessMode && GameState.currentInput.length > 0) {
             WordHandler.processFullWord();
         }
-        e.preventDefault(); // Prevent default enter behavior
     } else if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
         // Process letter input
         WordHandler.processLetter(e.key);
@@ -211,283 +134,203 @@ function handleCanvasTouch(e) {
     }
 }
 
-// Enhanced guessInput field for mobile
-function enhanceGuessInput() {
-    // Get or create the guessInput
-    let guessInput = document.getElementById('guessInput');
+// Create virtual keyboard for mobile devices
+function createVirtualKeyboard() {
+    // Only create if we're on a mobile device and it doesn't already exist
+    if (!document.getElementById('virtual-keyboard') && isMobileDevice()) {
+        virtualKeyboard = document.createElement('div');
+        virtualKeyboard.id = 'virtual-keyboard';
+        virtualKeyboard.style.display = 'none';
+        virtualKeyboard.style.position = 'fixed';
+        virtualKeyboard.style.bottom = '0';
+        virtualKeyboard.style.left = '0';
+        virtualKeyboard.style.width = '100%';
+        virtualKeyboard.style.backgroundColor = '#f5f5f5';
+        virtualKeyboard.style.padding = '10px';
+        virtualKeyboard.style.boxShadow = '0 -2px 5px rgba(0,0,0,0.1)';
+        virtualKeyboard.style.zIndex = '1000';
+        virtualKeyboard.style.borderTopLeftRadius = '15px';
+        virtualKeyboard.style.borderTopRightRadius = '15px';
+        virtualKeyboard.style.transition = 'transform 0.3s ease';
+        virtualKeyboard.style.transform = 'translateY(100%)';
 
-    if (!guessInput) {
-        // Create a new input field
-        guessInput = document.createElement('input');
-        guessInput.id = 'guessInput';
-        guessInput.type = 'text';
-        guessInput.autocomplete = 'off';
-        guessInput.autocorrect = 'off';
-        guessInput.autocapitalize = 'none';
-        guessInput.spellcheck = false;
+        // Add keyboard rows
+        const rows = [
+            'QWERTYUIOP',
+            'ASDFGHJKL',
+            'ZXCVBNM'
+        ];
 
-        // Add to game controls
-        const gameControls = document.querySelector('.game-controls');
-        if (gameControls) {
-            gameControls.appendChild(guessInput);
-        }
-    }
+        rows.forEach((row, rowIndex) => {
+            const rowDiv = document.createElement('div');
+            rowDiv.style.display = 'flex';
+            rowDiv.style.justifyContent = 'center';
+            rowDiv.style.margin = '5px 0';
+            rowDiv.style.gap = '4px';
 
-    // Set up the input with proper styling
-    guessInput.style.padding = '0';
-    guessInput.style.margin = '0';
-    guessInput.style.border = 'none';
-    guessInput.style.outline = 'none';
-    guessInput.style.opacity = '0';
-    guessInput.style.position = 'absolute';
-    guessInput.style.left = '-1000px'; // Position off-screen
-    guessInput.style.height = '1px';
-    guessInput.style.width = '1px';
+            // Add padding for the bottom row (for alignment)
+            if (rowIndex === 2) {
+                rowDiv.style.paddingLeft = '20px';
+                rowDiv.style.paddingRight = '20px';
+            }
 
-    // Remove previous event listeners by cloning the node
-    const parent = guessInput.parentNode;
-    if (parent) {
-        const newInput = guessInput.cloneNode(true);
-        parent.replaceChild(newInput, guessInput);
-        guessInput = newInput;
-    }
+            // Add keys for this row
+            for (let i = 0; i < row.length; i++) {
+                const key = document.createElement('button');
+                key.textContent = row[i];
+                key.style.margin = '2px';
+                key.style.padding = '12px 0';
+                key.style.width = '9%';
+                key.style.minWidth = '30px';
+                key.style.fontSize = '16px';
+                key.style.border = 'none';
+                key.style.borderRadius = '8px';
+                key.style.backgroundColor = 'white';
+                key.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                key.style.transition = 'all 0.2s ease';
+                key.style.fontWeight = 'bold';
+                key.style.color = '#333';
 
-    // Set up event listeners for input
-    guessInput.addEventListener('input', function(e) {
-        if (!GameState.guessMode) return;
+                // Add "active" effect on press
+                key.addEventListener('touchstart', function() {
+                    key.style.backgroundColor = '#e0e0e0';
+                    key.style.transform = 'translateY(2px)';
+                    key.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
+                });
 
-        // Get the last character typed
-        const lastChar = this.value.slice(-1);
+                key.addEventListener('touchend', function() {
+                    key.style.backgroundColor = 'white';
+                    key.style.transform = 'translateY(0)';
+                    key.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                });
 
-        // Clear input for next character
-        this.value = '';
+                // Add letter-by-letter validation
+                key.addEventListener('click', () => {
+                    if (GameState.guessMode) {
+                        const letter = key.textContent;
+                        WordHandler.processLetter(letter);
+                    }
+                });
 
-        // Process the character if it's a letter
-        if (/[a-zA-Z]/.test(lastChar)) {
-            WordHandler.processLetter(lastChar);
-        }
-    });
+                rowDiv.appendChild(key);
+            }
 
-    // Handle special keys
-    guessInput.addEventListener('keydown', function(e) {
-        if (!GameState.guessMode) return;
+            virtualKeyboard.appendChild(rowDiv);
+        });
 
-        if (e.key === 'Backspace') {
-            // Remove the last character
-            if (GameState.currentInput.length > 0) {
+        // Add additional buttons row (delete, space, enter)
+        const actionRow = document.createElement('div');
+        actionRow.style.display = 'flex';
+        actionRow.style.justifyContent = 'center';
+        actionRow.style.margin = '5px 0';
+        actionRow.style.gap = '8px';
+
+        // Delete button
+        const deleteButton = createKeyboardButton('←', '#f44336', 'white', 60);
+        deleteButton.addEventListener('click', () => {
+            if (GameState.guessMode && GameState.currentInput.length > 0) {
                 GameState.currentInput = GameState.currentInput.slice(0, -1);
                 WordHandler.updateWordSpaces();
             }
-            e.preventDefault();
-        } else if (e.key === 'Enter') {
-            // Submit full word
-            if (GameState.guessMode && GameState.currentInput.length > 0) {
+        });
+
+        // Space button
+        const spaceButton = createKeyboardButton('Space', '#9e9e9e', 'white', 150, true);
+        spaceButton.addEventListener('click', () => {
+            if (GameState.guessMode) {
+                WordHandler.processLetter(' ');
+            }
+        });
+
+        // Enter button
+        const enterButton = createKeyboardButton('Enter', '#4CAF50', 'white', 60);
+        enterButton.addEventListener('click', () => {
+            if (GameState.guessMode) {
                 WordHandler.processFullWord();
             }
-            e.preventDefault();
-        }
+        });
+
+        actionRow.appendChild(deleteButton);
+        actionRow.appendChild(spaceButton);
+        actionRow.appendChild(enterButton);
+        virtualKeyboard.appendChild(actionRow);
+
+        // Add dismiss handle for better UX
+        const dismissHandle = document.createElement('div');
+        dismissHandle.style.width = '40px';
+        dismissHandle.style.height = '5px';
+        dismissHandle.style.backgroundColor = '#ccc';
+        dismissHandle.style.borderRadius = '3px';
+        dismissHandle.style.margin = '0 auto 10px auto';
+        virtualKeyboard.insertBefore(dismissHandle, virtualKeyboard.firstChild);
+
+        // Add to document
+        document.body.appendChild(virtualKeyboard);
+
+        // Show keyboard when in guess mode with animation
+        document.addEventListener('guessmode-changed', (e) => {
+            if (e.detail.active) {
+                virtualKeyboard.style.display = 'block';
+                // Trigger reflow
+                void virtualKeyboard.offsetWidth;
+                virtualKeyboard.style.transform = 'translateY(0)';
+            } else {
+                virtualKeyboard.style.transform = 'translateY(100%)';
+                setTimeout(() => {
+                    virtualKeyboard.style.display = 'none';
+                }, 300);
+            }
+        });
+    }
+}
+
+// Create a keyboard button with consistent styling
+function createKeyboardButton(text, bgColor, textColor, minWidth, flexGrow = false) {
+    const button = document.createElement('button');
+    button.textContent = text;
+    button.style.padding = '12px 15px';
+    button.style.fontSize = '16px';
+    button.style.border = 'none';
+    button.style.borderRadius = '8px';
+    button.style.backgroundColor = bgColor;
+    button.style.color = textColor;
+    button.style.fontWeight = 'bold';
+    button.style.minWidth = `${minWidth}px`;
+    button.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+    button.style.transition = 'all 0.2s ease';
+
+    if (flexGrow) {
+        button.style.flexGrow = '1';
+        button.style.maxWidth = '150px';
+    }
+
+    // Add active effects
+    button.addEventListener('touchstart', function() {
+        this.style.transform = 'translateY(2px)';
+        this.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
     });
 
-    return guessInput;
-}
+    button.addEventListener('touchend', function() {
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+    });
 
-// Show the keyboard with animation
-function showKeyboard() {
-    // Make sure we have the guessInput
-    const guessInput = document.getElementById('guessInput');
-    if (!guessInput) return;
-
-    // Adjust the layout
-    updateKeyboardLayout(true);
-
-    // Make sure guessInput is visible and properly positioned
-    guessInput.style.display = 'block';
-
-    // Focus the input field to trigger the native keyboard
-    setTimeout(() => {
-        guessInput.focus();
-        console.log("Focused guessInput to show keyboard");
-    }, 100);
-}
-
-// Hide the keyboard with animation
-function hideKeyboard() {
-    // Make sure we have the guessInput
-    const guessInput = document.getElementById('guessInput');
-    if (!guessInput) return;
-
-    // Blur and hide the input field to dismiss the keyboard
-    guessInput.blur();
-    guessInput.style.display = 'none';
-
-    // Reset layout
-    updateKeyboardLayout(false);
-}
-
-// Adjust layout for keyboard visibility
-function updateKeyboardLayout(showKeyboard) {
-    // Get required elements
-    if (!canvasContainer) {
-        canvasContainer = document.querySelector('.canvas-container');
-    }
-
-    if (!wordSpacesDiv) {
-        wordSpacesDiv = document.getElementById('wordSpacesDiv');
-    }
-
-    const gameControls = document.querySelector('.game-controls');
-    const gameButtonContainer = document.getElementById('gameButtonContainer');
-    const backButton = document.getElementById('backButton');
-    const gameScreen = document.querySelector('.game-screen');
-
-    if (!canvasContainer || !gameScreen) return;
-
-    if (showKeyboard) {
-        // Add keyboard-visible class
-        gameScreen.classList.add('keyboard-visible');
-
-        // Resize canvas
-        canvasContainer.style.transition = 'all 0.3s ease';
-        canvasContainer.style.width = '80%';
-        canvasContainer.style.margin = '5px auto';
-        canvasContainer.style.transform = 'scale(0.9)';
-
-        // Adjust word spaces
-        if (wordSpacesDiv) {
-            wordSpacesDiv.style.margin = '5px auto';
-            wordSpacesDiv.style.transition = 'all 0.3s ease';
-            wordSpacesDiv.style.boxShadow = '0 0 8px rgba(76, 175, 80, 0.6)';
-        }
-
-        // Hide back button when keyboard is visible to save space
-        if (backButton) {
-            backButton.style.display = 'none';
-        }
-
-        // Add styles if they don't exist
-        addKeyboardStyles();
-
-    } else {
-        // Remove keyboard-visible class
-        gameScreen.classList.remove('keyboard-visible');
-
-        // Restore canvas size
-        canvasContainer.style.width = '100%';
-        canvasContainer.style.margin = '0 0 15px 0';
-        canvasContainer.style.transform = 'scale(1)';
-
-        // Restore word spaces
-        if (wordSpacesDiv) {
-            wordSpacesDiv.style.margin = '15px 0';
-            wordSpacesDiv.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
-        }
-
-        // Show back button again
-        if (backButton) {
-            backButton.style.display = 'block';
-        }
-    }
-}
-
-// Add keyboard styles
-function addKeyboardStyles() {
-    if (document.getElementById('keyboard-style-element')) return;
-
-    const styleElement = document.createElement('style');
-    styleElement.id = 'keyboard-style-element';
-    styleElement.textContent = `
-        /* Base keyboard adjustments */
-        .keyboard-visible .canvas-container {
-            width: 80% !important;
-            margin: 5px auto !important;
-            transform: scale(0.9) !important;
-        }
-
-        .keyboard-visible #wordSpacesDiv {
-            margin: 5px auto !important;
-            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6) !important;
-        }
-
-        .keyboard-visible #gameButtonContainer,
-        .keyboard-visible .game-controls {
-            margin-bottom: 0px !important;
-        }
-
-        /* iOS specific styles */
-        @supports (-webkit-touch-callout: none) {
-            .keyboard-visible .canvas-container {
-                width: 80% !important;
-                transform: scale(0.85) !important;
-                margin-top: 0 !important;
-            }
-
-            .keyboard-visible #wordSpacesDiv {
-                transform: scale(1.05);
-                margin: 8px auto !important;
-            }
-        }
-
-        /* Handle smaller screens */
-        @media (max-height: 700px) {
-            .keyboard-visible .canvas-container {
-                width: 70% !important;
-                transform: scale(0.8) !important;
-            }
-
-            .keyboard-visible #wordSpacesDiv {
-                transform: scale(0.95);
-                margin: 8px auto !important;
-            }
-        }
-    `;
-
-    document.head.appendChild(styleElement);
-}
-
-// Force hide the keyboard
-function forceHideKeyboard() {
-    // Hide and blur the input field
-    const guessInput = document.getElementById('guessInput');
-    if (guessInput) {
-        guessInput.blur();
-        guessInput.style.display = 'none';
-    }
-
-    // Reset layout
-    updateKeyboardLayout(false);
+    return button;
 }
 
 // Check if we're on a mobile device
 function isMobileDevice() {
-    return (
-        ('ontouchstart' in window) ||
-        (navigator.maxTouchPoints > 0) ||
-        (navigator.msMaxTouchPoints > 0) ||
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    );
-}
-
-// Function to create virtual keyboard (to fix the error)
-function createVirtualKeyboard() {
-    console.log("Virtual keyboard initialization requested");
-    // This is a placeholder - implement actual virtual keyboard logic if needed
-    return true;
+    return (typeof window.orientation !== 'undefined') ||
+           (navigator.userAgent.indexOf('IEMobile') !== -1) ||
+           (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 }
 
 // Export public functions
 export {
     init,
-    enhanceGuessInput,
-    setupEventListeners,
-    handleKeyPress,
     createVirtualKeyboard,
+    handleKeyPress,
     handleBeginButtonClick,
     handleBackButtonClick,
-    isMobileDevice,
-    showKeyboard,
-    hideKeyboard,
-    forceHideKeyboard,
-    updateKeyboardLayout,
-    addKeyboardStyles,
-    fixKeyboardListeners
+    isMobileDevice
 };

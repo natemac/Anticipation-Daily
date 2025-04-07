@@ -25,15 +25,9 @@ The project consists of the following files:
     - `renderer.js` - Canvas rendering and drawing
     - `animation.js` - Animation and visual effects
     - `audio.js` - Sound and music management
-    - `ui.js` - Main entry point for UI functionality (re-exports from modular UI components)
-    - `ui-core.js` - Core UI initialization and shared functionality
-    - `ui-controls.js` - UI controls like buttons and toggles
-    - `ui-timer.js` - Timer and countdown functionality
-    - `ui-hints.js` - Hint system implementation
-    - `ui-modes.js` - Game mode transitions
-    - `ui-keyboard.js` - Keyboard and input handling
+    - `ui.js` - User interface elements
     - `wordHandler.js` - Word display and validation
-    - `input.js` - General keyboard and touch handling
+    - `input.js` - Keyboard and touch handling
     - `gameLogic.js` - Game mechanics and flow
     - `volume-controls.js` - Audio volume management
   - `modulesBuilder/` - Modular builder functionality

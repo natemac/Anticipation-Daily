@@ -5,12 +5,11 @@ import * as Animation from './animation.js';
 import * as Audio from './audio.js';
 import * as WordHandler from './wordHandler.js';
 import * as GameLogic from './gameLogic.js';
-import * as Input from './input.js';
 import { log } from '../game.js';
 
 // Module variables
 let timerDisplay, beginButton, wrongMessage, backButton, buttonTimer;
-let wordSpacesDiv, hintButton, buttonContainer;
+let wordSpacesDiv, hintButton;
 let hintButtonTimeout;
 
 // Initialize UI module
@@ -29,14 +28,10 @@ function init() {
 
     // Create UI elements
     createWordSpacesDiv();
-    createButtonContainer();
     createHintButton();
 
     // Add audio toggle to settings
     addAudioToggle();
-
-    // Initialize mobile keyboard adaptations
-    initMobileKeyboard();
 
     log("UI module initialized");
 
@@ -47,8 +42,7 @@ function init() {
         backButton,
         buttonTimer,
         wordSpacesDiv,
-        hintButton,
-        buttonContainer
+        hintButton
     };
 }
 
@@ -72,8 +66,8 @@ function createWordSpacesDiv() {
     wordSpacesDiv = document.createElement('div');
     wordSpacesDiv.id = 'wordSpacesDiv';
     wordSpacesDiv.style.width = '100%';
-    wordSpacesDiv.style.minHeight = '60px';
-    wordSpacesDiv.style.margin = '15px 0'; // Even padding
+    wordSpacesDiv.style.height = '60px';
+    wordSpacesDiv.style.margin = '10px 0';
     wordSpacesDiv.style.textAlign = 'center';
     wordSpacesDiv.style.position = 'relative';
     wordSpacesDiv.style.backgroundColor = 'white';
@@ -99,44 +93,6 @@ function createWordSpacesDiv() {
     return wordSpacesDiv;
 }
 
-// Create button container for side-by-side layout
-function createButtonContainer() {
-    // Check if already exists
-    if (document.getElementById('gameButtonContainer')) {
-        buttonContainer = document.getElementById('gameButtonContainer');
-        return buttonContainer;
-    }
-
-    // Create container for buttons
-    buttonContainer = document.createElement('div');
-    buttonContainer.id = 'gameButtonContainer';
-    buttonContainer.style.display = 'flex';
-    buttonContainer.style.width = '100%';
-    buttonContainer.style.justifyContent = 'space-between';
-    buttonContainer.style.gap = '10px';
-    buttonContainer.style.margin = '15px 0'; // Even padding
-    buttonContainer.style.flexDirection = 'row'; // Ensure left-to-right layout
-
-    // Find the game controls div
-    const gameControlsDiv = document.querySelector('.game-controls');
-
-    if (gameControlsDiv) {
-        // Move the beginButton into our container once the DOM is fully loaded
-        setTimeout(() => {
-            const beginButton = document.getElementById('beginButton');
-            if (beginButton && beginButton.parentNode === gameControlsDiv) {
-                beginButton.style.margin = '0';
-                beginButton.style.flex = '2'; // Takes up 2/3 of the space
-                beginButton.style.order = '1'; // Explicitly set to first position (left)
-                buttonContainer.appendChild(beginButton);
-                gameControlsDiv.appendChild(buttonContainer);
-            }
-        }, 0);
-    }
-
-    return buttonContainer;
-}
-
 // Create hint button
 function createHintButton() {
     // Check if already exists
@@ -154,14 +110,12 @@ function createHintButton() {
     hintButton.style.color = '#333';
     hintButton.style.border = 'none';
     hintButton.style.borderRadius = '8px';
-    hintButton.style.padding = '12px 15px'; // Match beginButton
-    hintButton.style.margin = '0'; // Adjusted for side-by-side layout
+    hintButton.style.padding = '8px 15px';
+    hintButton.style.margin = '10px 0';
     hintButton.style.fontWeight = 'bold';
     hintButton.style.cursor = 'pointer';
     hintButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-    hintButton.style.transition = 'background-color 0.3s, transform 0.2s, opacity 0.3s';
-    hintButton.style.flex = '1'; // Takes up 1/3 of the container when beginButton has flex: 2
-    hintButton.style.order = '2'; // Explicitly set to second position (right)
+    hintButton.style.transition = 'background-color 0.3s, transform 0.2s';
 
     // Initially disable the hint button (will enable after cooldown period)
     hintButton.disabled = true;
@@ -171,25 +125,10 @@ function createHintButton() {
     // Add event listener
     hintButton.addEventListener('click', useHint);
 
-    // Add to button container instead of game controls
-    if (buttonContainer) {
-        // Make sure to append in the correct order for left-to-right layout
-        // The buttonContainer may already have the beginButton as first child
-        if (buttonContainer.children.length === 0) {
-            // Container is empty - we'll wait for the beginButton to be added first
-            setTimeout(() => {
-                buttonContainer.appendChild(hintButton); // Add hint button second
-            }, 10);
-        } else {
-            // Container already has beginButton - add hint button after it
-            buttonContainer.appendChild(hintButton);
-        }
-    } else {
-        // Fallback to old behavior
-        const gameControlsDiv = document.querySelector('.game-controls');
-        if (gameControlsDiv) {
-            gameControlsDiv.appendChild(hintButton);
-        }
+    // Add to game controls
+    const gameControlsDiv = document.querySelector('.game-controls');
+    if (gameControlsDiv) {
+        gameControlsDiv.appendChild(hintButton);
     }
 
     return hintButton;
@@ -665,7 +604,9 @@ function updateHintCooldown() {
     }
 }
 
-// Enter guess mode - updated to handle keyboard display
+// Updated sections of ui.js that need to integrate with the new audio system
+
+// Enter guess mode - update to handle music transition
 function enterGuessMode() {
     log("Entering guess mode");
 
@@ -710,9 +651,6 @@ function enterGuessMode() {
     // Update the word spaces to show empty slots
     WordHandler.updateWordSpaces();
 
-    // Make word spaces clickable
-    makeWordSpacesInteractive();
-
     // Add pulse animation to the word spaces div to draw attention
     if (wordSpacesDiv) {
         wordSpacesDiv.style.animation = 'pulse-attention 1s';
@@ -743,16 +681,11 @@ function enterGuessMode() {
         beginButton.querySelector('span').textContent = 'Guess';
     }
 
-    // Adjust layout for keyboard
-    Input.updateKeyboardLayout(true);
-
-    // Show virtual keyboard on mobile and adjust layout
-    if (typeof Input.showKeyboard === 'function') {
-        Input.showKeyboard();
-    }
+    // Show virtual keyboard on mobile
+    updateVirtualKeyboard(true);
 }
 
-// Exit guess mode - updated to handle keyboard handling
+// Exit guess mode - update to handle music transition
 function exitGuessMode() {
     log("Exiting guess mode");
 
@@ -784,192 +717,23 @@ function exitGuessMode() {
         }
     }
 
-    // Hide virtual keyboard on mobile and restore layout
-    if (typeof Input.hideKeyboard === 'function') {
-        Input.hideKeyboard();
-    }
-
-    // Also reset layout directly
-    Input.updateKeyboardLayout(false);
+    // Hide virtual keyboard on mobile
+    updateVirtualKeyboard(false);
 }
 
-// Make the word spaces area interactive (clickable)
-function makeWordSpacesInteractive() {
-    if (!wordSpacesDiv) return;
-
-    // Add cursor style
-    wordSpacesDiv.style.cursor = 'text';
-
-    // Remove existing click listener if any
-    wordSpacesDiv.removeEventListener('click', handleWordSpacesClick);
-
-    // Add click event to focus input
-    wordSpacesDiv.addEventListener('click', handleWordSpacesClick);
-}
-
-// Handle click on word spaces
-function handleWordSpacesClick() {
-    if (!GameState.guessMode) return;
-
-    // Focus the guess input to bring up keyboard
-    const guessInput = document.getElementById('guessInput');
-    if (guessInput) {
-        guessInput.focus();
-    }
-}
-
-// Initialize mobile keyboard support
-function initMobileKeyboard() {
-    // Create/enhance the input field
-    enhanceGuessInput();
-
-    // Add keyboard styles
-    addKeyboardStyles();
-}
-
-// Enhance the guessInput field for mobile
-function enhanceGuessInput() {
-    // Get or create the guessInput
-    let guessInput = document.getElementById('guessInput');
-
-    if (!guessInput) {
-        // Create a new input field
-        guessInput = document.createElement('input');
-        guessInput.id = 'guessInput';
-        guessInput.type = 'text';
-        guessInput.autocomplete = 'off';
-        guessInput.autocorrect = 'off';
-        guessInput.autocapitalize = 'none';
-        guessInput.spellcheck = false;
-
-        // Add to game controls
-        const gameControls = document.querySelector('.game-controls');
-        if (gameControls) {
-            gameControls.appendChild(guessInput);
-        }
-    }
-
-    // Set up the input with proper styling
-    guessInput.style.padding = '0';
-    guessInput.style.margin = '0';
-    guessInput.style.border = 'none';
-    guessInput.style.outline = 'none';
-    guessInput.style.opacity = '0';
-    guessInput.style.position = 'absolute';
-    guessInput.style.left = '-1000px'; // Position off-screen
-    guessInput.style.height = '1px';
-    guessInput.style.width = '1px';
-
-    // Set up event listeners for input
-    guessInput.addEventListener('input', function(e) {
-        if (!GameState.guessMode) return;
-
-        // Get the last character typed
-        const lastChar = this.value.slice(-1);
-
-        // Clear input for next character
-        this.value = '';
-
-        // Process the character if it's a letter
-        if (/[a-zA-Z]/.test(lastChar)) {
-            WordHandler.processLetter(lastChar);
+// Update mobile virtual keyboard visibility
+function updateVirtualKeyboard(show) {
+    const event = new CustomEvent('guessmode-changed', {
+        detail: {
+            active: show
         }
     });
-
-    // Handle special keys
-    guessInput.addEventListener('keydown', function(e) {
-        if (!GameState.guessMode) return;
-
-        if (e.key === 'Backspace') {
-            // Remove the last character
-            if (GameState.currentInput.length > 0) {
-                GameState.currentInput = GameState.currentInput.slice(0, -1);
-                WordHandler.updateWordSpaces();
-            }
-            e.preventDefault();
-        } else if (e.key === 'Enter') {
-            // Submit full word
-            if (GameState.guessMode && GameState.currentInput.length > 0) {
-                WordHandler.processFullWord();
-            }
-            e.preventDefault();
-        }
-    });
-
-    return guessInput;
-}
-
-// Add keyboard styles
-function addKeyboardStyles() {
-    if (document.getElementById('keyboard-style-element')) return;
-
-    const styleElement = document.createElement('style');
-    styleElement.id = 'keyboard-style-element';
-    styleElement.textContent = `
-        /* Base keyboard adjustments */
-        .keyboard-visible .canvas-container {
-            width: 80% !important;
-            margin: 5px auto !important;
-            transform: scale(0.9) !important;
-        }
-
-        .keyboard-visible #wordSpacesDiv {
-            margin: 5px auto !important;
-            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6) !important;
-        }
-
-        .keyboard-visible #gameButtonContainer,
-        .keyboard-visible .game-controls {
-            margin-bottom: 0px !important;
-        }
-
-        /* iOS specific styles */
-        @supports (-webkit-touch-callout: none) {
-            .keyboard-visible .canvas-container {
-                width: 80% !important;
-                transform: scale(0.85) !important;
-                margin-top: 0 !important;
-            }
-
-            .keyboard-visible #wordSpacesDiv {
-                transform: scale(1.05);
-                margin: 8px auto !important;
-            }
-        }
-
-        /* Handle smaller screens */
-        @media (max-height: 700px) {
-            .keyboard-visible .canvas-container {
-                width: 70% !important;
-                transform: scale(0.8) !important;
-            }
-
-            .keyboard-visible #wordSpacesDiv {
-                transform: scale(0.95);
-                margin: 8px auto !important;
-            }
-        }
-    `;
-
-    document.head.appendChild(styleElement);
-}
-
-// Function to detect if device is mobile
-function isMobileDevice() {
-    return (
-        ('ontouchstart' in window) ||
-        (navigator.maxTouchPoints > 0) ||
-        (navigator.msMaxTouchPoints > 0) ||
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    );
+    document.dispatchEvent(event);
 }
 
 // Reposition UI elements after resize
 function repositionElements() {
-    // Reapply keyboard layout adjustments if in guess mode
-    if (GameState.guessMode) {
-        Input.updateKeyboardLayout(true);
-    }
+    // Nothing to reposition yet
 }
 
 // Show/hide hint button
@@ -984,17 +748,6 @@ function toggleHintButton(show) {
 
     // Update display based on show parameter
     hintButton.style.display = show ? 'block' : 'none';
-
-    // Also show/hide the button container for consistent space
-    if (buttonContainer) {
-        buttonContainer.style.display = show ? 'flex' : 'block';
-
-        // Make sure the beginButton takes up 2/3 of the space when the hint button is showing
-        const beginButton = document.getElementById('beginButton');
-        if (beginButton) {
-            beginButton.style.flex = show ? '2' : '1';
-        }
-    }
 
     // Reset hint button state
     if (show) {
@@ -1053,13 +806,11 @@ export {
     hideMessages,
     enterGuessMode,
     exitGuessMode,
+    updateVirtualKeyboard,
     repositionElements,
     toggleHintButton,
     enableHintButton,
     startHintCooldown,
     showError,
-    updateHintButtonCounter,
-    makeWordSpacesInteractive,
-    handleWordSpacesClick,
-    isMobileDevice
+    updateHintButtonCounter
 };
