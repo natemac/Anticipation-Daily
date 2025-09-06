@@ -1,4 +1,4 @@
-# Daily Anticipation Game Project
+# Daily Anticipation Game Project - Previous Project
 
 This project recreates the classic Nintendo game "Anticipation" as a modern web application, consisting of two main components:
 
